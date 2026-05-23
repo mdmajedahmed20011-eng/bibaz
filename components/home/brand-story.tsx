@@ -14,9 +14,8 @@ export function BrandStory() {
     <section className="bg-surface border-t border-border/40 py-16 md:py-24">
       <div className="container mx-auto px-6 md:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-          
           {/* Left Side: Elegant Asymmetric Photo Frame */}
-          <div className="lg:col-span-6 relative aspect-[4/5] md:aspect-[3/4] lg:aspect-[4/5] rounded-sm overflow-hidden shadow-sm group">
+          <div className="lg:col-span-6 relative aspect-[4/5] md:aspect-[3/4] lg:aspect-[4/5] rounded-sm overflow-hidden shadow-sm group reveal">
             <Image
               src="/images/products/boutique/bouthik 3.webp"
               alt="Artisanal craftmanship at BIBAZ"
@@ -29,11 +28,11 @@ export function BrandStory() {
           </div>
 
           {/* Right Side: Editorial narrative and typography */}
-          <div className="lg:col-span-6 space-y-6 lg:pl-8">
+          <div className="lg:col-span-6 space-y-6 lg:pl-8 reveal [transition-delay:200ms]">
             <p className="text-[10px] uppercase tracking-[0.25em] text-accent font-bold">
               The Art of Weaving Elegance
             </p>
-            
+
             <h2 className="text-3xl md:text-4xl font-bold tracking-tight leading-tight text-foreground font-heading">
               Crafted for the Modern Woman,
               <br />
@@ -41,15 +40,21 @@ export function BrandStory() {
             </h2>
 
             <div className="border-l-2 border-accent/40 pl-4 py-1 text-muted-foreground italic text-sm">
-              &ldquo;We believe that clothing is not merely attire &mdash; it is a canvas of local heritage, artisan devotion, and timeless luxury.&rdquo;
+              &ldquo;We believe that clothing is not merely attire &mdash; it is a canvas of local
+              heritage, artisan devotion, and timeless luxury.&rdquo;
             </div>
 
             <div className="space-y-4 text-sm text-muted-foreground leading-relaxed">
               <p>
-                Every thread at BIBAZ tells a story of meticulous dedication. Our designer Borka, luxury Saree, and exclusive Boutique collections are crafted utilizing hand-selected fabrics, custom loom patterns, and refined embroidery techniques.
+                Every thread at BIBAZ tells a story of meticulous dedication. Our designer Borka,
+                luxury Saree, and exclusive Boutique collections are crafted utilizing hand-selected
+                fabrics, custom loom patterns, and refined embroidery techniques.
               </p>
               <p>
-                Collaborating directly with generational artisans, we merge traditional Bangladeshi heritage with modern high-fashion silhouettes. The result is a curated collection of rare comfort, rich texture, and elegant poise designed to make you feel extraordinary.
+                Collaborating directly with generational artisans, we merge traditional Bangladeshi
+                heritage with modern high-fashion silhouettes. The result is a curated collection of
+                rare comfort, rich texture, and elegant poise designed to make you feel
+                extraordinary.
               </p>
             </div>
 
@@ -62,7 +67,6 @@ export function BrandStory() {
               </Link>
             </div>
           </div>
-
         </div>
       </div>
     </section>

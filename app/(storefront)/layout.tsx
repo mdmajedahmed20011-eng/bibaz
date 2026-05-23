@@ -6,6 +6,7 @@
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { CartDrawer } from "@/components/cart/cart-drawer";
+import { ScrollReveal } from "@/components/ui/scroll-reveal";
 
 export default function StorefrontLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -16,6 +17,7 @@ export default function StorefrontLayout({ children }: { children: React.ReactNo
       </main>
       <Footer />
       <CartDrawer />
+      <ScrollReveal />
     </>
   );
 }

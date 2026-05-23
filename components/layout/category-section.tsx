@@ -13,7 +13,7 @@ export function CategorySection() {
     <section className="section-premium">
       <div className="container mx-auto px-6 md:px-8">
         {/* Section heading — editorial */}
-        <div className="text-center mb-10 md:mb-14">
+        <div className="text-center mb-10 md:mb-14 reveal">
           <p className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground font-medium mb-3">
             Collections
           </p>
@@ -21,7 +21,7 @@ export function CategorySection() {
         </div>
 
         {/* Asymmetric Grid — 1 large + 3 small */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3 reveal [transition-delay:200ms]">
           {/* First item — spans 2 columns on desktop */}
           {CATEGORIES[0] && (
             <Link

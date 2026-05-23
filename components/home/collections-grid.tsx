@@ -13,14 +13,14 @@ export function CollectionsGrid() {
     <section className="section-premium">
       <div className="container mx-auto px-6 md:px-8">
         {/* Section heading */}
-        <div className="text-center mb-10 md:mb-14">
+        <div className="text-center mb-10 md:mb-14 reveal">
           <p className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground font-medium mb-3">
             Browse
           </p>
           <h2 className="text-2xl md:text-[34px] font-bold tracking-[-0.02em]">All Collections</h2>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 reveal [transition-delay:200ms]">
           {CATEGORIES.map((collection) => (
             <Link
               key={collection.slug}

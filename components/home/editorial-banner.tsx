@@ -16,7 +16,7 @@ export function EditorialBanner() {
       {/* Content */}
       <div className="relative z-10 h-full flex items-center">
         <div className="container mx-auto px-6 md:px-8">
-          <div className="max-w-lg text-center mx-auto">
+          <div className="max-w-lg text-center mx-auto reveal">
             <p className="text-[11px] uppercase tracking-[0.3em] text-[#c9a96e] font-medium mb-4">
               Eid Collection 2026
             </p>

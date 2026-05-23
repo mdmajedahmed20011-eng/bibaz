@@ -21,7 +21,7 @@ export function FeaturedSection() {
     <section className="section-premium bg-surface-warm">
       <div className="container mx-auto px-6 md:px-8">
         {/* Section heading */}
-        <div className="flex items-end justify-between mb-10 md:mb-14">
+        <div className="flex items-end justify-between mb-10 md:mb-14 reveal">
           <div>
             <p className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground font-medium mb-2">
               Curated
@@ -39,7 +39,7 @@ export function FeaturedSection() {
         </div>
 
         {/* Asymmetric Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-8 md:gap-x-6 md:gap-y-12">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-8 md:gap-x-6 md:gap-y-12 reveal [transition-delay:200ms]">
           {/* Hero product — large, spans 2 cols */}
           {heroProduct && (
             <div className="col-span-2 row-span-2">

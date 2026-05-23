@@ -15,7 +15,7 @@ export function NewArrivalsSection() {
     <section className="section-premium">
       <div className="container mx-auto px-6 md:px-8">
         {/* Section heading — premium style */}
-        <div className="flex items-end justify-between mb-10 md:mb-14">
+        <div className="flex items-end justify-between mb-10 md:mb-14 reveal">
           <div>
             <p className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground font-medium mb-2">
               Just In
@@ -31,7 +31,7 @@ export function NewArrivalsSection() {
         </div>
 
         {/* Product Grid — generous gap */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-8 md:gap-x-6 md:gap-y-12">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-8 md:gap-x-6 md:gap-y-12 reveal [transition-delay:200ms]">
           {products.map((product) => (
             <ProductCard key={product.id} {...product} />
           ))}

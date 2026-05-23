@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useMemo } from "react";
 import { Heart, Minus, Plus, ShoppingBag, Truck, ChevronDown } from "lucide-react";
 import { toast } from "sonner";

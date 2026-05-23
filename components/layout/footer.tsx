@@ -1,3 +1,5 @@
+"use client";
+
 /**
  * BIBAZ — Footer (Premium v2.0)
  * Clean, organized, generous spacing
@@ -39,15 +41,16 @@ export function Footer() {
                 Subscribe for Exclusive Access
               </h3>
               <p className="text-xs text-neutral-400 max-w-sm leading-relaxed">
-                Be the first to discover new arrivals, designer edits, and private seasonal promotions.
+                Be the first to discover new arrivals, designer edits, and private seasonal
+                promotions.
               </p>
             </div>
-            
-            <form 
+
+            <form
               onSubmit={(e) => {
                 e.preventDefault();
                 alert("Thank you for subscribing to our newsletter!");
-              }} 
+              }}
               className="w-full md:w-auto flex flex-col sm:flex-row gap-3 items-stretch max-w-md"
             >
               <input
@@ -182,7 +185,10 @@ export function Footer() {
       <div className="border-t border-border/50">
         <div className="container mx-auto px-6 md:px-8 py-5 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-muted-foreground font-medium">
           <p>© {new Date().getFullYear()} BIBAZ. All rights reserved.</p>
-          <p>Cash on Delivery &nbsp;|&nbsp; Dhaka: ৳80 &nbsp;|&nbsp; Outside: ৳150 &nbsp;|&nbsp; Secured SSL Checkout</p>
+          <p>
+            Cash on Delivery &nbsp;|&nbsp; Dhaka: ৳80 &nbsp;|&nbsp; Outside: ৳150 &nbsp;|&nbsp;
+            Secured SSL Checkout
+          </p>
         </div>
       </div>
     </footer>

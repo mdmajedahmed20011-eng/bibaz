@@ -1,7 +1,7 @@
 # ═══════════════════════════════════════════════════
 # BIBAZ — Deploy Pipeline (SOP §৮B, §৮.৫)
-# Builds on GitHub Actions (7GB RAM) → Deploys to Hostinger
-# Rule: NEVER build on Hostinger server
+# Builds on GitHub Actions (7GB RAM) → Deploys to Hostinger via SSH
+# Rule: NEVER build on Hostinger server. Hostinger only runs: node server.js
 # ═══════════════════════════════════════════════════
 
 name: Build & Deploy
@@ -25,13 +25,15 @@ jobs:
           node-version: "20"
           cache: "npm"
 
-      - name: Install dependencies
+      - name: Install all dependencies
         run: npm ci
 
       - name: Generate Prisma Client
         run: npx prisma generate
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
-      - name: Build application
+      - name: Build application (GitHub Actions — 7GB RAM)
         run: npm run build
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
@@ -39,9 +41,29 @@ jobs:
           NEXTAUTH_URL: ${{ secrets.NEXTAUTH_URL }}
           AUTH_GOOGLE_ID: ${{ secrets.AUTH_GOOGLE_ID }}
           AUTH_GOOGLE_SECRET: ${{ secrets.AUTH_GOOGLE_SECRET }}
+          NODE_ENV: production
 
-      # Deploy step — will be configured when Hostinger is ready
-      # - name: Deploy to Hostinger
-      #   run: |
-      #     # Deploy pre-compiled .next + server.js + package.json
-      #     # Hostinger only runs: node server.js
+      - name: Copy built files to Hostinger via SCP
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.HOSTINGER_SSH_HOST }}
+          username: ${{ secrets.HOSTINGER_SSH_USER }}
+          password: ${{ secrets.HOSTINGER_SSH_PASSWORD }}
+          port: 65002
+          source: ".next/,public/,server.js,package.json,package-lock.json,next.config.ts,prisma/,proxy.ts"
+          target: "/home/${{ secrets.HOSTINGER_SSH_USER }}/domains/majedahmed.space/public_html"
+          strip_components: 0
+          overwrite: true
+
+      - name: Install production deps & restart on Hostinger
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HOSTINGER_SSH_HOST }}
+          username: ${{ secrets.HOSTINGER_SSH_USER }}
+          password: ${{ secrets.HOSTINGER_SSH_PASSWORD }}
+          port: 65002
+          script: |
+            cd /home/$USER/domains/majedahmed.space/public_html
+            npm ci --omit=dev --ignore-scripts
+            npx prisma generate
+            echo "✅ Deploy complete — Hostinger will auto-restart node server.js"

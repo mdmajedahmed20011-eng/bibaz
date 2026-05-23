@@ -41,7 +41,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
         // Find user by email
         const user = await prisma.user.findUnique({
-          where: { email },
+          where: { email: email.toLowerCase() },
           select: {
             id: true,
             name: true,
@@ -78,11 +78,24 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     // Facebook({...}),
   ],
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, account }) {
+      // On initial sign in, add user data to token
       if (user) {
         token.id = user.id;
-        token.role = (user as { role: string }).role;
-        token.phone = (user as { phone: string | null }).phone;
+        token.role = (user as { role: string }).role || "CUSTOMER";
+        token.phone = (user as { phone: string | null }).phone || null;
+      }
+      // For OAuth users, fetch role from DB
+      if (account && account.provider !== "credentials") {
+        const dbUser = await prisma.user.findUnique({
+          where: { email: token.email! },
+          select: { id: true, role: true, phone: true },
+        });
+        if (dbUser) {
+          token.id = dbUser.id;
+          token.role = dbUser.role;
+          token.phone = dbUser.phone;
+        }
       }
       return token;
     },

@@ -8,6 +8,15 @@ const nextConfig: NextConfig = {
         source: "/(.*)",
         headers: [
           {
+            key: "Content-Security-Policy",
+            value:
+              "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://res.cloudinary.com; font-src 'self' data:; connect-src 'self' https://aware-urchin-134751.upstash.io;",
+          },
+          {
+            key: "Strict-Transport-Security",
+            value: "max-age=31536000; includeSubDomains",
+          },
+          {
             key: "X-Frame-Options",
             value: "DENY",
           },
@@ -44,9 +53,6 @@ const nextConfig: NextConfig = {
 
   // Strict mode for better error catching
   reactStrictMode: true,
-
-  // Output standalone for Hostinger deployment
-  output: "standalone",
 
   // Disable Turbopack for production build (Hostinger compatibility)
   // Dev still uses Turbopack via --turbopack flag

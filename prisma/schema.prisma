@@ -93,6 +93,7 @@ model User {
   wishlists  Wishlist[]
   sessions   Session[]
   auditLogs  AuditLog[]
+  accounts   Account[]
   cart       Cart?
 
   @@map("users")
@@ -435,6 +436,8 @@ model Account {
   scope             String?
   id_token          String? @db.Text
   session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
   @@map("accounts")

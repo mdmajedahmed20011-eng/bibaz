@@ -47,6 +47,9 @@ const nextConfig: NextConfig = {
 
   // Output standalone for Hostinger deployment
   output: "standalone",
+
+  // Disable Turbopack for production build (Hostinger compatibility)
+  // Dev still uses Turbopack via --turbopack flag
 };
 
 export default nextConfig;

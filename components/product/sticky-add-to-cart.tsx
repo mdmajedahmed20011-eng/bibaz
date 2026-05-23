@@ -25,7 +25,14 @@ export function StickyAddToCart({
   label,
 }: StickyAddToCartProps) {
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-40 lg:hidden border-t border-border/40 bg-background/80 backdrop-blur-lg px-5 py-3.5 pb-safe shadow-[0_-10px_30px_rgba(0,0,0,0.05)] transition-transform duration-300">
+    <div
+      className="fixed bottom-0 left-0 right-0 z-40 lg:hidden border-t border-border/40 bg-white px-5 py-3.5 pb-safe shadow-[0_-10px_30px_rgba(0,0,0,0.05)] transition-transform duration-300"
+      style={{
+        backgroundColor: "rgba(253, 252, 250, 0.95)",
+        backdropFilter: "blur(16px)",
+        WebkitBackdropFilter: "blur(16px)",
+      }}
+    >
       <div className="flex flex-col gap-2 max-w-lg mx-auto">
         <div className="flex items-center justify-between">
           <span className="text-[10px] uppercase tracking-[0.15em] text-muted-foreground font-semibold">
@@ -39,7 +46,11 @@ export function StickyAddToCart({
           <button
             onClick={onAddToCart}
             disabled={disabled}
-            className="flex-1 flex items-center justify-center gap-1.5 h-11 bg-[#9faab1] text-white text-[10px] font-bold uppercase tracking-[0.12em] transition-all hover:bg-[#8e9aa1] disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+            className={`flex-1 flex items-center justify-center gap-1.5 h-11 text-[10px] font-bold uppercase tracking-[0.12em] transition-all rounded-sm cursor-pointer ${
+              disabled
+                ? "bg-neutral-100 border border-neutral-200 text-neutral-400 opacity-60 cursor-not-allowed"
+                : "bg-foreground hover:bg-neutral-800 text-background"
+            }`}
           >
             <ShoppingBag className="h-3.5 w-3.5" />
             {label}
@@ -47,9 +58,13 @@ export function StickyAddToCart({
           <button
             onClick={onBuyNow}
             disabled={disabled}
-            className="flex-1 flex items-center justify-center gap-1.5 h-11 bg-[#c88282] text-white text-[10px] font-bold uppercase tracking-[0.12em] transition-all hover:bg-[#b87171] disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shadow-sm"
+            className={`flex-1 flex items-center justify-center gap-1.5 h-11 text-[10px] font-bold uppercase tracking-[0.12em] transition-all rounded-sm cursor-pointer shadow-sm ${
+              disabled
+                ? "bg-neutral-100 border border-neutral-200 text-neutral-400 opacity-60 cursor-not-allowed"
+                : "bg-[#b33a3a] hover:bg-[#9c2f2f] text-white"
+            }`}
           >
-            BUY NOW
+            {label === "Select Size" ? "Select Size" : "BUY NOW"}
           </button>
         </div>
       </div>

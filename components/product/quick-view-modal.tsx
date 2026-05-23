@@ -221,12 +221,12 @@ function QuickViewModalInner({ product, onClose }: QuickViewModalInnerProps) {
 
       {/* Left Section: Gallery (50%) */}
       <div className="w-full md:w-1/2 bg-[#f5f5f5] p-6 flex flex-col justify-between max-h-[40vh] md:max-h-full">
-        <div className="relative flex-1 aspect-[3/4] max-h-[30vh] md:max-h-[50vh] overflow-hidden rounded-sm bg-neutral-100">
+        <div className="relative flex-1 aspect-[3/4] max-h-[35vh] md:max-h-[55vh] overflow-hidden rounded-sm bg-neutral-100">
           <Image
             src={images[activeImageIndex] ?? product.image}
             alt={product.name}
             fill
-            className="object-cover transition-transform duration-700 hover:scale-105"
+            className="object-contain transition-transform duration-700 hover:scale-103 bg-[#f5f5f5]"
             sizes="(max-width: 768px) 100vw, 50vw"
             priority
           />
@@ -368,8 +368,12 @@ function QuickViewModalInner({ product, onClose }: QuickViewModalInnerProps) {
           <div className="flex gap-3">
             <button
               onClick={handleAddToCart}
-              disabled={!isInStock}
-              className="flex-1 flex items-center justify-center gap-2 h-11 bg-[#9faab1] text-white text-xs font-bold uppercase tracking-[0.12em] hover:bg-[#8e9aa1] disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+              disabled={!selectedSize || !isInStock}
+              className={`flex-1 flex items-center justify-center gap-2 h-11 text-xs font-bold uppercase tracking-[0.12em] transition-all rounded-sm cursor-pointer ${
+                !selectedSize
+                  ? "bg-neutral-100 border border-neutral-200 text-neutral-400 opacity-60 cursor-not-allowed"
+                  : "bg-foreground hover:bg-neutral-800 text-background"
+              }`}
             >
               <ShoppingBag className="h-4 w-4" />
               {!selectedSize ? "Select Size" : !isInStock ? "Out of Stock" : "ADD TO BAG"}
@@ -377,10 +381,14 @@ function QuickViewModalInner({ product, onClose }: QuickViewModalInnerProps) {
 
             <button
               onClick={handleBuyNow}
-              disabled={!isInStock}
-              className="flex-1 flex items-center justify-center gap-2 h-11 bg-[#c88282] text-white text-xs font-bold uppercase tracking-[0.12em] hover:bg-[#b87171] disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm"
+              disabled={!selectedSize || !isInStock}
+              className={`flex-1 flex items-center justify-center gap-2 h-11 text-xs font-bold uppercase tracking-[0.12em] transition-all rounded-sm cursor-pointer shadow-sm ${
+                !selectedSize
+                  ? "bg-neutral-100 border border-neutral-200 text-neutral-400 opacity-60 cursor-not-allowed"
+                  : "bg-[#b33a3a] hover:bg-[#9c2f2f] text-white"
+              }`}
             >
-              BUY NOW
+              {!selectedSize ? "Select Size" : "BUY NOW"}
             </button>
 
             {/* Wishlist */}

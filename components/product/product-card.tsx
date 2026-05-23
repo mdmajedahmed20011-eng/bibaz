@@ -146,7 +146,7 @@ export function ProductCard({
         {!isSoldOut && (
           <button
             onClick={handleQuickViewClick}
-            className="absolute bottom-3 right-3 z-20 flex items-center justify-center h-10 w-10 rounded-full bg-white/95 text-foreground border border-border/40 hover:bg-white hover:text-accent shadow-[0_4px_12px_rgba(0,0,0,0.08)] transition-all duration-300 transform translate-y-2 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 focus:translate-y-0 focus:opacity-100 cursor-pointer backdrop-blur-[1px]"
+            className="absolute bottom-3 right-3 z-20 flex items-center justify-center h-10 w-10 rounded-full bg-white/95 text-foreground border border-border/40 hover:bg-white hover:text-accent shadow-[0_4px_12px_rgba(0,0,0,0.08)] transition-all duration-300 cursor-pointer backdrop-blur-[1px] transform md:translate-y-2 md:opacity-0 md:group-hover:translate-y-0 md:group-hover:opacity-100 md:focus:translate-y-0 md:focus:opacity-100"
             title="Quick View"
           >
             <Eye className="h-4.5 w-4.5" strokeWidth={1.5} />

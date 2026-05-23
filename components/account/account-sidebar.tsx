@@ -8,6 +8,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { User, Package, MapPin, Heart, Lock, LogOut } from "lucide-react";
+import { signOut } from "next-auth/react";
 
 const accountLinks = [
   { href: "/account", label: "Profile", icon: User },
@@ -64,7 +65,10 @@ export function AccountSidebar() {
         })}
 
         {/* Logout */}
-        <button className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-destructive hover:bg-destructive/5 transition-colors mt-4">
+        <button
+          onClick={() => signOut({ callbackUrl: "/" })}
+          className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-destructive hover:bg-destructive/5 transition-colors mt-4 cursor-pointer"
+        >
           <LogOut className="h-4 w-4" />
           Sign Out
         </button>

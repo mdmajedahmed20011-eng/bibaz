@@ -6,9 +6,15 @@
 
 "use client";
 
-import { useState } from "react";
-import { MapPin, Plus, Trash2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { MapPin, Plus, Trash2, Loader2 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
+import {
+  getAddresses,
+  addAddress,
+  deleteAddress,
+  setDefaultAddress,
+} from "@/actions/account.actions";
 
 interface Address {
   id: string;
@@ -22,51 +28,146 @@ interface Address {
   isDefault: boolean;
 }
 
-// Placeholder addresses
-const initialAddresses: Address[] = [
-  {
-    id: "1",
-    label: "Home",
-    name: "Habiba Hafiz",
-    phone: "+880 1860-744181",
-    street: "House 60, Road 10, Block D",
-    area: "Banani",
-    city: "Dhaka",
-    postalCode: "1216",
-    isDefault: true,
-  },
-  {
-    id: "2",
-    label: "Office",
-    name: "Habiba Hafiz",
-    phone: "+880 1860-744181",
-    street: "1st Floor, Nest Mega Mall",
-    area: "Banani",
-    city: "Dhaka",
-    postalCode: "1216",
-    isDefault: false,
-  },
-];
-
 export default function AddressesPage() {
-  const [addresses, setAddresses] = useState<Address[]>(initialAddresses);
+  const [addresses, setAddresses] = useState<Address[]>([]);
   const [showForm, setShowForm] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isMutating, setIsMutating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
-  const handleDelete = (id: string) => {
-    setAddresses((prev) => prev.filter((a) => a.id !== id));
+  // Form state
+  const [formData, setFormData] = useState({
+    label: "",
+    name: "",
+    phone: "",
+    street: "",
+    area: "",
+    city: "",
+    postalCode: "",
+    isDefault: false,
+  });
+
+  const loadAddresses = async () => {
+    setIsLoading(true);
+    setError(null);
+    const res = await getAddresses();
+    if (res.success && res.addresses) {
+      setAddresses(res.addresses);
+    } else {
+      setError(res.error || "Failed to load addresses.");
+    }
+    setIsLoading(false);
   };
 
-  const handleSetDefault = (id: string) => {
-    setAddresses((prev) => prev.map((a) => ({ ...a, isDefault: a.id === id })));
+  useEffect(() => {
+    setTimeout(() => {
+      loadAddresses();
+    }, 0);
+  }, []);
+
+  const handleDelete = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this address?")) return;
+    setIsMutating(true);
+    setError(null);
+    setSuccess(null);
+
+    const res = await deleteAddress(id);
+    if (res.success) {
+      setSuccess("Address deleted successfully.");
+      await loadAddresses();
+    } else {
+      setError(res.error || "Failed to delete address.");
+    }
+    setIsMutating(false);
   };
+
+  const handleSetDefault = async (id: string) => {
+    setIsMutating(true);
+    setError(null);
+    setSuccess(null);
+
+    const res = await setDefaultAddress(id);
+    if (res.success) {
+      setSuccess("Default address updated.");
+      await loadAddresses();
+    } else {
+      setError(res.error || "Failed to update default address.");
+    }
+    setIsMutating(false);
+  };
+
+  const handleFormSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setSuccess(null);
+
+    if (
+      !formData.name.trim() ||
+      !formData.phone.trim() ||
+      !formData.street.trim() ||
+      !formData.city.trim() ||
+      !formData.area.trim() ||
+      !formData.postalCode.trim()
+    ) {
+      setError("Please fill in all required fields.");
+      return;
+    }
+
+    setIsMutating(true);
+
+    const res = await addAddress({
+      label: formData.label || "Home",
+      address: {
+        name: formData.name,
+        phone: formData.phone,
+        street: formData.street,
+        city: formData.city,
+        area: formData.area,
+        postalCode: formData.postalCode,
+      },
+      isDefault: formData.isDefault,
+    });
+
+    if (res.success) {
+      setSuccess("Address added successfully.");
+      setShowForm(false);
+      setFormData({
+        label: "",
+        name: "",
+        phone: "",
+        street: "",
+        area: "",
+        city: "",
+        postalCode: "",
+        isDefault: false,
+      });
+      await loadAddresses();
+    } else {
+      setError(res.error || "Failed to add address.");
+    }
+    setIsMutating(false);
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold">Saved Addresses</h2>
         <button
-          onClick={() => setShowForm(!showForm)}
-          className="inline-flex items-center gap-1.5 h-9 px-4 rounded-lg border border-border text-sm font-medium hover:bg-muted transition-colors"
+          onClick={() => {
+            setShowForm(!showForm);
+            setError(null);
+            setSuccess(null);
+          }}
+          className="inline-flex items-center gap-1.5 h-9 px-4 rounded-lg border border-border text-sm font-medium hover:bg-muted transition-colors cursor-pointer"
         >
           <Plus className="h-4 w-4" />
           Add New
@@ -75,54 +176,148 @@ export default function AddressesPage() {
 
       <Separator />
 
-      {/* Add Address Form (simplified) */}
+      {error && (
+        <div className="p-3 text-xs bg-sale/5 border border-sale/20 text-sale font-semibold uppercase tracking-wider">
+          {error}
+        </div>
+      )}
+
+      {success && (
+        <div className="p-3 text-xs bg-success/5 border border-success/20 text-success font-semibold uppercase tracking-wider">
+          {success}
+        </div>
+      )}
+
+      {/* Add Address Form */}
       {showForm && (
-        <div className="p-4 rounded-xl border border-border space-y-4">
+        <form
+          onSubmit={handleFormSubmit}
+          className="p-4 rounded-xl border border-border space-y-4 max-w-2xl bg-[#f8f5f0]/30"
+        >
           <h3 className="text-sm font-semibold">New Address</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <input
-              type="text"
-              placeholder="Label (e.g., Home, Office)"
-              className="h-10 px-3 rounded-md border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-            />
-            <input
-              type="text"
-              placeholder="Full Name"
-              className="h-10 px-3 rounded-md border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-            />
-            <input
-              type="tel"
-              placeholder="Phone Number"
-              className="h-10 px-3 rounded-md border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-            />
-            <input
-              type="text"
-              placeholder="Street Address"
-              className="h-10 px-3 rounded-md border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-            />
-            <input
-              type="text"
-              placeholder="Area"
-              className="h-10 px-3 rounded-md border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-            />
-            <input
-              type="text"
-              placeholder="City"
-              className="h-10 px-3 rounded-md border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-            />
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                Label (e.g. Home, Office)
+              </label>
+              <input
+                type="text"
+                value={formData.label}
+                onChange={(e) => setFormData({ ...formData, label: e.target.value })}
+                placeholder="Home"
+                className="w-full h-10 px-3 rounded-md border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                Full Name *
+              </label>
+              <input
+                type="text"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                placeholder="Receiver name"
+                required
+                className="w-full h-10 px-3 rounded-md border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                Phone Number *
+              </label>
+              <input
+                type="tel"
+                value={formData.phone}
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                placeholder="01XXXXXXXXX"
+                required
+                className="w-full h-10 px-3 rounded-md border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                Street Address *
+              </label>
+              <input
+                type="text"
+                value={formData.street}
+                onChange={(e) => setFormData({ ...formData, street: e.target.value })}
+                placeholder="House 12, Road 4"
+                required
+                className="w-full h-10 px-3 rounded-md border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                Area *
+              </label>
+              <input
+                type="text"
+                value={formData.area}
+                onChange={(e) => setFormData({ ...formData, area: e.target.value })}
+                placeholder="Banani / Dhanmondi"
+                required
+                className="w-full h-10 px-3 rounded-md border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                City *
+              </label>
+              <input
+                type="text"
+                value={formData.city}
+                onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                placeholder="Dhaka"
+                required
+                className="w-full h-10 px-3 rounded-md border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                Postal Code *
+              </label>
+              <input
+                type="text"
+                value={formData.postalCode}
+                onChange={(e) => setFormData({ ...formData, postalCode: e.target.value })}
+                placeholder="1213"
+                required
+                className="w-full h-10 px-3 rounded-md border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+            </div>
+            <div className="flex items-end pb-3">
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={formData.isDefault}
+                  onChange={(e) => setFormData({ ...formData, isDefault: e.target.checked })}
+                  className="h-4 w-4 border-border rounded text-foreground focus:ring-foreground"
+                />
+                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Make this default address
+                </span>
+              </label>
+            </div>
           </div>
           <div className="flex gap-3">
-            <button className="h-9 px-5 rounded-lg bg-foreground text-background text-sm font-medium hover:bg-foreground/90 transition-colors">
+            <button
+              type="submit"
+              disabled={isMutating}
+              className="h-9 px-5 rounded-lg bg-foreground text-background text-sm font-medium hover:bg-foreground/90 disabled:opacity-50 transition-colors flex items-center gap-1.5 cursor-pointer"
+            >
+              {isMutating && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
               Save Address
             </button>
             <button
+              type="button"
               onClick={() => setShowForm(false)}
-              className="h-9 px-5 rounded-lg border border-border text-sm font-medium hover:bg-muted transition-colors"
+              className="h-9 px-5 rounded-lg border border-border text-sm font-medium hover:bg-muted transition-colors cursor-pointer"
             >
               Cancel
             </button>
           </div>
-        </div>
+        </form>
       )}
 
       {/* Address List */}
@@ -160,14 +355,16 @@ export default function AddressesPage() {
                 {!address.isDefault && (
                   <button
                     onClick={() => handleSetDefault(address.id)}
-                    className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                    disabled={isMutating}
+                    className="text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer disabled:opacity-50"
                   >
                     Set as Default
                   </button>
                 )}
                 <button
                   onClick={() => handleDelete(address.id)}
-                  className="text-xs text-muted-foreground hover:text-destructive transition-colors flex items-center gap-1"
+                  disabled={isMutating}
+                  className="text-xs text-muted-foreground hover:text-destructive transition-colors flex items-center gap-1 cursor-pointer disabled:opacity-50"
                 >
                   <Trash2 className="h-3 w-3" />
                   Delete

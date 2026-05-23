@@ -9,6 +9,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
+import { registerUserAction } from "@/actions/auth.actions";
+import { signIn } from "next-auth/react";
 
 interface FormData {
   name: string;
@@ -81,9 +83,37 @@ export function RegisterForm() {
     setIsLoading(true);
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      setServerError("Registration is currently unavailable.");
-    } finally {
+      const res = await registerUserAction({
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        password: formData.password,
+      });
+
+      if (!res.success) {
+        setServerError(res.error || "Failed to create account.");
+        setIsLoading(false);
+        return;
+      }
+
+      // Automatically sign in the user
+      const loginRes = await signIn("credentials", {
+        email: formData.email,
+        password: formData.password,
+        redirect: false,
+      });
+
+      if (loginRes?.error) {
+        setServerError("Account created, but automatic sign-in failed. Please login manually.");
+        setIsLoading(false);
+        return;
+      }
+
+      // Successful auto login, redirect to account dashboard
+      window.location.href = "/account";
+    } catch (err: unknown) {
+      console.error(err);
+      setServerError("An unexpected error occurred. Please try again.");
       setIsLoading(false);
     }
   };
@@ -99,7 +129,10 @@ export function RegisterForm() {
 
       {/* Name */}
       <div className="space-y-1.5">
-        <label htmlFor="name" className="text-[10px] uppercase tracking-wider text-foreground font-semibold">
+        <label
+          htmlFor="name"
+          className="text-[10px] uppercase tracking-wider text-foreground font-semibold"
+        >
           Full Name *
         </label>
         <input
@@ -112,12 +145,19 @@ export function RegisterForm() {
           autoComplete="name"
           disabled={isLoading}
         />
-        {errors.name && <p className="text-[10px] text-sale font-bold uppercase tracking-wider mt-1">{errors.name}</p>}
+        {errors.name && (
+          <p className="text-[10px] text-sale font-bold uppercase tracking-wider mt-1">
+            {errors.name}
+          </p>
+        )}
       </div>
 
       {/* Email */}
       <div className="space-y-1.5">
-        <label htmlFor="reg-email" className="text-[10px] uppercase tracking-wider text-foreground font-semibold">
+        <label
+          htmlFor="reg-email"
+          className="text-[10px] uppercase tracking-wider text-foreground font-semibold"
+        >
           Email Address *
         </label>
         <input
@@ -130,12 +170,19 @@ export function RegisterForm() {
           autoComplete="email"
           disabled={isLoading}
         />
-        {errors.email && <p className="text-[10px] text-sale font-bold uppercase tracking-wider mt-1">{errors.email}</p>}
+        {errors.email && (
+          <p className="text-[10px] text-sale font-bold uppercase tracking-wider mt-1">
+            {errors.email}
+          </p>
+        )}
       </div>
 
       {/* Phone */}
       <div className="space-y-1.5">
-        <label htmlFor="phone" className="text-[10px] uppercase tracking-wider text-foreground font-semibold">
+        <label
+          htmlFor="phone"
+          className="text-[10px] uppercase tracking-wider text-foreground font-semibold"
+        >
           Phone Number *
         </label>
         <input
@@ -148,12 +195,19 @@ export function RegisterForm() {
           autoComplete="tel"
           disabled={isLoading}
         />
-        {errors.phone && <p className="text-[10px] text-sale font-bold uppercase tracking-wider mt-1">{errors.phone}</p>}
+        {errors.phone && (
+          <p className="text-[10px] text-sale font-bold uppercase tracking-wider mt-1">
+            {errors.phone}
+          </p>
+        )}
       </div>
 
       {/* Password */}
       <div className="space-y-1.5">
-        <label htmlFor="reg-password" className="text-[10px] uppercase tracking-wider text-foreground font-semibold">
+        <label
+          htmlFor="reg-password"
+          className="text-[10px] uppercase tracking-wider text-foreground font-semibold"
+        >
           Password *
         </label>
         <div className="relative">
@@ -176,12 +230,19 @@ export function RegisterForm() {
             {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
           </button>
         </div>
-        {errors.password && <p className="text-[10px] text-sale font-bold uppercase tracking-wider mt-1">{errors.password}</p>}
+        {errors.password && (
+          <p className="text-[10px] text-sale font-bold uppercase tracking-wider mt-1">
+            {errors.password}
+          </p>
+        )}
       </div>
 
       {/* Confirm Password */}
       <div className="space-y-1.5">
-        <label htmlFor="confirm-password" className="text-[10px] uppercase tracking-wider text-foreground font-semibold">
+        <label
+          htmlFor="confirm-password"
+          className="text-[10px] uppercase tracking-wider text-foreground font-semibold"
+        >
           Confirm Password *
         </label>
         <input
@@ -195,7 +256,9 @@ export function RegisterForm() {
           disabled={isLoading}
         />
         {errors.confirmPassword && (
-          <p className="text-[10px] text-sale font-bold uppercase tracking-wider mt-1">{errors.confirmPassword}</p>
+          <p className="text-[10px] text-sale font-bold uppercase tracking-wider mt-1">
+            {errors.confirmPassword}
+          </p>
         )}
       </div>
 
@@ -225,7 +288,10 @@ export function RegisterForm() {
       {/* Guest Notice */}
       <p className="text-center text-[10px] uppercase tracking-wider text-muted-foreground pt-2">
         Alternatively, you can{" "}
-        <Link href="/collections/new-arrivals" className="underline hover:text-foreground font-bold">
+        <Link
+          href="/collections/new-arrivals"
+          className="underline hover:text-foreground font-bold"
+        >
           Shop As Guest
         </Link>
       </p>

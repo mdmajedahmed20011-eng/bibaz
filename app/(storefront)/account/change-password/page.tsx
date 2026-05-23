@@ -9,6 +9,7 @@
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
+import { changePassword } from "@/actions/account.actions";
 
 export default function ChangePasswordPage() {
   const [currentPassword, setCurrentPassword] = useState("");
@@ -46,13 +47,23 @@ export default function ChangePasswordPage() {
 
     setIsLoading(true);
 
-    // TODO: Call change password server action (Phase 3)
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      setSuccess(true);
-      setCurrentPassword("");
-      setNewPassword("");
-      setConfirmPassword("");
+      const res = await changePassword({
+        currentPassword,
+        newPassword,
+      });
+
+      if (res.success) {
+        setSuccess(true);
+        setCurrentPassword("");
+        setNewPassword("");
+        setConfirmPassword("");
+      } else {
+        setError(res.error || "Failed to update password.");
+      }
+    } catch (err: unknown) {
+      console.error(err);
+      setError("An unexpected error occurred. Please try again.");
     } finally {
       setIsLoading(false);
     }

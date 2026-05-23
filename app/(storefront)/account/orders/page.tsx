@@ -8,34 +8,7 @@ import Link from "next/link";
 import { Package } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { formatPrice } from "@/lib/utils";
-
-// Placeholder orders — will be replaced with server action (Phase 3)
-const placeholderOrders = [
-  {
-    id: "1",
-    orderNumber: "ORD-2026-00001",
-    date: "May 20, 2026",
-    status: "DELIVERED",
-    total: 3650,
-    itemCount: 2,
-  },
-  {
-    id: "2",
-    orderNumber: "ORD-2026-00002",
-    date: "May 22, 2026",
-    status: "SHIPPED",
-    total: 5200,
-    itemCount: 1,
-  },
-  {
-    id: "3",
-    orderNumber: "ORD-2026-00003",
-    date: "May 23, 2026",
-    status: "PROCESSING",
-    total: 2850,
-    itemCount: 3,
-  },
-];
+import { getUserOrders } from "@/actions/account.actions";
 
 const statusColors: Record<string, string> = {
   PENDING: "bg-yellow-100 text-yellow-800",
@@ -48,8 +21,11 @@ const statusColors: Record<string, string> = {
   REFUNDED: "bg-gray-100 text-gray-800",
 };
 
-export default function OrdersPage() {
-  if (placeholderOrders.length === 0) {
+export default async function OrdersPage() {
+  const res = await getUserOrders();
+  const orders = res.success && res.orders ? res.orders : [];
+
+  if (orders.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-12 gap-4 text-center">
         <Package className="h-12 w-12 text-muted-foreground/30" />
@@ -61,7 +37,7 @@ export default function OrdersPage() {
         </div>
         <Link
           href="/collections/new-arrivals"
-          className="inline-flex items-center justify-center h-10 px-6 rounded-lg bg-foreground text-background text-sm font-medium hover:bg-foreground/90 transition-colors"
+          className="inline-flex items-center justify-center h-10 px-6 rounded-lg bg-foreground text-background text-sm font-medium hover:bg-foreground/90 transition-colors cursor-pointer"
         >
           Start Shopping
         </Link>
@@ -71,15 +47,15 @@ export default function OrdersPage() {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-lg font-semibold">Order History</h2>
+      <h2 className="text-lg font-semibold">Order History ({orders.length})</h2>
       <Separator />
 
       <div className="space-y-4">
-        {placeholderOrders.map((order) => (
+        {orders.map((order) => (
           <Link
             key={order.id}
             href={`/account/orders/${order.id}`}
-            className="block p-4 rounded-xl border border-border hover:border-foreground/20 hover:bg-muted/30 transition-colors"
+            className="block p-4 rounded-xl border border-border hover:border-foreground/20 hover:bg-muted/30 transition-colors cursor-pointer"
           >
             <div className="flex items-start justify-between gap-4">
               <div className="space-y-1">

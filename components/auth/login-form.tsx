@@ -9,6 +9,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
+import { signIn } from "next-auth/react";
+import { useSearchParams } from "next/navigation";
 
 export function LoginForm() {
   const [email, setEmail] = useState("");
@@ -17,6 +19,9 @@ export function LoginForm() {
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get("callbackUrl") || "/account";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,9 +35,22 @@ export function LoginForm() {
     setIsLoading(true);
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      setError("Login functionality will be available soon.");
-    } finally {
+      const res = await signIn("credentials", {
+        email: email.trim(),
+        password: password.trim(),
+        redirect: false,
+      });
+
+      if (res?.error) {
+        setError("Invalid email or password. Please try again.");
+        setIsLoading(false);
+      } else {
+        // Successful login, redirect to callbackUrl
+        window.location.href = callbackUrl;
+      }
+    } catch (err: unknown) {
+      console.error(err);
+      setError("An unexpected error occurred. Please try again.");
       setIsLoading(false);
     }
   };
@@ -48,7 +66,10 @@ export function LoginForm() {
 
       {/* Email */}
       <div className="space-y-1.5">
-        <label htmlFor="email" className="text-[10px] uppercase tracking-wider text-foreground font-semibold">
+        <label
+          htmlFor="email"
+          className="text-[10px] uppercase tracking-wider text-foreground font-semibold"
+        >
           Email Address *
         </label>
         <input
@@ -66,7 +87,10 @@ export function LoginForm() {
       {/* Password */}
       <div className="space-y-1.5">
         <div className="flex items-center justify-between">
-          <label htmlFor="password" className="text-[10px] uppercase tracking-wider text-foreground font-semibold">
+          <label
+            htmlFor="password"
+            className="text-[10px] uppercase tracking-wider text-foreground font-semibold"
+          >
             Password *
           </label>
           <Link
@@ -107,7 +131,10 @@ export function LoginForm() {
           onChange={(e) => setRememberMe(e.target.checked)}
           className="h-4 w-4 border-border rounded-none text-foreground focus:ring-foreground accent-foreground cursor-pointer"
         />
-        <label htmlFor="remember" className="text-xs uppercase tracking-widest text-muted-foreground font-bold cursor-pointer select-none">
+        <label
+          htmlFor="remember"
+          className="text-xs uppercase tracking-widest text-muted-foreground font-bold cursor-pointer select-none"
+        >
           Remember me
         </label>
       </div>
@@ -162,7 +189,10 @@ export function LoginForm() {
       {/* Guest Notice */}
       <p className="text-center text-[10px] uppercase tracking-wider text-muted-foreground pt-2">
         Alternatively, you can{" "}
-        <Link href="/collections/new-arrivals" className="underline hover:text-foreground font-bold">
+        <Link
+          href="/collections/new-arrivals"
+          className="underline hover:text-foreground font-bold"
+        >
           Shop As Guest
         </Link>
       </p>

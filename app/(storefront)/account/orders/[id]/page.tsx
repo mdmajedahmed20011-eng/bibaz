@@ -8,62 +8,37 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { formatPrice } from "@/lib/utils";
-
-// Placeholder order detail
-const orderDetail = {
-  orderNumber: "ORD-2026-00001",
-  date: "May 20, 2026",
-  status: "DELIVERED",
-  items: [
-    {
-      id: "1",
-      name: "Elegant Black Borka with Gold Embroidery",
-      size: "M",
-      color: "Black",
-      quantity: 1,
-      price: 2850,
-    },
-    {
-      id: "2",
-      name: "Premium Silk Saree — Royal Blue",
-      size: "Free Size",
-      color: "Blue",
-      quantity: 1,
-      price: 4500,
-    },
-  ],
-  subtotal: 7350,
-  shipping: 80,
-  discount: 0,
-  total: 7430,
-  address: {
-    name: "Habiba Hafiz",
-    phone: "+880 1860-744181",
-    street: "House 60, Road 10, Block D",
-    area: "Banani",
-    city: "Dhaka",
-    postalCode: "1216",
-  },
-  paymentMethod: "Cash on Delivery",
-  timeline: [
-    { status: "Order Placed", date: "May 20, 2026 — 10:30 AM", active: true },
-    { status: "Confirmed", date: "May 20, 2026 — 11:00 AM", active: true },
-    { status: "Processing", date: "May 20, 2026 — 2:00 PM", active: true },
-    { status: "Shipped", date: "May 21, 2026 — 9:00 AM", active: true },
-    { status: "Delivered", date: "May 22, 2026 — 3:30 PM", active: true },
-  ],
-};
+import { getOrderDetails } from "@/actions/account.actions";
 
 interface OrderDetailPageProps {
   params: Promise<{ id: string }>;
 }
 
 export default async function OrderDetailPage({ params }: OrderDetailPageProps) {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { id } = await params;
 
-  // TODO: Fetch order from DB using `id` (Phase 3)
-  const order = orderDetail;
+  const res = await getOrderDetails(id);
+
+  if (!res.success || !res.order) {
+    return (
+      <div className="space-y-6">
+        <Link
+          href="/account/orders"
+          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to Orders
+        </Link>
+        <div className="flex flex-col items-center justify-center py-20 gap-4 text-center">
+          <p className="text-base font-semibold text-destructive">
+            Order not found or unauthorized.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  const order = res.order;
 
   return (
     <div className="space-y-6">

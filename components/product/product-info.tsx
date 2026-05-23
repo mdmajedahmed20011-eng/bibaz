@@ -231,8 +231,12 @@ export function ProductInfo({ product }: ProductInfoProps) {
         <div className="flex gap-3">
           <button
             onClick={handleAddToCart}
-            disabled={!isInStock}
-            className="flex-1 flex items-center justify-center gap-2 h-12 bg-[#9faab1] text-white text-xs font-bold uppercase tracking-[0.12em] hover:bg-[#8e9aa1] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            disabled={!selectedSize || !isInStock}
+            className={`flex-1 flex items-center justify-center gap-2 h-12 text-xs font-bold uppercase tracking-[0.12em] transition-all rounded-sm cursor-pointer ${
+              !selectedSize
+                ? "bg-neutral-100 border border-neutral-200 text-neutral-400 opacity-60 cursor-not-allowed"
+                : "bg-foreground hover:bg-neutral-800 text-background"
+            }`}
           >
             <ShoppingBag className="h-4 w-4" />
             {!selectedSize ? "Select Size" : !isInStock ? "Out of Stock" : "ADD TO BAG"}
@@ -240,10 +244,14 @@ export function ProductInfo({ product }: ProductInfoProps) {
 
           <button
             onClick={handleBuyNow}
-            disabled={!isInStock}
-            className="flex-1 flex items-center justify-center gap-2 h-12 bg-[#c88282] text-white text-xs font-bold uppercase tracking-[0.12em] hover:bg-[#b87171] disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-sm"
+            disabled={!selectedSize || !isInStock}
+            className={`flex-1 flex items-center justify-center gap-2 h-12 text-xs font-bold uppercase tracking-[0.12em] transition-all rounded-sm cursor-pointer shadow-sm ${
+              !selectedSize
+                ? "bg-neutral-100 border border-neutral-200 text-neutral-400 opacity-60 cursor-not-allowed"
+                : "bg-[#b33a3a] hover:bg-[#9c2f2f] text-white"
+            }`}
           >
-            BUY NOW
+            {!selectedSize ? "Select Size" : "BUY NOW"}
           </button>
 
           {/* Wishlist */}
@@ -317,7 +325,7 @@ export function ProductInfo({ product }: ProductInfoProps) {
         price={currentPrice}
         onAddToCart={handleAddToCart}
         onBuyNow={handleBuyNow}
-        disabled={!isInStock}
+        disabled={!selectedSize || !isInStock}
         label={!selectedSize ? "Select Size" : !isInStock ? "Out of Stock" : "ADD TO BAG"}
       />
     </div>

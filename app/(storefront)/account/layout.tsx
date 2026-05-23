@@ -6,13 +6,20 @@
 
 import type { Metadata } from "next";
 import { AccountSidebar } from "@/components/account/account-sidebar";
+import { auth } from "@/lib/auth";
+import { redirect } from "next/navigation";
 
 export const metadata: Metadata = {
   title: "My Account",
   description: "Manage your BIBAZ account, orders, and addresses.",
 };
 
-export default function AccountLayout({ children }: { children: React.ReactNode }) {
+export default async function AccountLayout({ children }: { children: React.ReactNode }) {
+  const session = await auth();
+  if (!session) {
+    redirect("/login?callbackUrl=/account");
+  }
+
   return (
     <div className="container mx-auto px-4 py-6 md:py-8">
       <h1 className="text-2xl md:text-3xl font-bold tracking-tight mb-6">My Account</h1>

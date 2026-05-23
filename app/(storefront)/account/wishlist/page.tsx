@@ -6,31 +6,14 @@
 
 import Link from "next/link";
 import { Heart } from "lucide-react";
-import { ProductCard, type ProductCardProps } from "@/components/product/product-card";
+import { ProductCard } from "@/components/product/product-card";
 import { Separator } from "@/components/ui/separator";
+import { getUserWishlist } from "@/actions/account.actions";
 
-// Placeholder wishlist items
-const wishlistItems: ProductCardProps[] = [
-  {
-    id: "w1",
-    name: "Luxury Handwoven Jamdani Saree",
-    slug: "luxury-handwoven-jamdani-saree",
-    price: 8500,
-    image: "https://res.cloudinary.com/dnbol4pey/image/upload/v1/bibaz/wishlist-1.jpg",
-    category: "Saree",
-  },
-  {
-    id: "w2",
-    name: "Premium Abaya — Midnight Black",
-    slug: "premium-abaya-midnight-black",
-    price: 4200,
-    compareAtPrice: 5000,
-    image: "https://res.cloudinary.com/dnbol4pey/image/upload/v1/bibaz/wishlist-2.jpg",
-    category: "Borka",
-  },
-];
+export default async function WishlistPage() {
+  const res = await getUserWishlist();
+  const wishlistItems = res.success && res.wishlist ? res.wishlist : [];
 
-export default function WishlistPage() {
   if (wishlistItems.length === 0) {
     return (
       <div className="space-y-6">
@@ -44,7 +27,7 @@ export default function WishlistPage() {
           </div>
           <Link
             href="/collections/new-arrivals"
-            className="inline-flex items-center justify-center h-10 px-6 rounded-lg bg-foreground text-background text-sm font-medium hover:bg-foreground/90 transition-colors"
+            className="inline-flex items-center justify-center h-10 px-6 rounded-lg bg-foreground text-background text-sm font-medium hover:bg-foreground/90 transition-colors cursor-pointer"
           >
             Explore Products
           </Link>

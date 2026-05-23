@@ -1,10 +1,10 @@
+"use client";
+
 /**
  * BIBAZ — Product Info (Premium v2.0 — Aarong Inspired)
  * Clean layout: Name → Price → Size → Quantity → ADD TO BAG → Accordion sections
  * No product code, no color selector (single color per product for now)
  */
-
-"use client";
 
 import { useState, useMemo } from "react";
 import { Heart, Minus, Plus, ShoppingBag, Truck, ChevronDown } from "lucide-react";
@@ -139,10 +139,10 @@ export function ProductInfo({ product }: ProductInfoProps) {
                 onClick={() => setSelectedSize(size)}
                 disabled={!inStock}
                 className={`h-10 min-w-[44px] px-4 text-sm border transition-all ${selectedSize === size
-                    ? "bg-foreground text-background border-foreground"
-                    : inStock
-                      ? "border-border text-foreground hover:border-foreground"
-                      : "border-border/50 text-muted-foreground/40 line-through cursor-not-allowed"
+                  ? "bg-foreground text-background border-foreground"
+                  : inStock
+                    ? "border-border text-foreground hover:border-foreground"
+                    : "border-border/50 text-muted-foreground/40 line-through cursor-not-allowed"
                   }`}
                 aria-pressed={selectedSize === size}
               >
@@ -197,8 +197,8 @@ export function ProductInfo({ product }: ProductInfoProps) {
         <button
           onClick={() => setIsWishlisted(!isWishlisted)}
           className={`flex items-center justify-center h-11 w-11 border transition-colors ${isWishlisted
-              ? "border-sale text-sale"
-              : "border-border text-muted-foreground hover:text-foreground hover:border-foreground"
+            ? "border-sale text-sale"
+            : "border-border text-muted-foreground hover:text-foreground hover:border-foreground"
             }`}
           aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
         >

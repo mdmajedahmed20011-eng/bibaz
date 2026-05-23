@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState, useMemo } from "react";
 import { Heart, Minus, Plus, ShoppingBag, Truck, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
@@ -33,6 +34,7 @@ interface ProductInfoProps {
 }
 
 export function ProductInfo({ product }: ProductInfoProps) {
+  const router = useRouter();
   const addItem = useCartStore((state) => state.addItem);
 
   const availableSizes = useMemo(
@@ -85,6 +87,33 @@ export function ProductInfo({ product }: ProductInfoProps) {
     });
   };
 
+  const handleBuyNow = () => {
+    if (!selectedVariant) {
+      toast.error("Please select a size");
+      return;
+    }
+
+    addItem({
+      variantId: selectedVariant.id,
+      productId: product.id,
+      productName: product.name,
+      productSlug: product.slug,
+      variantSku: selectedVariant.sku,
+      size: selectedVariant.size,
+      color: selectedVariant.color,
+      price: selectedVariant.price,
+      quantity,
+      image: product.images[0] ?? "",
+      maxStock: selectedVariant.stock,
+    });
+
+    toast.success("Proceeding to checkout...", {
+      description: `${product.name} — Size ${selectedVariant.size}`,
+    });
+
+    router.push("/checkout");
+  };
+
   const toggleSection = (section: string) => {
     setOpenSection(openSection === section ? null : section);
   };
@@ -127,14 +156,16 @@ export function ProductInfo({ product }: ProductInfoProps) {
       <div>
         <div className="flex items-center justify-between mb-3.5">
           <div className="flex items-baseline gap-2">
-            <p className="text-xs font-bold uppercase tracking-wider text-foreground">Select Size</p>
+            <p className="text-xs font-bold uppercase tracking-wider text-foreground">
+              Select Size
+            </p>
             {selectedSize && (
               <span className="text-xs text-muted-foreground font-medium">({selectedSize})</span>
             )}
           </div>
           <SizeGuideModal />
         </div>
-        
+
         <div className="flex flex-wrap gap-2.5">
           {availableSizes.map((size) => {
             const variant = product.variants.find((v) => v.size === size);
@@ -158,7 +189,7 @@ export function ProductInfo({ product }: ProductInfoProps) {
             );
           })}
         </div>
-        
+
         {selectedVariant && selectedVariant.stock <= 3 && selectedVariant.stock > 0 && (
           <p className="text-xs font-medium text-sale mt-2.5 animate-pulse">
             Only {selectedVariant.stock} left in stock — shop soon!
@@ -166,52 +197,68 @@ export function ProductInfo({ product }: ProductInfoProps) {
         )}
       </div>
 
-      {/* Quantity + Add to Bag */}
-      <div className="flex items-center gap-3">
+      {/* Quantity & Actions Grid */}
+      <div className="space-y-4">
         {/* Quantity */}
-        <div className="flex items-center border border-border">
-          <button
-            onClick={() => setQuantity(Math.max(1, quantity - 1))}
-            disabled={quantity <= 1}
-            className="flex items-center justify-center h-11 w-11 text-muted-foreground hover:text-foreground disabled:opacity-30 transition-colors"
-            aria-label="Decrease quantity"
-          >
-            <Minus className="h-4 w-4" />
-          </button>
-          <span className="flex items-center justify-center h-11 w-11 text-sm font-medium border-x border-border">
-            {quantity}
+        <div className="flex items-center gap-3">
+          <span className="text-xs font-bold uppercase tracking-wider text-foreground">
+            Quantity:
           </span>
-          <button
-            onClick={() => setQuantity(Math.min(maxQuantity, quantity + 1))}
-            disabled={quantity >= maxQuantity}
-            className="flex items-center justify-center h-11 w-11 text-muted-foreground hover:text-foreground disabled:opacity-30 transition-colors"
-            aria-label="Increase quantity"
-          >
-            <Plus className="h-4 w-4" />
-          </button>
+          <div className="flex items-center border border-border">
+            <button
+              onClick={() => setQuantity(Math.max(1, quantity - 1))}
+              disabled={quantity <= 1}
+              className="flex items-center justify-center h-10 w-10 text-muted-foreground hover:text-foreground disabled:opacity-30 transition-colors"
+              aria-label="Decrease quantity"
+            >
+              <Minus className="h-3.5 w-3.5" />
+            </button>
+            <span className="flex items-center justify-center h-10 w-10 text-xs font-semibold border-x border-border">
+              {quantity}
+            </span>
+            <button
+              onClick={() => setQuantity(Math.min(maxQuantity, quantity + 1))}
+              disabled={quantity >= maxQuantity}
+              className="flex items-center justify-center h-10 w-10 text-muted-foreground hover:text-foreground disabled:opacity-30 transition-colors"
+              aria-label="Increase quantity"
+            >
+              <Plus className="h-3.5 w-3.5" />
+            </button>
+          </div>
         </div>
 
-        {/* Add to Bag — Full width, prominent */}
-        <button
-          onClick={handleAddToCart}
-          disabled={!isInStock}
-          className="flex-1 flex items-center justify-center gap-2 h-11 bg-foreground text-background text-sm font-medium tracking-wide hover:bg-foreground/90 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-        >
-          <ShoppingBag className="h-4 w-4" />
-          {!selectedSize ? "Select Size" : !isInStock ? "Out of Stock" : "ADD TO BAG"}
-        </button>
+        {/* Add to Bag & Buy Now Actions */}
+        <div className="flex gap-3">
+          <button
+            onClick={handleAddToCart}
+            disabled={!isInStock}
+            className="flex-1 flex items-center justify-center gap-2 h-12 bg-[#9faab1] text-white text-xs font-bold uppercase tracking-[0.12em] hover:bg-[#8e9aa1] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            <ShoppingBag className="h-4 w-4" />
+            {!selectedSize ? "Select Size" : !isInStock ? "Out of Stock" : "ADD TO BAG"}
+          </button>
 
-        {/* Wishlist */}
-        <button
-          onClick={() => setIsWishlisted(!isWishlisted)}
-          className={`flex items-center justify-center h-11 w-11 border transition-colors ${isWishlisted
-            ? "border-sale text-sale"
-            : "border-border text-muted-foreground hover:text-foreground hover:border-foreground"
+          <button
+            onClick={handleBuyNow}
+            disabled={!isInStock}
+            className="flex-1 flex items-center justify-center gap-2 h-12 bg-[#c88282] text-white text-xs font-bold uppercase tracking-[0.12em] hover:bg-[#b87171] disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-sm"
+          >
+            BUY NOW
+          </button>
+
+          {/* Wishlist */}
+          <button
+            onClick={() => setIsWishlisted(!isWishlisted)}
+            className={`flex items-center justify-center h-12 w-12 border transition-colors shrink-0 ${
+              isWishlisted
+                ? "border-sale text-sale"
+                : "border-border text-muted-foreground hover:text-foreground hover:border-foreground"
             }`}
-          aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
-        >
-          <Heart className="h-4 w-4" fill={isWishlisted ? "currentColor" : "none"} />
-        </button>
+            aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
+          >
+            <Heart className="h-4 w-4" fill={isWishlisted ? "currentColor" : "none"} />
+          </button>
+        </div>
       </div>
 
       {/* Delivery Info */}
@@ -219,9 +266,7 @@ export function ProductInfo({ product }: ProductInfoProps) {
         <Truck className="h-4 w-4 shrink-0 mt-0.5 text-muted-foreground" strokeWidth={1.5} />
         <div>
           <p className="text-sm font-medium">Delivery Information</p>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            {product.deliveryInfo}
-          </p>
+          <p className="text-xs text-muted-foreground mt-0.5">{product.deliveryInfo}</p>
         </div>
       </div>
 
@@ -233,9 +278,7 @@ export function ProductInfo({ product }: ProductInfoProps) {
           isOpen={openSection === "description"}
           onToggle={() => toggleSection("description")}
         >
-          <p className="text-sm text-muted-foreground leading-relaxed">
-            {product.description}
-          </p>
+          <p className="text-sm text-muted-foreground leading-relaxed">{product.description}</p>
         </AccordionItem>
 
         {/* Features / Details */}
@@ -273,6 +316,7 @@ export function ProductInfo({ product }: ProductInfoProps) {
       <StickyAddToCart
         price={currentPrice}
         onAddToCart={handleAddToCart}
+        onBuyNow={handleBuyNow}
         disabled={!isInStock}
         label={!selectedSize ? "Select Size" : !isInStock ? "Out of Stock" : "ADD TO BAG"}
       />
@@ -301,15 +345,12 @@ function AccordionItem({
       >
         {title}
         <ChevronDown
-          className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${isOpen ? "rotate-180" : ""
-            }`}
+          className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${
+            isOpen ? "rotate-180" : ""
+          }`}
         />
       </button>
-      {isOpen && (
-        <div className="pb-4 animate-[fadeIn_0.2s_ease-out]">
-          {children}
-        </div>
-      )}
+      {isOpen && <div className="pb-4 animate-[fadeIn_0.2s_ease-out]">{children}</div>}
     </div>
   );
 }

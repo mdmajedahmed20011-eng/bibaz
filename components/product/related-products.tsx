@@ -16,7 +16,7 @@ const relatedProducts: ProductCardProps[] = [
     name: "Classic Black Borka — Everyday Elegance",
     slug: "classic-black-borka-everyday",
     price: 2200,
-    image: "https://res.cloudinary.com/dnbol4pey/image/upload/v1/bibaz/related-1.jpg",
+    image: "/images/products/borka/borka 1.jpg",
     category: "Borka",
   },
   {
@@ -25,7 +25,7 @@ const relatedProducts: ProductCardProps[] = [
     slug: "embroidered-borka-floral",
     price: 3100,
     compareAtPrice: 3500,
-    image: "https://res.cloudinary.com/dnbol4pey/image/upload/v1/bibaz/related-2.jpg",
+    image: "/images/products/borka/borka 2.jpg",
     category: "Borka",
   },
   {
@@ -33,7 +33,7 @@ const relatedProducts: ProductCardProps[] = [
     name: "Premium Silk Borka — Pearl White",
     slug: "premium-silk-borka-pearl-white",
     price: 3800,
-    image: "https://res.cloudinary.com/dnbol4pey/image/upload/v1/bibaz/related-3.jpg",
+    image: "/images/products/borka/borka 3.jpg",
     category: "Borka",
     isNew: true,
   },
@@ -42,7 +42,7 @@ const relatedProducts: ProductCardProps[] = [
     name: "Casual Borka — Dusty Rose",
     slug: "casual-borka-dusty-rose",
     price: 1950,
-    image: "https://res.cloudinary.com/dnbol4pey/image/upload/v1/bibaz/related-4.jpg",
+    image: "/images/products/borka/borka 4.jpg",
     category: "Borka",
   },
 ];

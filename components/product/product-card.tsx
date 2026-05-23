@@ -1,3 +1,5 @@
+"use client";
+
 /**
  * BIBAZ — Product Card (Premium v2.0)
  * Borderless, editorial, clean hierarchy
@@ -6,6 +8,8 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { Eye } from "lucide-react";
+import { useQuickViewStore } from "@/store/quick-view-store";
 import { CURRENCY } from "@/lib/constants";
 import { formatPrice } from "@/lib/utils";
 
@@ -47,6 +51,7 @@ function getSecondaryImage(image: string): string {
 }
 
 export function ProductCard({
+  id,
   name,
   slug,
   price,
@@ -64,6 +69,24 @@ export function ProductCard({
   const secondaryImage = getSecondaryImage(image);
   const hasSecondaryImage = secondaryImage !== image;
 
+  const openQuickView = useQuickViewStore((state) => state.openQuickView);
+
+  const handleQuickViewClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    openQuickView({
+      id,
+      name,
+      slug,
+      price,
+      compareAtPrice,
+      image,
+      category,
+      isNew,
+      isSoldOut,
+    });
+  };
+
   return (
     <Link
       href={`/products/${slug}`}
@@ -72,7 +95,6 @@ export function ProductCard({
     >
       {/* Image Container — 3:4 ratio, editorial sharp edges */}
       <div className="relative aspect-[3/4] overflow-hidden bg-[#f5f5f5] mb-3 md:mb-4">
-        
         {/* Primary Image */}
         <Image
           src={image}
@@ -80,7 +102,9 @@ export function ProductCard({
           fill
           sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
           className={`object-cover transition-all duration-[800ms] cubic-bezier(0.25, 1, 0.5, 1) ${
-            hasSecondaryImage ? "group-hover:opacity-0 scale-100 group-hover:scale-103" : "group-hover:scale-[1.03]"
+            hasSecondaryImage
+              ? "group-hover:opacity-0 scale-100 group-hover:scale-103"
+              : "group-hover:scale-[1.03]"
           }`}
         />
 
@@ -116,6 +140,17 @@ export function ProductCard({
               Sold Out
             </span>
           </div>
+        )}
+
+        {/* Quick View Hover Button (Eye Icon) */}
+        {!isSoldOut && (
+          <button
+            onClick={handleQuickViewClick}
+            className="absolute bottom-3 right-3 z-20 flex items-center justify-center h-10 w-10 rounded-full bg-white/95 text-foreground border border-border/40 hover:bg-white hover:text-accent shadow-[0_4px_12px_rgba(0,0,0,0.08)] transition-all duration-300 transform translate-y-2 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 focus:translate-y-0 focus:opacity-100 cursor-pointer backdrop-blur-[1px]"
+            title="Quick View"
+          >
+            <Eye className="h-4.5 w-4.5" strokeWidth={1.5} />
+          </button>
         )}
       </div>
 

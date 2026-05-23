@@ -1,7 +1,7 @@
 /**
- * BIBAZ — Newsletter Section
- * Email subscription for promotions
- * Conversion booster — placed before footer
+ * BIBAZ — Newsletter Section (Premium v2.0)
+ * Dark background, elegant, minimal
+ * Design Guide: Integrated before footer, dark bg
  */
 
 "use client";
@@ -22,7 +22,6 @@ export function NewsletterSection() {
     }
 
     setIsSubmitting(true);
-    // TODO: Subscribe to newsletter (Phase 3)
     await new Promise((resolve) => setTimeout(resolve, 800));
     toast.success("Subscribed!", {
       description: "You'll receive updates on new arrivals and offers.",
@@ -32,35 +31,37 @@ export function NewsletterSection() {
   };
 
   return (
-    <section className="bg-foreground text-background py-12 md:py-16">
-      <div className="container mx-auto px-4 text-center">
-        <h2 className="text-2xl md:text-3xl font-bold tracking-tight">Stay in Style</h2>
-        <p className="text-background/70 mt-2 text-sm md:text-base max-w-md mx-auto">
-          Subscribe to get updates on new arrivals, exclusive offers, and style tips.
+    <section className="bg-[#1a1a1a] py-16 md:py-20">
+      <div className="container mx-auto px-6 md:px-8 text-center">
+        <p className="text-[11px] uppercase tracking-[0.3em] text-[#c9a96e] font-medium mb-3">
+          Stay Updated
+        </p>
+        <h2 className="text-2xl md:text-3xl font-bold text-white tracking-[-0.02em] mb-3">
+          Join the BIBAZ Family
+        </h2>
+        <p className="text-sm text-white/50 max-w-sm mx-auto mb-8">
+          Subscribe for exclusive offers, new arrivals, and style inspiration.
         </p>
 
-        <form
-          onSubmit={handleSubmit}
-          className="mt-6 flex flex-col sm:flex-row gap-3 max-w-md mx-auto"
-        >
+        <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
           <input
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="Enter your email"
-            className="flex-1 h-11 px-4 rounded-lg bg-background/10 border border-background/20 text-background placeholder:text-background/50 text-sm focus:outline-none focus:ring-2 focus:ring-background/30"
+            placeholder="Your email address"
+            className="flex-1 h-12 px-4 bg-white/5 border border-white/15 text-white placeholder:text-white/40 text-sm focus:outline-none focus:border-[#c9a96e]/50 transition-colors"
             disabled={isSubmitting}
           />
           <button
             type="submit"
             disabled={isSubmitting}
-            className="h-11 px-6 rounded-lg bg-background text-foreground font-medium text-sm hover:bg-background/90 disabled:opacity-50 transition-colors"
+            className="h-12 px-8 bg-white text-[#1a1a1a] text-sm font-medium tracking-wide hover:bg-white/90 disabled:opacity-50 transition-colors"
           >
-            {isSubmitting ? "Subscribing..." : "Subscribe"}
+            {isSubmitting ? "..." : "Subscribe"}
           </button>
         </form>
 
-        <p className="text-xs text-background/50 mt-3">No spam, unsubscribe anytime.</p>
+        <p className="text-[11px] text-white/30 mt-4">No spam. Unsubscribe anytime.</p>
       </div>
     </section>
   );

@@ -1,9 +1,7 @@
 /**
- * BIBAZ — Product Card Component
- * Displays product image, name, price with hover effects
- * SOP §২ — Frontend Plan F2.4
- *
- * Used in: Homepage (New Arrivals, Featured), Collection pages
+ * BIBAZ — Product Card (Premium v2.0)
+ * Borderless, editorial, clean hierarchy
+ * Design Guide: No border, no shadow, 3:4 ratio, clean info
  */
 
 import Link from "next/link";
@@ -41,31 +39,28 @@ export function ProductCard({
   return (
     <Link
       href={`/products/${slug}`}
-      className="group block space-y-3"
+      className="group block"
       aria-label={`View ${name} - ${CURRENCY.SYMBOL}${price}`}
     >
-      {/* Image Container */}
-      <div className="relative aspect-[3/4] overflow-hidden rounded-lg bg-muted">
+      {/* Image — 3:4 ratio, no border radius (editorial) */}
+      <div className="relative aspect-[3/4] overflow-hidden bg-[#f5f5f5] mb-3 md:mb-4">
         <Image
           src={image}
           alt={name}
           fill
           sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-          className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+          className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.03]"
         />
 
-        {/* Hover overlay */}
-        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-300" />
-
-        {/* Badges */}
-        <div className="absolute top-2 left-2 flex flex-col gap-1">
+        {/* Badges — minimal, top-left */}
+        <div className="absolute top-3 left-3 flex flex-col gap-1.5">
           {isNew && (
-            <span className="inline-flex items-center rounded-md bg-foreground px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-background">
+            <span className="inline-flex items-center px-2 py-0.5 bg-foreground text-background text-[10px] font-semibold uppercase tracking-[0.1em]">
               New
             </span>
           )}
           {hasDiscount && (
-            <span className="inline-flex items-center rounded-md bg-destructive px-2 py-0.5 text-[10px] font-semibold text-white">
+            <span className="inline-flex items-center px-2 py-0.5 bg-sale text-white text-[10px] font-semibold">
               -{discountPercent}%
             </span>
           )}
@@ -73,24 +68,33 @@ export function ProductCard({
 
         {/* Sold Out Overlay */}
         {isSoldOut && (
-          <div className="absolute inset-0 flex items-center justify-center bg-background/60">
-            <span className="rounded-md bg-foreground px-3 py-1 text-xs font-semibold uppercase tracking-wider text-background">
+          <div className="absolute inset-0 flex items-center justify-center bg-white/70">
+            <span className="text-xs font-semibold uppercase tracking-[0.1em] text-foreground/70">
               Sold Out
             </span>
           </div>
         )}
       </div>
 
-      {/* Product Info */}
-      <div className="space-y-1 px-0.5">
+      {/* Product Info — Clean hierarchy */}
+      <div className="space-y-1">
+        {/* Category overline */}
         {category && (
-          <p className="text-[11px] uppercase tracking-wider text-muted-foreground">{category}</p>
+          <p className="text-[10px] md:text-[11px] uppercase tracking-[0.12em] text-muted-foreground font-medium">
+            {category}
+          </p>
         )}
-        <h3 className="text-sm font-medium leading-snug text-foreground line-clamp-2 group-hover:text-foreground/80 transition-colors">
+
+        {/* Product name */}
+        <h3 className="text-[13px] md:text-sm font-medium leading-snug text-foreground line-clamp-2 group-hover:opacity-70 transition-opacity duration-200">
           {name}
         </h3>
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-semibold text-foreground">{formatPrice(price)}</span>
+
+        {/* Price */}
+        <div className="flex items-center gap-2 pt-0.5">
+          <span className="text-sm md:text-[15px] font-semibold text-foreground">
+            {formatPrice(price)}
+          </span>
           {hasDiscount && (
             <span className="text-xs text-muted-foreground line-through">
               {formatPrice(compareAtPrice)}

@@ -1,7 +1,7 @@
 /**
- * BIBAZ — Trust Badges Section
- * Shows delivery, COD, quality guarantees
- * Builds customer confidence
+ * BIBAZ — Trust Badges (Premium v2.0)
+ * Subtle, minimal trust strip
+ * Design Guide: Light background, clean icons, generous spacing
  */
 
 import { Truck, ShieldCheck, CreditCard, RotateCcw } from "lucide-react";
@@ -31,18 +31,15 @@ const badges = [
 
 export function TrustBadges() {
   return (
-    <section className="border-y border-border bg-muted/30">
-      <div className="container mx-auto px-4 py-6">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+    <section className="py-8 md:py-10 border-b border-border/50">
+      <div className="container mx-auto px-6 md:px-8">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
           {badges.map((badge) => (
-            <div
-              key={badge.title}
-              className="flex items-center gap-3 justify-center md:justify-start"
-            >
-              <badge.icon className="h-5 w-5 shrink-0 text-foreground/70" />
+            <div key={badge.title} className="flex flex-col items-center text-center gap-2">
+              <badge.icon className="h-5 w-5 text-foreground/60" strokeWidth={1.5} />
               <div>
-                <p className="text-xs md:text-sm font-medium text-foreground">{badge.title}</p>
-                <p className="text-[11px] md:text-xs text-muted-foreground">{badge.description}</p>
+                <p className="text-xs font-medium text-foreground tracking-wide">{badge.title}</p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">{badge.description}</p>
               </div>
             </div>
           ))}

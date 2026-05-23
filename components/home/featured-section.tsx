@@ -1,18 +1,16 @@
 /**
- * BIBAZ — Featured Collection Section
- * Curated products with editorial-style layout
- * SOP §২ — Homepage Section 5
+ * BIBAZ — Featured Section (Premium v2.0)
+ * Asymmetric editorial layout with premium spacing
+ * Design Guide: 1 large hero + 3 standard cards
  */
 
 import Link from "next/link";
 import Image from "next/image";
-import { SectionHeading } from "@/components/ui/section-heading";
 import { ProductCard } from "@/components/product/product-card";
 import { ALL_PRODUCTS } from "@/lib/demo-data";
 import { formatPrice } from "@/lib/utils";
 
 export function FeaturedSection() {
-  // Pick premium products for featured section
   const featuredProducts = ALL_PRODUCTS.filter(
     (p) => p.compareAtPrice && p.compareAtPrice >= 3000
   ).slice(0, 4);
@@ -20,22 +18,34 @@ export function FeaturedSection() {
   const heroProduct = featuredProducts[0];
 
   return (
-    <section className="bg-muted/30 py-12 md:py-16">
-      <div className="container mx-auto px-4">
-        <SectionHeading
-          title="Featured Collection"
-          subtitle="Handpicked styles for the modern woman"
-          viewAllHref="/collections/featured"
-        />
+    <section className="section-premium bg-surface-warm">
+      <div className="container mx-auto px-6 md:px-8">
+        {/* Section heading */}
+        <div className="flex items-end justify-between mb-10 md:mb-14">
+          <div>
+            <p className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground font-medium mb-2">
+              Curated
+            </p>
+            <h2 className="text-2xl md:text-[34px] font-bold tracking-[-0.02em]">
+              Featured Collection
+            </h2>
+          </div>
+          <Link
+            href="/collections/featured"
+            className="text-sm font-medium text-foreground/70 hover:text-foreground transition-colors underline underline-offset-4 decoration-foreground/30 hover:decoration-foreground"
+          >
+            View All
+          </Link>
+        </div>
 
-        {/* Editorial-style layout: 1 large + 3 small on desktop */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-          {/* First item — large on desktop */}
+        {/* Asymmetric Grid */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-8 md:gap-x-6 md:gap-y-12">
+          {/* Hero product — large, spans 2 cols */}
           {heroProduct && (
             <div className="col-span-2 row-span-2">
               <Link
                 href={`/products/${heroProduct.slug}`}
-                className="group block relative h-full min-h-[300px] md:min-h-[500px] overflow-hidden rounded-xl bg-muted"
+                className="group block relative aspect-[3/4] overflow-hidden"
                 aria-label={`View ${heroProduct.name}`}
               >
                 <Image
@@ -43,22 +53,22 @@ export function FeaturedSection() {
                   alt={heroProduct.name}
                   fill
                   sizes="(max-width: 768px) 100vw, 50vw"
-                  className="object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
+                  className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.03]"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
-                <div className="absolute bottom-0 left-0 right-0 p-4 md:p-6">
-                  <p className="text-[11px] uppercase tracking-wider text-white/70 mb-1">
+                <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+                <div className="absolute bottom-0 left-0 right-0 p-5 md:p-8">
+                  <p className="text-[10px] uppercase tracking-[0.15em] text-white/60 font-medium mb-1">
                     {heroProduct.category}
                   </p>
-                  <h3 className="text-base md:text-lg font-semibold text-white leading-snug">
+                  <h3 className="text-lg md:text-xl font-semibold text-white leading-snug">
                     {heroProduct.name}
                   </h3>
-                  <div className="flex items-center gap-2 mt-1.5">
-                    <span className="text-sm font-medium text-white">
+                  <div className="flex items-center gap-2 mt-2">
+                    <span className="text-sm font-semibold text-white">
                       {formatPrice(heroProduct.price)}
                     </span>
                     {heroProduct.compareAtPrice && (
-                      <span className="text-xs text-white/60 line-through">
+                      <span className="text-xs text-white/50 line-through">
                         {formatPrice(heroProduct.compareAtPrice)}
                       </span>
                     )}
@@ -68,7 +78,7 @@ export function FeaturedSection() {
             </div>
           )}
 
-          {/* Remaining items — standard cards */}
+          {/* Standard cards */}
           {featuredProducts.slice(1).map((product) => (
             <ProductCard key={product.id} {...product} />
           ))}

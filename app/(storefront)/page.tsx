@@ -1,15 +1,9 @@
 /**
- * BIBAZ — Homepage
- * SOP §২ — Homepage Sections (Top to Bottom):
- * 1. Hero Banner
- * 2. Category Section
- * 3. New Arrival Collection
- * 4. Featured Collection
- * 5. All Collections Grid
- * 6. Brand Promise / Trust Badges
+ * BIBAZ — Homepage (Premium v2.0)
+ * Cinematic, editorial, luxury brand experience
+ * Design Guide: 05_premium_ui_design_guide.md
  *
- * Note: Using placeholder data until products are seeded in DB.
- * Server Actions will replace this in Phase 3.
+ * Flow: Hero → Trust → Categories → New Arrivals → Editorial → Featured → Newsletter
  */
 
 import { HeroSection } from "@/components/layout/hero-section";
@@ -19,29 +13,33 @@ import { FeaturedSection } from "@/components/home/featured-section";
 import { CollectionsGrid } from "@/components/home/collections-grid";
 import { TrustBadges } from "@/components/home/trust-badges";
 import { NewsletterSection } from "@/components/home/newsletter-section";
+import { EditorialBanner } from "@/components/home/editorial-banner";
 
 export default function HomePage() {
   return (
     <div className="flex flex-col">
-      {/* Section 1: Hero Banner */}
+      {/* 1. Hero — Cinematic, 85vh */}
       <HeroSection />
 
-      {/* Trust Badges — Delivery, COD, Quality */}
+      {/* 2. Trust Strip — Subtle */}
       <TrustBadges />
 
-      {/* Section 2: Category Section */}
+      {/* 3. Categories — Asymmetric editorial grid */}
       <CategorySection />
 
-      {/* Section 3: New Arrivals */}
+      {/* 4. New Arrivals — Product grid */}
       <NewArrivalsSection />
 
-      {/* Section 4: Featured Collection */}
+      {/* 5. Editorial Banner — Full-width lifestyle */}
+      <EditorialBanner />
+
+      {/* 6. Featured Collection — Asymmetric */}
       <FeaturedSection />
 
-      {/* Section 5: All Collections Grid */}
+      {/* 7. Collections Grid */}
       <CollectionsGrid />
 
-      {/* Section 6: Newsletter */}
+      {/* 8. Newsletter — Dark, elegant */}
       <NewsletterSection />
     </div>
   );

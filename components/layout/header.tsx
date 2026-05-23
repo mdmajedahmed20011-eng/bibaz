@@ -34,7 +34,11 @@ export function Header() {
           <div className="flex items-center gap-4">
             <MobileNav links={navLinks} />
             <Link href="/" className="flex items-center">
-              <span className="text-2xl font-bold tracking-tight">BIBAZ</span>
+              <img
+                src="/images/logo/348254398_927747708509948_4192295653740697805_n.jpg"
+                alt="BIBAZ"
+                className="h-9 w-auto rounded"
+              />
             </Link>
           </div>
 

@@ -12,10 +12,11 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
-import { ProductCard, type ProductCardProps } from "@/components/product/product-card";
+import { ProductCard } from "@/components/product/product-card";
 import { CollectionFilters } from "@/components/product/collection-filters";
 import { SortDropdown } from "@/components/product/sort-dropdown";
 import { MobileFilterDrawer } from "@/components/product/mobile-filter-drawer";
+import { getProductsByCategory } from "@/lib/demo-data";
 
 // Placeholder category data
 const categories: Record<string, { name: string; description: string }> = {
@@ -49,19 +50,6 @@ const categories: Record<string, { name: string; description: string }> = {
   },
 };
 
-// Placeholder products for collection pages
-const placeholderProducts: ProductCardProps[] = Array.from({ length: 12 }, (_, i) => ({
-  id: `col-${i + 1}`,
-  name: `Premium Fashion Item ${i + 1}`,
-  slug: `premium-fashion-item-${i + 1}`,
-  price: 1500 + Math.floor(Math.random() * 5000),
-  compareAtPrice: i % 3 === 0 ? 2000 + Math.floor(Math.random() * 5000) : null,
-  image: `https://res.cloudinary.com/dnbol4pey/image/upload/v1/bibaz/product-${(i % 8) + 1}.jpg`,
-  category: "Collection",
-  isNew: i < 3,
-  isSoldOut: i === 7,
-}));
-
 interface CollectionPageProps {
   params: Promise<{ slug: string }>;
 }
@@ -88,6 +76,8 @@ export default async function CollectionPage({ params }: CollectionPageProps) {
     notFound();
   }
 
+  const products = getProductsByCategory(slug);
+
   return (
     <div className="container mx-auto px-4 py-6 md:py-8">
       {/* Breadcrumb */}
@@ -112,9 +102,7 @@ export default async function CollectionPage({ params }: CollectionPageProps) {
         <div className="flex-1 min-w-0">
           {/* Top Bar: Count + Sort + Mobile Filter */}
           <div className="flex items-center justify-between mb-6">
-            <p className="text-sm text-muted-foreground">
-              Showing {placeholderProducts.length} products
-            </p>
+            <p className="text-sm text-muted-foreground">Showing {products.length} products</p>
             <div className="flex items-center gap-2">
               <MobileFilterDrawer />
               <SortDropdown />
@@ -123,7 +111,7 @@ export default async function CollectionPage({ params }: CollectionPageProps) {
 
           {/* Product Grid */}
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
-            {placeholderProducts.map((product) => (
+            {products.map((product) => (
               <ProductCard key={product.id} {...product} />
             ))}
           </div>

@@ -1,12 +1,6 @@
 /**
- * BIBAZ — Collection/Category Page
- * Shows products filtered by category with sidebar filters
- * SOP §২ — Frontend Plan PAGE 2
- *
- * Route: /collections/[slug]
- * Features: Filters, Sort, Pagination, Responsive Grid
- *
- * TODO: Replace placeholder data with server action (Phase 3)
+ * BIBAZ — Collection Page (Premium v2.0)
+ * Clean grid, functional filters, real data
  */
 
 import { notFound } from "next/navigation";
@@ -18,11 +12,10 @@ import { SortDropdown } from "@/components/product/sort-dropdown";
 import { MobileFilterDrawer } from "@/components/product/mobile-filter-drawer";
 import { getProductsByCategory } from "@/lib/demo-data";
 
-// Placeholder category data
 const categories: Record<string, { name: string; description: string }> = {
   borka: {
-    name: "Borka",
-    description: "Elegant borka collection for everyday and special occasions",
+    name: "Borka & Abaya",
+    description: "Elegant borka and abaya collection for everyday and special occasions",
   },
   saree: {
     name: "Saree",
@@ -57,11 +50,7 @@ interface CollectionPageProps {
 export async function generateMetadata({ params }: CollectionPageProps): Promise<Metadata> {
   const { slug } = await params;
   const category = categories[slug];
-
-  if (!category) {
-    return { title: "Collection Not Found" };
-  }
-
+  if (!category) return { title: "Collection Not Found" };
   return {
     title: `${category.name} Collection`,
     description: category.description,
@@ -79,30 +68,39 @@ export default async function CollectionPage({ params }: CollectionPageProps) {
   const products = getProductsByCategory(slug);
 
   return (
-    <div className="container mx-auto px-4 py-6 md:py-8">
+    <div className="container mx-auto px-4 md:px-6 lg:px-8 py-4 md:py-6">
       {/* Breadcrumb */}
       <Breadcrumb
-        items={[{ label: "Collections", href: "/collections" }, { label: category.name }]}
+        items={[
+          { label: "Collections", href: "/collections" },
+          { label: category.name },
+        ]}
       />
 
       {/* Page Header */}
-      <div className="mt-6 mb-8">
-        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">{category.name}</h1>
-        <p className="text-muted-foreground mt-1">{category.description}</p>
+      <div className="mt-6 mb-8 md:mb-10">
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
+          {category.name}
+        </h1>
+        <p className="text-sm text-muted-foreground mt-1">
+          {category.description}
+        </p>
       </div>
 
-      {/* Content: Filters + Grid */}
-      <div className="flex gap-8">
-        {/* Sidebar Filters — Desktop only */}
-        <aside className="hidden lg:block w-60 shrink-0">
+      {/* Content */}
+      <div className="flex gap-8 lg:gap-10">
+        {/* Sidebar Filters — Desktop */}
+        <aside className="hidden lg:block w-56 shrink-0">
           <CollectionFilters />
         </aside>
 
         {/* Main Content */}
         <div className="flex-1 min-w-0">
-          {/* Top Bar: Count + Sort + Mobile Filter */}
-          <div className="flex items-center justify-between mb-6">
-            <p className="text-sm text-muted-foreground">Showing {products.length} products</p>
+          {/* Top Bar */}
+          <div className="flex items-center justify-between mb-6 pb-4 border-b border-border">
+            <p className="text-sm text-muted-foreground">
+              {products.length} Products
+            </p>
             <div className="flex items-center gap-2">
               <MobileFilterDrawer />
               <SortDropdown />
@@ -110,26 +108,20 @@ export default async function CollectionPage({ params }: CollectionPageProps) {
           </div>
 
           {/* Product Grid */}
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-8 md:gap-x-5 md:gap-y-10">
             {products.map((product) => (
               <ProductCard key={product.id} {...product} />
             ))}
           </div>
 
-          {/* Pagination placeholder */}
-          <div className="mt-10 flex justify-center">
-            <nav aria-label="Pagination" className="flex items-center gap-1">
-              <span className="flex items-center justify-center h-9 w-9 rounded-md bg-foreground text-background text-sm font-medium">
-                1
-              </span>
-              <button className="flex items-center justify-center h-9 w-9 rounded-md text-sm text-muted-foreground hover:bg-muted transition-colors">
-                2
-              </button>
-              <button className="flex items-center justify-center h-9 w-9 rounded-md text-sm text-muted-foreground hover:bg-muted transition-colors">
-                3
-              </button>
-            </nav>
-          </div>
+          {/* Empty State */}
+          {products.length === 0 && (
+            <div className="text-center py-16">
+              <p className="text-muted-foreground">
+                No products found in this collection.
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </div>

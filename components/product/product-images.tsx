@@ -1,7 +1,7 @@
 /**
- * BIBAZ — Product Images Component
- * Main image + thumbnails, zoom on hover (desktop), swipe (mobile)
- * SOP §২ — Frontend Plan F3.8
+ * BIBAZ — Product Images (Premium v2.0)
+ * Large main image + thumbnail strip
+ * Mobile: swipeable, Desktop: click thumbnails
  */
 
 "use client";
@@ -16,37 +16,34 @@ interface ProductImagesProps {
 
 export function ProductImages({ images, productName }: ProductImagesProps) {
   const [selectedIndex, setSelectedIndex] = useState(0);
-
   const selectedImage = images[selectedIndex] ?? images[0] ?? "";
 
   return (
-    <div className="space-y-4">
-      {/* Main Image */}
-      <div className="relative aspect-[3/4] overflow-hidden rounded-xl bg-muted group">
+    <div className="space-y-3">
+      {/* Main Image — large, clean */}
+      <div className="relative aspect-[3/4] overflow-hidden bg-[#f5f5f5]">
         <Image
           src={selectedImage}
           alt={`${productName} - Image ${selectedIndex + 1}`}
           fill
-          sizes="(max-width: 1024px) 100vw, 50vw"
-          className="object-cover transition-transform duration-300 group-hover:scale-105"
+          sizes="(max-width: 1024px) 100vw, 58vw"
+          className="object-cover"
           priority
         />
       </div>
 
-      {/* Thumbnails */}
+      {/* Thumbnails — horizontal strip */}
       {images.length > 1 && (
         <div className="flex gap-2 overflow-x-auto pb-1">
           {images.map((image, index) => (
             <button
               key={index}
               onClick={() => setSelectedIndex(index)}
-              className={`relative shrink-0 h-16 w-16 md:h-20 md:w-20 rounded-lg overflow-hidden border-2 transition-all ${
-                selectedIndex === index
-                  ? "border-foreground"
-                  : "border-transparent hover:border-border"
-              }`}
+              className={`relative shrink-0 w-16 h-20 md:w-20 md:h-24 overflow-hidden bg-[#f5f5f5] transition-all ${selectedIndex === index
+                  ? "ring-2 ring-foreground ring-offset-1"
+                  : "opacity-60 hover:opacity-100"
+                }`}
               aria-label={`View image ${index + 1}`}
-              aria-current={selectedIndex === index ? "true" : undefined}
             >
               <Image
                 src={image}

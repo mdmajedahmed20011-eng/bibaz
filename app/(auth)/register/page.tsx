@@ -8,7 +8,9 @@
 
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Suspense } from "react";
 import { RegisterForm } from "@/components/auth/register-form";
+import { Loader2 } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Create Account",
@@ -31,7 +33,15 @@ export default function RegisterPage() {
         </div>
 
         {/* Register Form */}
-        <RegisterForm />
+        <Suspense
+          fallback={
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          }
+        >
+          <RegisterForm />
+        </Suspense>
 
         {/* Login Link */}
         <p className="text-center text-sm text-muted-foreground">

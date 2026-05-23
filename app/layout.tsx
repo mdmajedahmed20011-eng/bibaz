@@ -50,7 +50,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={cn("h-full", inter.variable, playfair.variable)}>
+    <html
+      lang="en"
+      className={cn("h-full", inter.variable, playfair.variable)}
+      suppressHydrationWarning
+    >
       <body className="min-h-full flex flex-col font-sans antialiased bg-background text-foreground">
         {/* Skip to main content — Accessibility (WCAG AA) */}
         <a href="#main-content" className="skip-link">

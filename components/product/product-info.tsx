@@ -1,16 +1,10 @@
-"use client";
-
-/**
- * BIBAZ — Product Info (Premium v2.0 — Aarong Inspired)
- * Clean layout: Name → Price → Size → Quantity → ADD TO BAG → Accordion sections
- * No product code, no color selector (single color per product for now)
- */
-
 import { useState, useMemo } from "react";
 import { Heart, Minus, Plus, ShoppingBag, Truck, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { formatPrice } from "@/lib/utils";
 import { useCartStore } from "@/store/cart-store";
+import { SizeGuideModal } from "./size-guide-modal";
+import { StickyAddToCart } from "./sticky-add-to-cart";
 
 interface Variant {
   id: string;
@@ -32,6 +26,7 @@ interface ProductInfoProps {
     variants: Variant[];
     features: string[];
     deliveryInfo: string;
+    images: string[];
   };
 }
 
@@ -46,7 +41,7 @@ export function ProductInfo({ product }: ProductInfoProps) {
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [isWishlisted, setIsWishlisted] = useState(false);
-  const [openSection, setOpenSection] = useState<string | null>(null);
+  const [openSection, setOpenSection] = useState<string | null>("description");
 
   // Find selected variant
   const selectedVariant = useMemo(() => {
@@ -79,7 +74,7 @@ export function ProductInfo({ product }: ProductInfoProps) {
       color: selectedVariant.color,
       price: selectedVariant.price,
       quantity,
-      image: "",
+      image: product.images[0] ?? "", // Fixed the empty string image bug!
       maxStock: selectedVariant.stock,
     });
 
@@ -94,24 +89,29 @@ export function ProductInfo({ product }: ProductInfoProps) {
 
   return (
     <div className="space-y-6">
+      {/* Category/Brand overline */}
+      <p className="text-[10px] uppercase tracking-[0.2em] text-accent font-bold">
+        BIBAZ LUXURY EDITION
+      </p>
+
       {/* Product Name */}
       <div>
-        <h1 className="text-xl md:text-2xl lg:text-[26px] font-bold leading-tight tracking-[-0.01em]">
+        <h1 className="text-xl md:text-2xl lg:text-[28px] font-bold leading-tight tracking-[-0.02em] font-heading text-foreground">
           {product.name}
         </h1>
       </div>
 
-      {/* Price */}
+      {/* Price Display */}
       <div className="flex items-baseline gap-3">
-        <span className="text-lg md:text-xl font-bold">
+        <span className="text-xl md:text-2xl font-semibold text-foreground">
           {formatPrice(currentPrice)}
         </span>
         {hasDiscount && (
           <>
-            <span className="text-sm text-muted-foreground line-through">
+            <span className="text-sm text-muted-foreground line-through font-medium">
               {formatPrice(product.compareAtPrice!)}
             </span>
-            <span className="text-sm font-medium text-sale">
+            <span className="text-xs font-bold text-sale bg-sale/5 px-2 py-0.5 rounded-sm">
               {discountPercent}% OFF
             </span>
           </>
@@ -119,17 +119,21 @@ export function ProductInfo({ product }: ProductInfoProps) {
       </div>
 
       {/* Divider */}
-      <div className="border-t border-border" />
+      <div className="border-t border-border/40" />
 
       {/* Size Selector */}
       <div>
-        <div className="flex items-center justify-between mb-3">
-          <p className="text-sm font-semibold">Size</p>
-          {selectedSize && (
-            <p className="text-sm text-muted-foreground">{selectedSize}</p>
-          )}
+        <div className="flex items-center justify-between mb-3.5">
+          <div className="flex items-baseline gap-2">
+            <p className="text-xs font-bold uppercase tracking-wider text-foreground">Select Size</p>
+            {selectedSize && (
+              <span className="text-xs text-muted-foreground font-medium">({selectedSize})</span>
+            )}
+          </div>
+          <SizeGuideModal />
         </div>
-        <div className="flex flex-wrap gap-2">
+        
+        <div className="flex flex-wrap gap-2.5">
           {availableSizes.map((size) => {
             const variant = product.variants.find((v) => v.size === size);
             const inStock = variant ? variant.stock > 0 : false;
@@ -138,12 +142,13 @@ export function ProductInfo({ product }: ProductInfoProps) {
                 key={size}
                 onClick={() => setSelectedSize(size)}
                 disabled={!inStock}
-                className={`h-10 min-w-[44px] px-4 text-sm border transition-all ${selectedSize === size
-                  ? "bg-foreground text-background border-foreground"
-                  : inStock
-                    ? "border-border text-foreground hover:border-foreground"
-                    : "border-border/50 text-muted-foreground/40 line-through cursor-not-allowed"
-                  }`}
+                className={`h-11 min-w-[48px] px-4 text-xs font-semibold uppercase tracking-wider border rounded-sm transition-all duration-200 cursor-pointer ${
+                  selectedSize === size
+                    ? "bg-foreground text-background border-foreground shadow-sm"
+                    : inStock
+                      ? "border-border text-foreground hover:border-foreground hover:bg-neutral-50"
+                      : "border-border/30 text-muted-foreground/30 line-through cursor-not-allowed bg-neutral-50/20"
+                }`}
                 aria-pressed={selectedSize === size}
               >
                 {size}
@@ -151,9 +156,10 @@ export function ProductInfo({ product }: ProductInfoProps) {
             );
           })}
         </div>
+        
         {selectedVariant && selectedVariant.stock <= 3 && selectedVariant.stock > 0 && (
-          <p className="text-xs text-sale mt-2">
-            Only {selectedVariant.stock} left in stock
+          <p className="text-xs font-medium text-sale mt-2.5 animate-pulse">
+            Only {selectedVariant.stock} left in stock — shop soon!
           </p>
         )}
       </div>
@@ -260,6 +266,14 @@ export function ProductInfo({ product }: ProductInfoProps) {
           </div>
         </AccordionItem>
       </div>
+
+      {/* Sticky Bottom Add to Cart Bar for Mobile */}
+      <StickyAddToCart
+        price={currentPrice}
+        onAddToCart={handleAddToCart}
+        disabled={!isInStock}
+        label={!selectedSize ? "Select Size" : !isInStock ? "Out of Stock" : "ADD TO BAG"}
+      />
     </div>
   );
 }

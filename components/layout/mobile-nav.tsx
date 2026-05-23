@@ -1,21 +1,17 @@
-/**
- * BIBAZ — Mobile Navigation (Sheet/Drawer)
- * Slide-out menu for mobile devices
- */
-
 "use client";
 
-import { useState } from "react";
+/**
+ * BIBAZ — Mobile Navigation Overlay (Premium v2.0)
+ * Full-screen visual experience with smooth animations, large touch targets,
+ * expandable accordions, search integration, and persistent bag actions.
+ */
+
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Menu } from "lucide-react";
-import {
-    Sheet,
-    SheetContent,
-    SheetHeader,
-    SheetTitle,
-    SheetTrigger,
-} from "@/components/ui/sheet";
-import { Separator } from "@/components/ui/separator";
+import { useRouter } from "next/navigation";
+import { Menu, X, Search, ShoppingBag, User, ChevronDown, ChevronUp } from "lucide-react";
+import Image from "next/image";
+import { useCartStore } from "@/store/cart-store";
 
 interface MobileNavProps {
     links: { href: string; label: string }[];
@@ -23,57 +19,201 @@ interface MobileNavProps {
 
 export function MobileNav({ links }: MobileNavProps) {
     const [open, setOpen] = useState(false);
+    const [activeAccordion, setActiveAccordion] = useState<string | null>(null);
+    const [searchQuery, setSearchQuery] = useState("");
+    const router = useRouter();
+    
+    // Read cart items count dynamically from Zustand store
+    const cartCount = useCartStore((state) => state.items.reduce((sum, item) => sum + item.quantity, 0));
+
+    // Prevent background body scroll when the overlay is active
+    useEffect(() => {
+        if (open) {
+            document.body.style.overflow = "hidden";
+        } else {
+            document.body.style.overflow = "";
+        }
+        return () => {
+            document.body.style.overflow = "";
+        };
+    }, [open]);
+
+    const handleSearch = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (searchQuery.trim()) {
+            router.push(`/collections/new-arrivals?search=${encodeURIComponent(searchQuery.trim())}`);
+            setOpen(false);
+            setSearchQuery("");
+        }
+    };
+
+    const toggleAccordion = (label: string) => {
+        setActiveAccordion(activeAccordion === label ? null : label);
+    };
+
+    // Subcategories structured like desktop mega-menu for consistent mobile flows
+    const categoriesWithSubs: Record<string, string[]> = {
+        "Borka": ["Shop All Borka", "New Arrivals", "Party Abaya", "Daily Wear"],
+        "Saree": ["Shop All Saree", "New Saree Designs", "Traditional Silk", "Printed Cotton"],
+        "Boutique": ["Shop All Boutique", "New Boutique Suits", "Embroidered Luxury", "Casual Designer"],
+        "Three Piece": ["Shop All Three Piece", "New Kurta Sets", "Zardozi Work Suits", "Printed Kurta Sets"]
+    };
 
     return (
-        <Sheet open={open} onOpenChange={setOpen}>
-            <SheetTrigger
-                className="lg:hidden flex items-center justify-center size-9 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-                aria-label="Open menu"
+        <>
+            {/* Minimal line trigger button */}
+            <button
+                onClick={() => setOpen(true)}
+                className="lg:hidden flex items-center justify-center size-10 text-foreground/80 hover:bg-neutral-100 rounded-full transition-all duration-200"
+                aria-label="Open navigation menu"
             >
-                <Menu className="h-5 w-5" />
-            </SheetTrigger>
-            <SheetContent side="left" className="w-[300px] sm:w-[350px]">
-                <SheetHeader>
-                    <SheetTitle className="text-left text-2xl font-bold">BIBAZ</SheetTitle>
-                </SheetHeader>
-                <Separator className="my-4" />
-                <nav className="flex flex-col gap-1" aria-label="Mobile navigation">
-                    {links.map((link) => (
-                        <Link
-                            key={link.href}
-                            href={link.href}
-                            onClick={() => setOpen(false)}
-                            className="flex items-center py-3 px-2 text-base font-medium text-foreground rounded-md hover:bg-muted transition-colors"
-                        >
-                            {link.label}
+                <Menu className="h-6 w-6" strokeWidth={1.75} />
+            </button>
+
+            {/* Premium Full-Screen Navigation Panel Overlay */}
+            {open && (
+                <div className="fixed inset-0 bg-white z-[9999] flex flex-col overflow-y-auto animate-slide-up">
+                    {/* Header bar within overlay */}
+                    <div className="flex h-16 items-center justify-between px-6 border-b border-border/50 bg-white">
+                        <Link href="/" onClick={() => setOpen(false)} className="flex items-center">
+                            <Image
+                                src="/images/logo/348254398_927747708509948_4192295653740697805_n.jpg"
+                                alt="BIBAZ"
+                                width={32}
+                                height={32}
+                                className="h-8 w-auto"
+                            />
+                            <span className="ml-2 font-heading text-lg font-bold tracking-tight">BIBAZ</span>
                         </Link>
-                    ))}
-                </nav>
-                <Separator className="my-4" />
-                <div className="flex flex-col gap-1">
-                    <Link
-                        href="/track-order"
-                        onClick={() => setOpen(false)}
-                        className="flex items-center py-3 px-2 text-sm text-muted-foreground rounded-md hover:bg-muted transition-colors"
-                    >
-                        Track Order
-                    </Link>
-                    <Link
-                        href="/about"
-                        onClick={() => setOpen(false)}
-                        className="flex items-center py-3 px-2 text-sm text-muted-foreground rounded-md hover:bg-muted transition-colors"
-                    >
-                        About Us
-                    </Link>
-                    <Link
-                        href="/contact"
-                        onClick={() => setOpen(false)}
-                        className="flex items-center py-3 px-2 text-sm text-muted-foreground rounded-md hover:bg-muted transition-colors"
-                    >
-                        Contact
-                    </Link>
+                        
+                        <button
+                            onClick={() => setOpen(false)}
+                            className="flex items-center justify-center size-10 text-foreground hover:bg-neutral-100 rounded-full transition-all duration-200"
+                            aria-label="Close navigation menu"
+                        >
+                            <X className="h-6 w-6" strokeWidth={1.5} />
+                        </button>
+                    </div>
+
+                    {/* Integrated Mobile Search experience (Resolves hidden search on mobile) */}
+                    <div className="px-6 py-4 bg-neutral-50/50 border-b border-border/30">
+                        <form onSubmit={handleSearch} className="relative">
+                            <input
+                                type="text"
+                                placeholder="Search products, styles..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="w-full h-11 pl-11 pr-4 bg-white border border-border/80 rounded-lg text-sm placeholder:text-muted-foreground focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-all duration-200"
+                            />
+                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" strokeWidth={1.5} />
+                        </form>
+                    </div>
+
+                    {/* Touch-Optimized Accordion Navigation Links */}
+                    <nav className="flex-1 px-6 py-4" aria-label="Mobile navigation">
+                        <div className="flex flex-col">
+                            {links.map((link) => {
+                                const hasSubCategories = link.label in categoriesWithSubs;
+                                const isAccordionActive = activeAccordion === link.label;
+
+                                return (
+                                    <div key={link.href} className="border-b border-border/40">
+                                        {hasSubCategories ? (
+                                            <div>
+                                                <button
+                                                    onClick={() => toggleAccordion(link.label)}
+                                                    className="w-full min-h-[56px] py-4 flex justify-between items-center text-[15px] font-semibold tracking-wide text-foreground hover:text-accent transition-colors"
+                                                    aria-expanded={isAccordionActive}
+                                                >
+                                                    {link.label}
+                                                    {isAccordionActive ? (
+                                                        <ChevronUp className="h-4 w-4 text-muted-foreground" strokeWidth={1.5} />
+                                                    ) : (
+                                                        <ChevronDown className="h-4 w-4 text-muted-foreground" strokeWidth={1.5} />
+                                                    )}
+                                                </button>
+                                                
+                                                {/* Expandable Category Sub-menus */}
+                                                {isAccordionActive && (
+                                                    <div className="pl-4 pb-5 flex flex-col gap-4 animate-slide-down">
+                                                        {(categoriesWithSubs[link.label] ?? []).map((subLabel) => {
+                                                            const isShopAll = subLabel.toLowerCase().startsWith("shop all");
+                                                            const urlParam = isShopAll ? "" : `?filter=${subLabel.toLowerCase().replace(/\s+/g, "-")}`;
+                                                            return (
+                                                                <Link
+                                                                    key={subLabel}
+                                                                    href={`${link.href}${urlParam}`}
+                                                                    onClick={() => setOpen(false)}
+                                                                    className="text-[14px] text-muted-foreground hover:text-foreground transition-colors font-medium py-1"
+                                                                >
+                                                                    {subLabel}
+                                                                </Link>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ) : (
+                                            <Link
+                                                href={link.href}
+                                                onClick={() => setOpen(false)}
+                                                className="w-full min-h-[56px] py-4 flex items-center text-[15px] font-semibold tracking-wide text-foreground hover:text-accent transition-colors"
+                                            >
+                                                {link.label}
+                                            </Link>
+                                        )}
+                                    </div>
+                                );
+                            })}
+                        </div>
+
+                        {/* Extra brand & utility links */}
+                        <div className="flex flex-col gap-4 mt-8 pr-2">
+                            <Link
+                                href="/track-order"
+                                onClick={() => setOpen(false)}
+                                className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                            >
+                                Track My Order
+                            </Link>
+                            <Link
+                                href="/about"
+                                onClick={() => setOpen(false)}
+                                className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                            >
+                                Our Brand Story
+                            </Link>
+                            <Link
+                                href="/contact"
+                                onClick={() => setOpen(false)}
+                                className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                            >
+                                Contact
+                            </Link>
+                        </div>
+                    </nav>
+
+                    {/* Premium action cards in footer (native-app aesthetic) */}
+                    <div className="px-6 py-6 border-t border-border bg-[#fcfbf9] grid grid-cols-2 gap-4 mt-auto">
+                        <Link
+                            href="/account"
+                            onClick={() => setOpen(false)}
+                            className="flex items-center justify-center gap-2 h-12 bg-white border border-border text-sm font-medium text-foreground hover:border-foreground rounded-lg transition-colors shadow-sm"
+                        >
+                            <User className="h-4 w-4 text-muted-foreground" strokeWidth={1.5} />
+                            My Account
+                        </Link>
+                        <Link
+                            href="/cart"
+                            onClick={() => setOpen(false)}
+                            className="flex items-center justify-center gap-2 h-12 bg-foreground text-background text-sm font-medium hover:bg-neutral-800 rounded-lg transition-colors shadow-sm"
+                        >
+                            <ShoppingBag className="h-4 w-4" strokeWidth={1.5} />
+                            Bag ({cartCount})
+                        </Link>
+                    </div>
                 </div>
-            </SheetContent>
-        </Sheet>
+            )}
+        </>
     );
 }

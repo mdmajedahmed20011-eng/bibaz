@@ -31,15 +31,27 @@ const badges = [
 
 export function TrustBadges() {
   return (
-    <section className="py-8 md:py-10 border-b border-border/50">
+    <section className="bg-surface-warm border-y border-border/40 py-10 md:py-12">
       <div className="container mx-auto px-6 md:px-8">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
-          {badges.map((badge) => (
-            <div key={badge.title} className="flex flex-col items-center text-center gap-2">
-              <badge.icon className="h-5 w-5 text-foreground/60" strokeWidth={1.5} />
-              <div>
-                <p className="text-xs font-medium text-foreground tracking-wide">{badge.title}</p>
-                <p className="text-[11px] text-muted-foreground mt-0.5">{badge.description}</p>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-y-8 gap-x-4 divide-y lg:divide-y-0 lg:divide-x divide-border/30">
+          {badges.map((badge, i) => (
+            <div 
+              key={badge.title} 
+              className={`flex flex-col sm:flex-row items-center text-center sm:text-left gap-3.5 px-4 group transition-all duration-300 ${
+                i > 0 && i % 2 === 0 ? "pt-6 sm:pt-0" : ""
+              } ${i === 1 ? "pt-0" : ""} lg:pt-0`}
+            >
+              <div className="flex items-center justify-center size-10 rounded-full bg-white text-foreground/70 group-hover:text-accent group-hover:bg-foreground transition-all duration-500 shadow-sm shrink-0">
+                <badge.icon className="h-5 w-5" strokeWidth={1.5} />
+              </div>
+              
+              <div className="space-y-0.5">
+                <p className="text-xs font-semibold uppercase tracking-[0.08em] text-foreground tracking-wide group-hover:text-accent transition-colors duration-300">
+                  {badge.title}
+                </p>
+                <p className="text-[11px] text-muted-foreground leading-relaxed">
+                  {badge.description}
+                </p>
               </div>
             </div>
           ))}

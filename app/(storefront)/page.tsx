@@ -14,6 +14,7 @@ import { CollectionsGrid } from "@/components/home/collections-grid";
 import { TrustBadges } from "@/components/home/trust-badges";
 import { NewsletterSection } from "@/components/home/newsletter-section";
 import { EditorialBanner } from "@/components/home/editorial-banner";
+import { BrandStory } from "@/components/home/brand-story";
 
 export default function HomePage() {
   return (
@@ -39,7 +40,10 @@ export default function HomePage() {
       {/* 7. Collections Grid */}
       <CollectionsGrid />
 
-      {/* 8. Newsletter — Dark, elegant */}
+      {/* 8. Brand Story — Editorial storytelling */}
+      <BrandStory />
+
+      {/* 9. Newsletter — Dark, elegant */}
       <NewsletterSection />
     </div>
   );

@@ -27,7 +27,47 @@ const helpLinks = [
 export function Footer() {
   return (
     <footer className="bg-[#fafafa] border-t border-border/50">
-      {/* Main Footer */}
+      {/* 1. Global Integrated Newsletter Section — Dark, Editorial */}
+      <div className="bg-foreground text-background py-14 md:py-16">
+        <div className="container mx-auto px-6 md:px-8">
+          <div className="max-w-4xl mx-auto flex flex-col md:flex-row items-center justify-between gap-8">
+            <div className="space-y-2 text-center md:text-left">
+              <p className="text-[10px] uppercase tracking-[0.2em] text-accent font-semibold">
+                Join the World of BIBAZ
+              </p>
+              <h3 className="text-xl md:text-2xl font-bold tracking-tight text-white font-heading">
+                Subscribe for Exclusive Access
+              </h3>
+              <p className="text-xs text-neutral-400 max-w-sm leading-relaxed">
+                Be the first to discover new arrivals, designer edits, and private seasonal promotions.
+              </p>
+            </div>
+            
+            <form 
+              onSubmit={(e) => {
+                e.preventDefault();
+                alert("Thank you for subscribing to our newsletter!");
+              }} 
+              className="w-full md:w-auto flex flex-col sm:flex-row gap-3 items-stretch max-w-md"
+            >
+              <input
+                type="email"
+                required
+                placeholder="Enter your email address"
+                className="h-11 px-4 bg-neutral-800 border border-neutral-700 text-white text-xs placeholder:text-neutral-500 rounded-md focus:outline-none focus:border-accent w-full sm:w-64 transition-colors"
+              />
+              <button
+                type="submit"
+                className="h-11 px-6 bg-white hover:bg-neutral-100 text-black text-xs font-semibold uppercase tracking-[0.1em] rounded-md transition-all active:scale-[0.98]"
+              >
+                Subscribe
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      {/* 2. Main Footer Links Columns */}
       <div className="container mx-auto px-6 md:px-8 py-16 md:py-20">
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8 md:gap-12">
           {/* Brand Column */}
@@ -43,7 +83,7 @@ export function Footer() {
             </Link>
             <p className="text-sm text-muted-foreground leading-relaxed max-w-xs">
               Premium women&apos;s fashion. Elegant designs crafted with quality fabrics for the
-              modern woman.
+              modern Bangladeshi woman.
             </p>
             {/* Social Icons */}
             <div className="flex items-center gap-4 pt-2">
@@ -82,7 +122,7 @@ export function Footer() {
                 <li key={link.href}>
                   <Link
                     href={link.href}
-                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                    className="text-sm text-muted-foreground hover:text-foreground transition-colors font-medium"
                   >
                     {link.label}
                   </Link>
@@ -101,7 +141,7 @@ export function Footer() {
                 <li key={link.href}>
                   <Link
                     href={link.href}
-                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                    className="text-sm text-muted-foreground hover:text-foreground transition-colors font-medium"
                   >
                     {link.label}
                   </Link>
@@ -115,7 +155,7 @@ export function Footer() {
             <h4 className="text-xs font-semibold uppercase tracking-[0.12em] text-foreground mb-4">
               Contact
             </h4>
-            <ul className="space-y-2.5 text-sm text-muted-foreground">
+            <ul className="space-y-2.5 text-sm text-muted-foreground font-medium">
               <li>
                 <a
                   href={`tel:${BUSINESS.PHONE}`}
@@ -132,7 +172,7 @@ export function Footer() {
                   {BUSINESS.EMAIL}
                 </a>
               </li>
-              <li className="leading-relaxed pt-1">{BUSINESS.ADDRESS}</li>
+              <li className="leading-relaxed pt-1 text-[13px]">{BUSINESS.ADDRESS}</li>
             </ul>
           </div>
         </div>
@@ -140,9 +180,9 @@ export function Footer() {
 
       {/* Bottom Bar */}
       <div className="border-t border-border/50">
-        <div className="container mx-auto px-6 md:px-8 py-5 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-muted-foreground">
+        <div className="container mx-auto px-6 md:px-8 py-5 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-muted-foreground font-medium">
           <p>© {new Date().getFullYear()} BIBAZ. All rights reserved.</p>
-          <p>Cash on Delivery &nbsp;|&nbsp; Dhaka: ৳80 &nbsp;|&nbsp; Outside: ৳150</p>
+          <p>Cash on Delivery &nbsp;|&nbsp; Dhaka: ৳80 &nbsp;|&nbsp; Outside: ৳150 &nbsp;|&nbsp; Secured SSL Checkout</p>
         </div>
       </div>
     </footer>

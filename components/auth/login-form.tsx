@@ -29,10 +29,8 @@ export function LoginForm() {
 
     setIsLoading(true);
 
-    // TODO: Call signIn from NextAuth (Phase 3)
     try {
       await new Promise((resolve) => setTimeout(resolve, 1000));
-      // Placeholder — will be replaced with actual auth
       setError("Login functionality will be available soon.");
     } finally {
       setIsLoading(false);
@@ -40,26 +38,26 @@ export function LoginForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-5">
       {/* Error Message */}
       {error && (
-        <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-sm text-destructive">
+        <div className="p-3.5 bg-sale/5 border border-sale/25 text-xs text-sale font-bold uppercase tracking-wider">
           {error}
         </div>
       )}
 
       {/* Email */}
       <div className="space-y-1.5">
-        <label htmlFor="email" className="text-sm font-medium">
-          Email
+        <label htmlFor="email" className="text-[10px] uppercase tracking-wider text-foreground font-semibold">
+          Email Address *
         </label>
         <input
           id="email"
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="w-full h-10 px-3 rounded-md border border-border bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-          placeholder="you@example.com"
+          className="w-full h-11 px-4 border border-border/60 bg-transparent text-sm transition-all focus:outline-none focus:border-foreground focus:ring-1 focus:ring-foreground bg-[#f8f5f0]/10 hover:bg-[#f8f5f0]/30 rounded-none placeholder:text-muted-foreground/30 text-foreground font-medium"
+          placeholder="your@email.com"
           autoComplete="email"
           disabled={isLoading}
         />
@@ -68,14 +66,14 @@ export function LoginForm() {
       {/* Password */}
       <div className="space-y-1.5">
         <div className="flex items-center justify-between">
-          <label htmlFor="password" className="text-sm font-medium">
-            Password
+          <label htmlFor="password" className="text-[10px] uppercase tracking-wider text-foreground font-semibold">
+            Password *
           </label>
           <Link
             href="/forgot-password"
-            className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+            className="text-[10px] uppercase tracking-widest text-muted-foreground hover:text-foreground transition-colors font-bold"
           >
-            Forgot password?
+            Forgot?
           </Link>
         </div>
         <div className="relative">
@@ -84,7 +82,7 @@ export function LoginForm() {
             type={showPassword ? "text" : "password"}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full h-10 px-3 pr-10 rounded-md border border-border bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            className="w-full h-11 px-4 pr-11 border border-border/60 bg-transparent text-sm transition-all focus:outline-none focus:border-foreground focus:ring-1 focus:ring-foreground bg-[#f8f5f0]/10 hover:bg-[#f8f5f0]/30 rounded-none placeholder:text-muted-foreground/30 text-foreground font-medium"
             placeholder="Enter your password"
             autoComplete="current-password"
             disabled={isLoading}
@@ -92,7 +90,7 @@ export function LoginForm() {
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
             aria-label={showPassword ? "Hide password" : "Show password"}
           >
             {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -107,9 +105,9 @@ export function LoginForm() {
           type="checkbox"
           checked={rememberMe}
           onChange={(e) => setRememberMe(e.target.checked)}
-          className="h-4 w-4 rounded border-border"
+          className="h-4 w-4 border-border rounded-none text-foreground focus:ring-foreground accent-foreground cursor-pointer"
         />
-        <label htmlFor="remember" className="text-sm text-muted-foreground">
+        <label htmlFor="remember" className="text-xs uppercase tracking-widest text-muted-foreground font-bold cursor-pointer select-none">
           Remember me
         </label>
       </div>
@@ -118,27 +116,27 @@ export function LoginForm() {
       <button
         type="submit"
         disabled={isLoading}
-        className="w-full h-11 rounded-lg bg-foreground text-background font-medium text-sm hover:bg-foreground/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+        className="w-full h-12 bg-foreground text-background font-bold text-xs uppercase tracking-[0.2em] hover:bg-foreground/90 transition-all duration-300 disabled:opacity-50 flex items-center justify-center gap-2 rounded-none cursor-pointer"
       >
         {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
         {isLoading ? "Signing in..." : "Sign In"}
       </button>
 
       {/* Divider */}
-      <div className="relative my-6">
+      <div className="relative my-6 py-2">
         <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-border" />
+          <div className="w-full border-t border-border/40" />
         </div>
-        <div className="relative flex justify-center text-xs">
-          <span className="bg-background px-2 text-muted-foreground">or continue with</span>
+        <div className="relative flex justify-center text-[10px] font-bold uppercase tracking-[0.2em]">
+          <span className="bg-background px-3 text-muted-foreground">Or Connect With</span>
         </div>
       </div>
 
-      {/* OAuth Buttons (placeholder — Phase 3) */}
+      {/* OAuth Buttons */}
       <button
         type="button"
         disabled
-        className="w-full h-10 rounded-lg border border-border text-sm font-medium text-muted-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+        className="w-full h-11 border border-border/60 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60 flex items-center justify-center gap-2.5 rounded-none cursor-not-allowed"
       >
         <svg className="h-4 w-4" viewBox="0 0 24 24">
           <path
@@ -158,16 +156,15 @@ export function LoginForm() {
             fill="#EA4335"
           />
         </svg>
-        Google (Coming Soon)
+        Google Account
       </button>
 
       {/* Guest Notice */}
-      <p className="text-center text-xs text-muted-foreground pt-2">
-        You can also{" "}
-        <Link href="/collections/new-arrivals" className="underline hover:text-foreground">
-          shop as a guest
-        </Link>{" "}
-        without creating an account.
+      <p className="text-center text-[10px] uppercase tracking-wider text-muted-foreground pt-2">
+        Alternatively, you can{" "}
+        <Link href="/collections/new-arrivals" className="underline hover:text-foreground font-bold">
+          Shop As Guest
+        </Link>
       </p>
     </form>
   );

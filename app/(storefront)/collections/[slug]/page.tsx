@@ -45,9 +45,10 @@ const categories: Record<string, { name: string; description: string }> = {
 
 interface CollectionPageProps {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ size?: string | string[]; price?: string; sort?: string }>;
 }
 
-export async function generateMetadata({ params }: CollectionPageProps): Promise<Metadata> {
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
   const category = categories[slug];
   if (!category) return { title: "Collection Not Found" };
@@ -57,18 +58,65 @@ export async function generateMetadata({ params }: CollectionPageProps): Promise
   };
 }
 
-export default async function CollectionPage({ params }: CollectionPageProps) {
+export default async function CollectionPage({ params, searchParams }: CollectionPageProps) {
+  // Await promises for Next.js 16 compliance
   const { slug } = await params;
+  const resolvedSearchParams = await searchParams;
   const category = categories[slug];
 
   if (!category) {
     notFound();
   }
 
-  const products = getProductsByCategory(slug);
+  // Retrieve active filters
+  const size = resolvedSearchParams.size;
+  const price = resolvedSearchParams.price;
+  const sort = resolvedSearchParams.sort;
+
+  // Get demo product list for category
+  let products = getProductsByCategory(slug);
+
+  // 1. Server-Side Size Filtering
+  const sizeArray = size ? (Array.isArray(size) ? size : [size]) : [];
+  if (sizeArray.length > 0) {
+    products = products.filter((product) => {
+      // Free size matches only Sarees
+      if (sizeArray.includes("Free Size") && product.category === "Saree") {
+        return true;
+      }
+      // Standard sizes (S, M, L, XL) match non-saree apparel
+      const standardSizes = ["S", "M", "L", "XL"];
+      const hasStandardRequested = sizeArray.some((s) => standardSizes.includes(s));
+      if (hasStandardRequested && product.category !== "Saree") {
+        return true;
+      }
+      return false;
+    });
+  }
+
+  // 2. Server-Side Price Filtering
+  if (price && typeof price === "string") {
+    const parts = price.split("-");
+    const minVal = Number(parts[0]);
+    const maxVal = Number(parts[1]);
+    if (!isNaN(minVal) && !isNaN(maxVal)) {
+      products = products.filter((product) => product.price >= minVal && product.price <= maxVal);
+    }
+  }
+
+  // 3. Server-Side Sorting
+  if (sort) {
+    if (sort === "price-low-high") {
+      products = [...products].sort((a, b) => a.price - b.price);
+    } else if (sort === "price-high-low") {
+      products = [...products].sort((a, b) => b.price - a.price);
+    } else if (sort === "newest") {
+      products = [...products].sort((a, b) => (b.isNew ? 1 : 0) - (a.isNew ? 1 : 0));
+    }
+  }
 
   return (
-    <div className="container mx-auto px-4 md:px-6 lg:px-8 py-4 md:py-6">
+    <div className="container mx-auto px-6 md:px-8 py-6 md:py-10 max-w-[1280px]">
       {/* Breadcrumb */}
       <Breadcrumb
         items={[
@@ -77,53 +125,48 @@ export default async function CollectionPage({ params }: CollectionPageProps) {
         ]}
       />
 
-      {/* Page Header */}
-      <div className="mt-6 mb-8 md:mb-10">
-        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
+      {/* Page Header — editorial typography */}
+      <div className="mt-6 mb-8">
+        <h1 className="text-3xl md:text-4xl font-bold tracking-tight font-heading">
           {category.name}
         </h1>
-        <p className="text-sm text-muted-foreground mt-1">
+        <p className="text-xs md:text-sm text-muted-foreground mt-2 max-w-xl leading-relaxed">
           {category.description}
         </p>
       </div>
 
-      {/* Content */}
-      <div className="flex gap-8 lg:gap-10">
-        {/* Sidebar Filters — Desktop */}
-        <aside className="hidden lg:block w-56 shrink-0">
-          <CollectionFilters />
-        </aside>
+      {/* Premium Horizontal Dropdown Filter Bar */}
+      <div className="mb-8">
+        <CollectionFilters />
+      </div>
 
-        {/* Main Content */}
-        <div className="flex-1 min-w-0">
-          {/* Top Bar */}
-          <div className="flex items-center justify-between mb-6 pb-4 border-b border-border">
-            <p className="text-sm text-muted-foreground">
-              {products.length} Products
-            </p>
-            <div className="flex items-center gap-2">
-              <MobileFilterDrawer />
-              <SortDropdown />
-            </div>
-          </div>
-
-          {/* Product Grid */}
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-8 md:gap-x-5 md:gap-y-10">
-            {products.map((product) => (
-              <ProductCard key={product.id} {...product} />
-            ))}
-          </div>
-
-          {/* Empty State */}
-          {products.length === 0 && (
-            <div className="text-center py-16">
-              <p className="text-muted-foreground">
-                No products found in this collection.
-              </p>
-            </div>
-          )}
+      {/* Catalog Top Info Bar */}
+      <div className="flex items-center justify-between mb-8 pb-4 border-b border-border/40">
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          {products.length} {products.length === 1 ? "Product" : "Products"} Found
+        </p>
+        <div className="flex items-center gap-4">
+          <MobileFilterDrawer />
+          <SortDropdown />
         </div>
       </div>
+
+      {/* Product Catalog Grid — 4 columns for luxury breathability */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-12">
+        {products.map((product) => (
+          <ProductCard key={product.id} {...product} />
+        ))}
+      </div>
+
+      {/* Elegant Empty State */}
+      {products.length === 0 && (
+        <div className="text-center py-24 border border-dashed border-border/80 rounded-lg max-w-md mx-auto space-y-3 mt-12 bg-neutral-50/50">
+          <p className="text-sm font-semibold text-foreground">No matching products found</p>
+          <p className="text-xs text-muted-foreground max-w-xs mx-auto">
+            Try adjusting your sizes or price ranges to discover other premium fashion edits.
+          </p>
+        </div>
+      )}
     </div>
   );
 }

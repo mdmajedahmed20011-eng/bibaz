@@ -162,8 +162,12 @@ export function LoginForm() {
       {/* OAuth Buttons */}
       <button
         type="button"
-        disabled
-        className="w-full h-11 border border-border/60 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60 flex items-center justify-center gap-2.5 rounded-none cursor-not-allowed"
+        onClick={() => {
+          setIsLoading(true);
+          signIn("google", { callbackUrl });
+        }}
+        disabled={isLoading}
+        className="w-full h-11 border border-border/60 text-[10px] font-bold uppercase tracking-wider text-foreground flex items-center justify-center gap-2.5 rounded-none cursor-pointer hover:bg-neutral-50 transition-colors disabled:opacity-50"
       >
         <svg className="h-4 w-4" viewBox="0 0 24 24">
           <path

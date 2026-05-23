@@ -8,6 +8,7 @@
 
 import { useState, useMemo } from "react";
 import { Heart, Minus, Plus, ShoppingBag, Truck } from "lucide-react";
+import { toast } from "sonner";
 import { formatPrice } from "@/lib/utils";
 import { useCartStore } from "@/store/cart-store";
 
@@ -97,6 +98,10 @@ export function ProductInfo({ product }: ProductInfoProps) {
       quantity,
       image: "", // Will come from variant images
       maxStock: selectedVariant.stock,
+    });
+
+    toast.success("Added to cart", {
+      description: `${product.name} (${selectedVariant.size}, ${selectedVariant.color}) × ${quantity}`,
     });
   };
 

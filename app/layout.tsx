@@ -3,6 +3,7 @@ import { Inter, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import { OrganizationJsonLd, WebsiteJsonLd } from "@/components/seo/json-ld";
+import { Toaster } from "@/components/ui/sonner";
 
 // Body font — clean, modern, highly readable
 const inter = Inter({
@@ -59,6 +60,7 @@ export default function RootLayout({
         <OrganizationJsonLd />
         <WebsiteJsonLd />
         {children}
+        <Toaster position="top-right" richColors closeButton />
       </body>
     </html>
   );

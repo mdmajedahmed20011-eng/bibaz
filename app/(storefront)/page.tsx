@@ -18,6 +18,7 @@ import { NewArrivalsSection } from "@/components/home/new-arrivals-section";
 import { FeaturedSection } from "@/components/home/featured-section";
 import { CollectionsGrid } from "@/components/home/collections-grid";
 import { TrustBadges } from "@/components/home/trust-badges";
+import { NewsletterSection } from "@/components/home/newsletter-section";
 
 export default function HomePage() {
   return (
@@ -39,6 +40,9 @@ export default function HomePage() {
 
       {/* Section 5: All Collections Grid */}
       <CollectionsGrid />
+
+      {/* Section 6: Newsletter */}
+      <NewsletterSection />
     </div>
   );
 }

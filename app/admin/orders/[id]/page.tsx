@@ -83,17 +83,19 @@ export default async function AdminOrderDetailPage({
           <div className="rounded-xl border border-gray-200 bg-white p-6">
             <h2 className="mb-4 text-lg font-semibold text-gray-900">Order Items</h2>
             <div className="space-y-3">
-              {order.items.map((item: any) => (
+              {order.items?.map((item: any) => (
                 <div
                   key={item.id}
                   className="flex items-center justify-between rounded-lg border border-gray-100 p-3"
                 >
                   <div>
-                    <p className="text-sm font-medium text-gray-900">{item.variant.product.name}</p>
+                    <p className="text-sm font-medium text-gray-900">
+                      {item.variant?.product?.name || "Deleted Product"}
+                    </p>
                     <p className="text-xs text-gray-500">
-                      {item.variant.size && `Size: ${item.variant.size}`}
-                      {item.variant.color && ` • Color: ${item.variant.color}`}
-                      {` • SKU: ${item.variant.sku}`}
+                      {item.variant?.size && `Size: ${item.variant.size}`}
+                      {item.variant?.color && ` • Color: ${item.variant.color}`}
+                      {item.variant?.sku && ` • SKU: ${item.variant.sku}`}
                     </p>
                   </div>
                   <div className="text-right">
@@ -150,7 +152,7 @@ export default async function AdminOrderDetailPage({
           <div className="rounded-xl border border-gray-200 bg-white p-6">
             <h2 className="mb-4 text-lg font-semibold text-gray-900">Order Timeline</h2>
             <div className="space-y-4">
-              {order.timeline.map((entry: any, index: number) => (
+              {order.timeline?.map((entry: any, index: number) => (
                 <div key={entry.id} className="flex gap-3">
                   <div className="flex flex-col items-center">
                     <div
@@ -158,7 +160,7 @@ export default async function AdminOrderDetailPage({
                         index === 0 ? "bg-blue-500" : "bg-gray-300"
                       }`}
                     />
-                    {index < order.timeline.length - 1 && (
+                    {index < (order.timeline?.length || 0) - 1 && (
                       <div className="w-px flex-1 bg-gray-200" />
                     )}
                   </div>

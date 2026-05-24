@@ -22,6 +22,7 @@ import {
   Store,
   Sparkles,
   SlidersHorizontal,
+  Layers,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -65,6 +66,12 @@ const navSections = [
         label: "Products",
         href: "/admin/products",
         icon: Package,
+        roles: ["MANAGER", "ADMIN", "SUPER_ADMIN"],
+      },
+      {
+        label: "Categories",
+        href: "/admin/categories",
+        icon: Layers,
         roles: ["MANAGER", "ADMIN", "SUPER_ADMIN"],
       },
       {

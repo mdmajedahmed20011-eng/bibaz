@@ -14,8 +14,9 @@ const globalForPrisma = globalThis as unknown as {
 };
 
 function createPrismaClient() {
-    const connectionString =
-        process.env.DATABASE_URL || "mysql://root:@localhost:3306/bibaz";
+    // Remove connection_limit from URL if present (not supported by adapter)
+    let connectionString = process.env.DATABASE_URL || "mysql://root:@localhost:3306/bibaz";
+    connectionString = connectionString.replace(/[?&]connection_limit=\d+/, "");
 
     const adapter = new PrismaMariaDb(connectionString);
 

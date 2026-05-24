@@ -5,7 +5,7 @@
  * SOP §৬F — Admin Customer Management
  */
 
-import { prisma } from "@/lib/db";
+import { prisma, serializeDecimals } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 
@@ -199,7 +199,7 @@ export async function getCustomerDetail(userId: string) {
       return { success: false, error: "Customer not found" };
     }
 
-    return { success: true, customer };
+    return { success: true, customer: serializeDecimals(customer) };
   } catch (error) {
     console.error("[CUSTOMER] getCustomerDetail error:", error);
     return { success: false, error: "Failed to fetch customer" };

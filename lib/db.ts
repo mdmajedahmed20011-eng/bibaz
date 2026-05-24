@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * BIBAZ — Prisma Client Singleton
  */
@@ -39,7 +40,6 @@ function createPrismaClient() {
     connectionLimit: 2,
     connectTimeout: 30000,
     acquireTimeout: 30000,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } as any);
 
   return new PrismaClient({
@@ -52,3 +52,35 @@ export const prisma = globalForPrisma.prisma ?? createPrismaClient();
 
 // Always store prisma in globalThis in all environments to prevent connection leaks in Next.js Server Actions
 globalForPrisma.prisma = prisma;
+
+/**
+ * Recursively converts Prisma Decimal values to standard JavaScript numbers.
+ * This is crucial for Next.js Server Actions which crash with 500 error when returning non-serializable Decimal types.
+ */
+export function serializeDecimals<T>(obj: T): T {
+  if (obj === null || obj === undefined) return obj;
+
+  if (typeof obj === "object") {
+    // Check if it's a Prisma Decimal (Prisma's Decimal implements decimal.js with a toNumber method)
+    if (
+      (obj as any).constructor &&
+      (obj as any).constructor.name === "Decimal" &&
+      typeof (obj as any).toNumber === "function"
+    ) {
+      return (obj as any).toNumber() as unknown as T;
+    }
+    if (obj instanceof Date) {
+      return obj;
+    }
+    if (Array.isArray(obj)) {
+      return obj.map((item) => serializeDecimals(item)) as unknown as T;
+    }
+    const serialized: any = {};
+    for (const key of Object.keys(obj)) {
+      serialized[key] = serializeDecimals((obj as any)[key]);
+    }
+    return serialized as T;
+  }
+
+  return obj;
+}

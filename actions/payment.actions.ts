@@ -9,7 +9,7 @@
  * Phase 3: SSLCommerz (future)
  */
 
-import { prisma } from "@/lib/db";
+import { prisma, serializeDecimals } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 
@@ -50,7 +50,7 @@ export async function initiateCODPayment(orderId: string) {
       },
     });
 
-    return { success: true, payment };
+    return { success: true, payment: serializeDecimals(payment) };
   } catch (error) {
     console.error("[PAYMENT] initiateCODPayment error:", error);
     return { success: false, error: "Failed to initiate payment" };

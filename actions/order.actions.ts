@@ -8,7 +8,7 @@
  * Track: Order Number + Phone দিয়ে track করা যাবে
  */
 
-import { prisma } from "@/lib/db";
+import { prisma, serializeDecimals } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import {
@@ -417,7 +417,7 @@ export async function getOrderDetail(orderId: string) {
       }
     }
 
-    return { success: true, order };
+    return { success: true, order: serializeDecimals(order) };
   } catch (error) {
     console.error("[ORDER] getOrderDetail error:", error);
     return { success: false, order: null, error: "Failed to fetch order" };
@@ -562,7 +562,7 @@ export async function getAdminOrders(options?: {
 
     return {
       success: true,
-      orders,
+      orders: serializeDecimals(orders),
       pagination: { page, pageSize, total, totalPages: Math.ceil(total / pageSize) },
     };
   } catch (error) {

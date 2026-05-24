@@ -5,7 +5,7 @@
  * SOP §৬ — Coupon/Discount System
  */
 
-import { prisma } from "@/lib/db";
+import { prisma, serializeDecimals } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
@@ -127,7 +127,7 @@ export async function getCoupons() {
       },
     });
 
-    return { success: true, coupons };
+    return { success: true, coupons: serializeDecimals(coupons) };
   } catch (error) {
     console.error("[COUPON] getCoupons error:", error);
     return { success: false, coupons: [], error: "Failed to fetch coupons" };
@@ -178,7 +178,7 @@ export async function createCoupon(data: z.infer<typeof createCouponSchema>) {
     });
 
     revalidatePath("/admin/coupons");
-    return { success: true, coupon };
+    return { success: true, coupon: serializeDecimals(coupon) };
   } catch (error) {
     console.error("[COUPON] createCoupon error:", error);
     return { success: false, error: "Failed to create coupon" };

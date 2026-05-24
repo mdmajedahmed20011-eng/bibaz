@@ -8,7 +8,7 @@
  * Admin+: createProduct, updateProduct, deleteProduct, createVariant, updateVariant
  */
 
-import { prisma } from "@/lib/db";
+import { prisma, serializeDecimals } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import {
@@ -125,7 +125,7 @@ export async function getProducts(options?: {
 
     return {
       success: true,
-      products,
+      products: serializeDecimals(products),
       pagination: {
         page,
         pageSize,
@@ -167,7 +167,7 @@ export async function getProductBySlug(slug: string) {
       return { success: false, product: null, error: "Product not found" };
     }
 
-    return { success: true, product };
+    return { success: true, product: serializeDecimals(product) };
   } catch (error) {
     console.error("[PRODUCT] getProductBySlug error:", error);
     return { success: false, product: null, error: "Failed to fetch product" };
@@ -221,7 +221,7 @@ export async function getRelatedProducts(productId: string, categoryId: string, 
       },
     });
 
-    return { success: true, products };
+    return { success: true, products: serializeDecimals(products) };
   } catch (error) {
     console.error("[PRODUCT] getRelatedProducts error:", error);
     return { success: false, products: [] };
@@ -303,7 +303,10 @@ export async function createProduct(data: CreateProductInput) {
     revalidatePath("/admin/products");
     revalidatePath("/");
 
-    return { success: true, product };
+    return {
+      success: true,
+      product: serializeDecimals(product),
+    };
   } catch (error) {
     console.error("[PRODUCT] createProduct error:", error);
     return { success: false, error: "Failed to create product" };
@@ -347,7 +350,10 @@ export async function updateProduct(productId: string, data: UpdateProductInput)
     revalidatePath(`/products/${product.slug}`);
     revalidatePath("/");
 
-    return { success: true, product };
+    return {
+      success: true,
+      product: serializeDecimals(product),
+    };
   } catch (error) {
     console.error("[PRODUCT] updateProduct error:", error);
     return { success: false, error: "Failed to update product" };
@@ -437,7 +443,10 @@ export async function createVariant(data: CreateVariantInput) {
 
     revalidatePath("/admin/products");
 
-    return { success: true, variant };
+    return {
+      success: true,
+      variant: serializeDecimals(variant),
+    };
   } catch (error) {
     console.error("[PRODUCT] createVariant error:", error);
     return { success: false, error: "Failed to create variant" };
@@ -475,7 +484,10 @@ export async function updateVariant(variantId: string, data: UpdateVariantInput)
 
     revalidatePath("/admin/products");
 
-    return { success: true, variant };
+    return {
+      success: true,
+      variant: serializeDecimals(variant),
+    };
   } catch (error) {
     console.error("[PRODUCT] updateVariant error:", error);
     return { success: false, error: "Failed to update variant" };
@@ -514,7 +526,10 @@ export async function updateStock(variantId: string, stock: number) {
 
     revalidatePath("/admin/products");
 
-    return { success: true, variant };
+    return {
+      success: true,
+      variant: serializeDecimals(variant),
+    };
   } catch (error) {
     console.error("[PRODUCT] updateStock error:", error);
     return { success: false, error: "Failed to update stock" };

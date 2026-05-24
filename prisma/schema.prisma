@@ -458,3 +458,87 @@ model VerificationToken {
   @@unique([identifier, token])
   @@map("verification_tokens")
 }
+
+
+// ═══════════════════════════════════════════
+// TABLE 16: Site Settings (Dynamic Key-Value Store)
+// Admin panel থেকে editable — no code change needed
+// ═══════════════════════════════════════════
+
+model SiteSetting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     Json
+  group     String   @default("general") // general, shipping, payment, social, seo, appearance
+  label     String?  // Human-readable label for admin UI
+  type      String   @default("text") // text, number, boolean, image, json, color, textarea
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([group])
+  @@map("site_settings")
+}
+
+// ═══════════════════════════════════════════
+// TABLE 17: Homepage Sections (Dynamic Homepage Builder)
+// Admin controls which sections show, their order, and content
+// ═══════════════════════════════════════════
+
+model HomepageSection {
+  id        String   @id @default(cuid())
+  type      String   // hero_banner, category_grid, product_grid, collection_showcase, testimonials, promo_banner, custom_html
+  title     String?
+  subtitle  String?
+  content   Json     @default("{}") // Section-specific data (images, links, product IDs, etc.)
+  sortOrder Int      @default(0) @map("sort_order")
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([isActive, sortOrder])
+  @@map("homepage_sections")
+}
+
+// ═══════════════════════════════════════════
+// TABLE 18: Collections (Curated product groups)
+// Different from categories — collections are marketing-focused
+// ═══════════════════════════════════════════
+
+model Collection {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  description String?
+  image       String?
+  bannerImage String?  @map("banner_image")
+  isActive    Boolean  @default(true) @map("is_active")
+  isFeatured  Boolean  @default(false) @map("is_featured")
+  sortOrder   Int      @default(0) @map("sort_order")
+  productIds  Json     @default("[]") @map("product_ids") // Array of product IDs in this collection
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@index([isActive, sortOrder])
+  @@map("collections")
+}
+
+// ═══════════════════════════════════════════
+// TABLE 19: Media Library (Centralized image management)
+// ═══════════════════════════════════════════
+
+model Media {
+  id        String   @id @default(cuid())
+  url       String
+  publicId  String?  @map("public_id") // Cloudinary public ID
+  filename  String
+  mimeType  String   @map("mime_type")
+  size      Int      // bytes
+  width     Int?
+  height    Int?
+  folder    String   @default("general") // products, banners, categories, logos
+  alt       String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([folder])
+  @@map("media")
+}

@@ -790,13 +790,17 @@ export async function importProductsCSV(csvData: string) {
   }
 
   try {
-    const lines = csvData.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-    if (lines.length <= 1 || !lines[0]) return { success: false, error: "Empty or invalid CSV file" };
+    const lines = csvData
+      .split("\n")
+      .map((l) => l.trim())
+      .filter((l) => l.length > 0);
+    if (lines.length <= 1 || !lines[0])
+      return { success: false, error: "Empty or invalid CSV file" };
 
-    const header = lines[0].split(',');
-    const skuIndex = header.indexOf('SKU');
-    const stockIndex = header.indexOf('Stock');
-    const priceIndex = header.indexOf('VariantPrice');
+    const header = lines[0].split(",");
+    const skuIndex = header.indexOf("SKU");
+    const stockIndex = header.indexOf("Stock");
+    const priceIndex = header.indexOf("VariantPrice");
 
     if (skuIndex === -1 || stockIndex === -1) {
       return { success: false, error: "CSV must contain SKU and Stock columns" };
@@ -805,24 +809,28 @@ export async function importProductsCSV(csvData: string) {
     let updatedCount = 0;
 
     for (let i = 1; i < lines.length; i++) {
+      const line = lines[i];
+      if (!line) continue;
+
       // Basic CSV parsing handling quotes
       const regex = /(".*?"|[^",\s]+)(?=\s*,|\s*$)/g;
       const row = [];
       let match;
-      while ((match = regex.exec(lines[i])) !== null) {
-        row.push(match[1].replace(/^"|"$/g, '').replace(/""/g, '"'));
+      while ((match = regex.exec(line)) !== null) {
+        const val = match[1] || "";
+        row.push(val.replace(/^"|"$/g, "").replace(/""/g, '"'));
       }
 
       const sku = row[skuIndex];
       const stock = parseInt(row[stockIndex] || "0", 10);
       let price: number | undefined;
-      
+
       if (priceIndex !== -1 && row[priceIndex]) {
         price = parseFloat(row[priceIndex]);
       }
 
       if (sku && !isNaN(stock)) {
-        const updateData: any = { stock };
+        const updateData: { stock: number; price?: number } = { stock };
         if (price !== undefined && !isNaN(price)) {
           updateData.price = price;
         }
@@ -856,4 +864,3 @@ export async function importProductsCSV(csvData: string) {
     return { success: false, error: "Failed to import products" };
   }
 }
-

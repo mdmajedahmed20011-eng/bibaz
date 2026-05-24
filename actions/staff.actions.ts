@@ -8,6 +8,7 @@
 import { prisma } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
+import { Role } from "@prisma/client";
 
 export async function getStaffMembers() {
   const session = await auth();
@@ -39,7 +40,7 @@ export async function assignRole(userId: string, newRole: string) {
     return { success: false, error: "Unauthorized" };
   }
 
-  const validRoles = ["USER", "STAFF", "MANAGER", "ADMIN"];
+  const validRoles = ["CUSTOMER", "STAFF", "MANAGER", "ADMIN"];
   if (!validRoles.includes(newRole) && currentUserRole !== "SUPER_ADMIN") {
     return { success: false, error: "Invalid role assignment" };
   }
@@ -53,7 +54,7 @@ export async function assignRole(userId: string, newRole: string) {
 
     await prisma.user.update({
       where: { id: userId },
-      data: { role: newRole as any },
+      data: { role: newRole as Role },
     });
 
     revalidatePath("/admin/staff");
@@ -77,7 +78,7 @@ export async function searchUsersByEmail(emailQuery: string) {
     const users = await prisma.user.findMany({
       where: {
         email: { contains: emailQuery },
-        role: "USER",
+        role: "CUSTOMER",
       },
       take: 5,
     });

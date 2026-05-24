@@ -164,18 +164,21 @@ export async function createOrder(data: CreateOrderInput | any) {
     const total = subtotal + shippingCharge - discount;
 
     // Generate unique order number: ORD-YYYY-XXXXX
+    // Use count-based numbering to avoid collation issues with startsWith
     const year = new Date().getFullYear();
-    const lastOrder = await prisma.order.findFirst({
-      where: { orderNumber: { startsWith: `ORD-${year}` } },
-      orderBy: { createdAt: "desc" },
-      select: { orderNumber: true },
+    const yearStart = new Date(`${year}-01-01T00:00:00Z`);
+    const yearEnd = new Date(`${year + 1}-01-01T00:00:00Z`);
+
+    const orderCountThisYear = await prisma.order.count({
+      where: {
+        createdAt: {
+          gte: yearStart,
+          lt: yearEnd,
+        },
+      },
     });
 
-    let nextNum = 1;
-    if (lastOrder) {
-      const lastNum = parseInt(lastOrder.orderNumber.split("-")[2] || "0");
-      nextNum = lastNum + 1;
-    }
+    const nextNum = orderCountThisYear + 1;
     const orderNumber = `ORD-${year}-${nextNum.toString().padStart(5, "0")}`;
 
     // Create order with items

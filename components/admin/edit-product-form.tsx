@@ -1,0 +1,459 @@
+"use client";
+
+/**
+ * BIBAZ — Edit Product Form (Admin)
+ * Includes product details + variant management
+ */
+
+import {
+  updateProduct,
+  createVariant,
+  updateVariant,
+  deleteProduct,
+} from "@/actions/product.actions";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { Trash2, Plus } from "lucide-react";
+
+interface Variant {
+  id: string;
+  sku: string;
+  size: string | null;
+  color: string | null;
+  price: number;
+  stock: number;
+  isActive: boolean;
+  images: unknown;
+  createdAt: Date;
+  updatedAt: Date;
+  productId: string;
+}
+
+interface Category {
+  id: string;
+  name: string;
+  slug: string;
+}
+
+interface Product {
+  id: string;
+  name: string;
+  slug: string;
+  description: string;
+  basePrice: number;
+  categoryId: string;
+  status: string;
+  isFeatured: boolean;
+  seoTitle: string | null;
+  seoDesc: string | null;
+  variants: Variant[];
+}
+
+interface EditProductFormProps {
+  product: Product;
+  categories: Category[];
+}
+
+export function EditProductForm({ product, categories }: EditProductFormProps) {
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  const [variants, setVariants] = useState(product.variants);
+
+  // Variant form state
+  const [showVariantForm, setShowVariantForm] = useState(false);
+  const [newVariant, setNewVariant] = useState({
+    size: "",
+    color: "",
+    price: product.basePrice,
+    stock: 0,
+  });
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+    setSuccess(null);
+
+    const formData = new FormData(e.currentTarget);
+
+    const data = {
+      name: formData.get("name") as string,
+      description: formData.get("description") as string,
+      basePrice: parseFloat(formData.get("basePrice") as string),
+      categoryId: formData.get("categoryId") as string,
+      status: formData.get("status") as "DRAFT" | "ACTIVE",
+      isFeatured: formData.get("isFeatured") === "on",
+      seoTitle: (formData.get("seoTitle") as string) || undefined,
+      seoDesc: (formData.get("seoDesc") as string) || undefined,
+    };
+
+    const result = await updateProduct(product.id, data);
+    setLoading(false);
+
+    if (result.success) {
+      setSuccess("Product updated successfully!");
+    } else {
+      setError(result.error || "Failed to update product");
+    }
+  }
+
+  async function handleAddVariant(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+
+    const result = await createVariant({
+      productId: product.id,
+      size: newVariant.size || undefined,
+      color: newVariant.color || undefined,
+      price: newVariant.price,
+      stock: newVariant.stock,
+    });
+
+    if (result.success && result.variant) {
+      setVariants([
+        ...variants,
+        { ...result.variant, price: Number(result.variant.price) } as unknown as Variant,
+      ]);
+      setShowVariantForm(false);
+      setNewVariant({ size: "", color: "", price: product.basePrice, stock: 0 });
+    } else {
+      setError(result.error || "Failed to add variant");
+    }
+  }
+
+  async function handleUpdateVariantStock(variantId: string, stock: number) {
+    const result = await updateVariant(variantId, { stock });
+    if (result.success) {
+      setVariants(variants.map((v) => (v.id === variantId ? { ...v, stock } : v)));
+    }
+  }
+
+  async function handleToggleVariant(variantId: string, isActive: boolean) {
+    const result = await updateVariant(variantId, { isActive });
+    if (result.success) {
+      setVariants(variants.map((v) => (v.id === variantId ? { ...v, isActive } : v)));
+    }
+  }
+
+  async function handleDeleteProduct() {
+    if (!confirm("Are you sure you want to delete this product? This action cannot be undone.")) {
+      return;
+    }
+
+    const result = await deleteProduct(product.id);
+    if (result.success) {
+      router.push("/admin/products");
+    } else {
+      setError(result.error || "Failed to delete product");
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Product Details Form */}
+      <form
+        onSubmit={handleSubmit}
+        className="space-y-6 rounded-xl border border-gray-200 bg-white p-6"
+      >
+        <h2 className="text-lg font-semibold text-gray-900">Product Details</h2>
+
+        {/* Name */}
+        <div>
+          <label htmlFor="name" className="mb-1 block text-sm font-medium text-gray-700">
+            Product Name *
+          </label>
+          <input
+            type="text"
+            id="name"
+            name="name"
+            required
+            defaultValue={product.name}
+            className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm focus:border-gray-400 focus:outline-none"
+          />
+        </div>
+
+        {/* Description */}
+        <div>
+          <label htmlFor="description" className="mb-1 block text-sm font-medium text-gray-700">
+            Description *
+          </label>
+          <textarea
+            id="description"
+            name="description"
+            required
+            rows={5}
+            defaultValue={product.description}
+            className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm focus:border-gray-400 focus:outline-none"
+          />
+        </div>
+
+        {/* Price + Category */}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div>
+            <label htmlFor="basePrice" className="mb-1 block text-sm font-medium text-gray-700">
+              Base Price (৳) *
+            </label>
+            <input
+              type="number"
+              id="basePrice"
+              name="basePrice"
+              required
+              min={1}
+              step="0.01"
+              defaultValue={product.basePrice}
+              className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm focus:border-gray-400 focus:outline-none"
+            />
+          </div>
+          <div>
+            <label htmlFor="categoryId" className="mb-1 block text-sm font-medium text-gray-700">
+              Category *
+            </label>
+            <select
+              id="categoryId"
+              name="categoryId"
+              required
+              defaultValue={product.categoryId}
+              className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm focus:border-gray-400 focus:outline-none"
+            >
+              {categories.map((cat) => (
+                <option key={cat.id} value={cat.id}>
+                  {cat.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {/* Status + Featured */}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div>
+            <label htmlFor="status" className="mb-1 block text-sm font-medium text-gray-700">
+              Status
+            </label>
+            <select
+              id="status"
+              name="status"
+              defaultValue={product.status}
+              className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm focus:border-gray-400 focus:outline-none"
+            >
+              <option value="DRAFT">Draft</option>
+              <option value="ACTIVE">Active</option>
+              <option value="OUT_OF_STOCK">Out of Stock</option>
+              <option value="ARCHIVED">Archived</option>
+            </select>
+          </div>
+          <div className="flex items-end">
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                name="isFeatured"
+                defaultChecked={product.isFeatured}
+                className="h-4 w-4 rounded border-gray-300"
+              />
+              <span className="text-sm text-gray-700">Featured Product</span>
+            </label>
+          </div>
+        </div>
+
+        {/* SEO */}
+        <div className="border-t border-gray-100 pt-4">
+          <h3 className="mb-3 text-sm font-semibold text-gray-900">SEO (Optional)</h3>
+          <div className="space-y-4">
+            <div>
+              <label htmlFor="seoTitle" className="mb-1 block text-sm font-medium text-gray-700">
+                SEO Title
+              </label>
+              <input
+                type="text"
+                id="seoTitle"
+                name="seoTitle"
+                maxLength={60}
+                defaultValue={product.seoTitle || ""}
+                className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm focus:border-gray-400 focus:outline-none"
+              />
+            </div>
+            <div>
+              <label htmlFor="seoDesc" className="mb-1 block text-sm font-medium text-gray-700">
+                SEO Description
+              </label>
+              <textarea
+                id="seoDesc"
+                name="seoDesc"
+                maxLength={160}
+                rows={2}
+                defaultValue={product.seoDesc || ""}
+                className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm focus:border-gray-400 focus:outline-none"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Messages */}
+        {error && <p className="text-sm text-red-600">{error}</p>}
+        {success && <p className="text-sm text-green-600">{success}</p>}
+
+        {/* Actions */}
+        <div className="flex items-center justify-between">
+          <button
+            type="submit"
+            disabled={loading}
+            className="rounded-lg bg-gray-900 px-6 py-2.5 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-50"
+          >
+            {loading ? "Saving..." : "Save Changes"}
+          </button>
+          <button
+            type="button"
+            onClick={handleDeleteProduct}
+            className="flex items-center gap-2 rounded-lg border border-red-200 px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50"
+          >
+            <Trash2 className="h-4 w-4" />
+            Delete Product
+          </button>
+        </div>
+      </form>
+
+      {/* Variants Section */}
+      <div className="rounded-xl border border-gray-200 bg-white p-6">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-gray-900">Variants ({variants.length})</h2>
+          <button
+            onClick={() => setShowVariantForm(!showVariantForm)}
+            className="inline-flex items-center gap-2 rounded-lg bg-gray-100 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200"
+          >
+            <Plus className="h-4 w-4" />
+            Add Variant
+          </button>
+        </div>
+
+        {/* Add Variant Form */}
+        {showVariantForm && (
+          <form
+            onSubmit={handleAddVariant}
+            className="mb-4 space-y-3 rounded-lg border border-blue-100 bg-blue-50 p-4"
+          >
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <div>
+                <label className="mb-1 block text-xs font-medium text-gray-600">Size</label>
+                <input
+                  type="text"
+                  value={newVariant.size}
+                  onChange={(e) => setNewVariant({ ...newVariant, size: e.target.value })}
+                  placeholder="e.g., M, L, XL"
+                  className="w-full rounded border border-gray-200 px-2 py-1.5 text-sm"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium text-gray-600">Color</label>
+                <input
+                  type="text"
+                  value={newVariant.color}
+                  onChange={(e) => setNewVariant({ ...newVariant, color: e.target.value })}
+                  placeholder="e.g., Red, Blue"
+                  className="w-full rounded border border-gray-200 px-2 py-1.5 text-sm"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium text-gray-600">Price (৳)</label>
+                <input
+                  type="number"
+                  value={newVariant.price}
+                  onChange={(e) =>
+                    setNewVariant({ ...newVariant, price: parseFloat(e.target.value) })
+                  }
+                  min={1}
+                  required
+                  className="w-full rounded border border-gray-200 px-2 py-1.5 text-sm"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium text-gray-600">Stock</label>
+                <input
+                  type="number"
+                  value={newVariant.stock}
+                  onChange={(e) =>
+                    setNewVariant({ ...newVariant, stock: parseInt(e.target.value) })
+                  }
+                  min={0}
+                  required
+                  className="w-full rounded border border-gray-200 px-2 py-1.5 text-sm"
+                />
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <button
+                type="submit"
+                className="rounded bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700"
+              >
+                Add Variant
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowVariantForm(false)}
+                className="rounded border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        )}
+
+        {/* Variants List */}
+        {variants.length === 0 ? (
+          <p className="text-sm text-gray-500">
+            No variants yet. Add at least one variant with size/color/stock.
+          </p>
+        ) : (
+          <div className="space-y-2">
+            {variants.map((variant) => (
+              <div
+                key={variant.id}
+                className={`flex items-center justify-between rounded-lg border p-3 ${
+                  variant.isActive ? "border-gray-200" : "border-red-100 bg-red-50"
+                }`}
+              >
+                <div className="flex items-center gap-4">
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">
+                      {variant.size && `Size: ${variant.size}`}
+                      {variant.size && variant.color && " • "}
+                      {variant.color && `Color: ${variant.color}`}
+                      {!variant.size && !variant.color && "Default"}
+                    </p>
+                    <p className="text-xs text-gray-500">SKU: {variant.sku}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-4">
+                  <div className="text-right">
+                    <p className="text-sm font-medium">৳{variant.price.toLocaleString()}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <label className="text-xs text-gray-500">Stock:</label>
+                    <input
+                      type="number"
+                      value={variant.stock}
+                      onChange={(e) =>
+                        handleUpdateVariantStock(variant.id, parseInt(e.target.value) || 0)
+                      }
+                      min={0}
+                      className="w-16 rounded border border-gray-200 px-2 py-1 text-center text-sm"
+                    />
+                  </div>
+                  <button
+                    onClick={() => handleToggleVariant(variant.id, !variant.isActive)}
+                    className={`rounded px-2 py-1 text-xs font-medium ${
+                      variant.isActive ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+                    }`}
+                  >
+                    {variant.isActive ? "Active" : "Inactive"}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

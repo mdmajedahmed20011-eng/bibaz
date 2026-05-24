@@ -1,53 +1,823 @@
 "use server";
 
+/**
+ * BIBAZ — Order Server Actions
+ * SOP §৬B — Order Management System
+ *
+ * Guest-first: Order করতে login দরকার নেই
+ * Track: Order Number + Phone দিয়ে track করা যাবে
+ */
+
 import { prisma } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
+import {
+  createOrderSchema,
+  updateOrderStatusSchema,
+  type CreateOrderInput,
+  type UpdateOrderStatusInput,
+} from "@/lib/validators/order";
+import { initiateCODPayment } from "./payment.actions";
 
+// ═══════════════════════════════════════════
+// PUBLIC ACTIONS
+// ═══════════════════════════════════════════
+
+/**
+ * Create a new order (Guest or Logged-in)
+ * Server-side price re-calculation — NEVER trust client prices
+ * Accepts both typed CreateOrderInput and legacy checkout form format
+ */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function createOrder(data: any) {
+export async function createOrder(data: CreateOrderInput | any) {
   try {
     const session = await auth();
-    const userId = session?.user?.id;
+    const userId = session?.user?.id || null;
 
-    // Generate unique order number (e.g. ORD-2026-89421)
-    const randomNum = Math.floor(10000 + Math.random() * 90000);
-    const orderNumber = `ORD-${new Date().getFullYear()}-${randomNum}`;
+    // Normalize data — support both new format and legacy checkout form format
+    let items: { variantId: string; quantity: number }[];
+    let shippingAddress: {
+      name: string;
+      phone: string;
+      street: string;
+      city: string;
+      area: string;
+      postalCode: string;
+    };
+    let paymentMethod: "COD" | "BKASH" | "NAGAD" | "SSLCOMMERZ";
+    let guestEmail: string | undefined;
+    let couponCode: string | undefined;
 
+    if (data.shippingAddress) {
+      // New typed format (CreateOrderInput)
+      const parsed = createOrderSchema.safeParse(data);
+      if (!parsed.success) {
+        const firstIssue = parsed.error?.issues?.[0];
+        return { success: false, error: firstIssue?.message || "Invalid input" };
+      }
+      items = parsed.data.items;
+      shippingAddress = parsed.data.shippingAddress;
+      paymentMethod = parsed.data.paymentMethod;
+      guestEmail = parsed.data.guestEmail;
+      couponCode = parsed.data.couponCode;
+    } else if (data.address) {
+      // Legacy checkout form format
+      items = (data.items || []).map(
+        (item: { variantId?: string; id?: string; quantity: number }) => ({
+          variantId: item.variantId || item.id || "",
+          quantity: item.quantity,
+        })
+      );
+      shippingAddress = {
+        name: data.address.name,
+        phone: data.address.phone,
+        street: data.address.street,
+        city: data.address.city,
+        area: data.address.area,
+        postalCode: data.address.postalCode || "0000",
+      };
+      paymentMethod = (data.paymentMethod || "COD") as "COD" | "BKASH" | "NAGAD" | "SSLCOMMERZ";
+      guestEmail = data.address.email;
+      couponCode = data.couponCode;
+    } else {
+      return { success: false, error: "Invalid order data" };
+    }
+
+    // Server-side price calculation (NEVER trust client)
+    const variantIds = items.map((item) => item.variantId);
+    const variants = await prisma.productVariant.findMany({
+      where: { id: { in: variantIds }, isActive: true },
+      include: { product: { select: { status: true, name: true } } },
+    });
+
+    // Validate all variants exist and are active
+    if (variants.length !== items.length) {
+      return { success: false, error: "Some products are no longer available" };
+    }
+
+    // Validate stock
+    for (const item of items) {
+      const variant = variants.find((v) => v.id === item.variantId);
+      if (!variant) {
+        return { success: false, error: "Product variant not found" };
+      }
+      if (variant.product.status !== "ACTIVE") {
+        return { success: false, error: `${variant.product.name} is not available` };
+      }
+      if (variant.stock < item.quantity) {
+        return {
+          success: false,
+          error: `${variant.product.name}: only ${variant.stock} in stock`,
+        };
+      }
+    }
+
+    // Calculate subtotal from DB prices
+    let subtotal = 0;
+    const orderItems = items.map((item) => {
+      const variant = variants.find((v) => v.id === item.variantId)!;
+      const unitPrice = Number(variant.price);
+      const totalPrice = unitPrice * item.quantity;
+      subtotal += totalPrice;
+      return {
+        variantId: item.variantId,
+        quantity: item.quantity,
+        unitPrice,
+        totalPrice,
+      };
+    });
+
+    // Calculate shipping
+    const isDhaka = shippingAddress.city.toLowerCase().includes("dhaka");
+    const shippingCharge = isDhaka ? 80 : 150;
+
+    // Apply coupon if provided
+    let discount = 0;
+    let couponId: string | null = null;
+    if (couponCode) {
+      const coupon = await prisma.coupon.findUnique({
+        where: { code: couponCode.toUpperCase() },
+      });
+      if (coupon && coupon.isActive) {
+        if (!coupon.expiresAt || new Date(coupon.expiresAt) > new Date()) {
+          if (!coupon.maxUses || coupon.usedCount < coupon.maxUses) {
+            if (!coupon.minOrder || subtotal >= Number(coupon.minOrder)) {
+              switch (coupon.type) {
+                case "PERCENTAGE":
+                  discount = (subtotal * Number(coupon.value)) / 100;
+                  break;
+                case "FIXED":
+                  discount = Number(coupon.value);
+                  break;
+                case "FREE_SHIPPING":
+                  discount = shippingCharge;
+                  break;
+              }
+              discount = Math.min(discount, subtotal);
+              couponId = coupon.id;
+            }
+          }
+        }
+      }
+    }
+
+    const total = subtotal + shippingCharge - discount;
+
+    // Generate unique order number: ORD-YYYY-XXXXX
+    const year = new Date().getFullYear();
+    const lastOrder = await prisma.order.findFirst({
+      where: { orderNumber: { startsWith: `ORD-${year}` } },
+      orderBy: { createdAt: "desc" },
+      select: { orderNumber: true },
+    });
+
+    let nextNum = 1;
+    if (lastOrder) {
+      const lastNum = parseInt(lastOrder.orderNumber.split("-")[2] || "0");
+      nextNum = lastNum + 1;
+    }
+    const orderNumber = `ORD-${year}-${nextNum.toString().padStart(5, "0")}`;
+
+    // Create order with items
     const order = await prisma.order.create({
       data: {
         orderNumber,
-        userId: userId || null,
-        guestName: data.address.name,
-        guestPhone: data.address.phone,
-        guestEmail: data.address.email,
-        shippingAddress: data.address,
-        subtotal: data.subtotal,
-        shippingCharge: data.shippingCharge,
-        discount: data.discount,
-        total: data.total,
-        paymentMethod: data.paymentMethod,
+        userId,
+        guestName: shippingAddress.name,
+        guestPhone: shippingAddress.phone,
+        guestEmail: guestEmail || null,
+        shippingAddress: shippingAddress,
+        subtotal,
+        shippingCharge,
+        discount,
+        total,
+        paymentMethod,
+        paymentStatus: "UNPAID",
         status: "PENDING",
+        couponId,
         items: {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          create: data.items.map((item: any) => ({
-            variantId: item.variantId,
-            quantity: item.quantity,
-            unitPrice: item.price,
-            totalPrice: item.price * item.quantity,
-          })),
+          create: orderItems,
+        },
+        timeline: {
+          create: {
+            status: "PENDING",
+            note: "Order placed",
+            createdBy: userId || "GUEST",
+          },
         },
       },
     });
 
+    // Deduct stock
+    for (const item of items) {
+      await prisma.productVariant.update({
+        where: { id: item.variantId },
+        data: { stock: { decrement: item.quantity } },
+      });
+    }
+
+    // Increment coupon usage
+    if (couponId) {
+      await prisma.coupon.update({
+        where: { id: couponId },
+        data: { usedCount: { increment: 1 } },
+      });
+    }
+
+    // Initiate payment (COD)
+    if (paymentMethod === "COD") {
+      await initiateCODPayment(order.id);
+    }
+
+    // Clear user cart if logged in
     if (userId) {
-      // Revalidate account pages so orders appear
+      const cart = await prisma.cart.findUnique({ where: { userId } });
+      if (cart) {
+        await prisma.cartItem.deleteMany({ where: { cartId: cart.id } });
+      }
       revalidatePath("/account/orders");
     }
 
-    return { success: true, orderNumber: order.orderNumber };
+    // Send email notifications (non-blocking)
+    try {
+      const { sendEmail, orderConfirmationEmail, newOrderAlertEmail } = await import("@/lib/email");
+
+      const customerEmail = guestEmail || null;
+      if (customerEmail) {
+        const emailData = orderConfirmationEmail({
+          orderNumber,
+          customerName: shippingAddress.name,
+          items: orderItems.map((item, i) => ({
+            name: `Item ${i + 1}`,
+            quantity: item.quantity,
+            price: item.totalPrice,
+          })),
+          subtotal,
+          shipping: shippingCharge,
+          discount,
+          total,
+          address: `${shippingAddress.street}, ${shippingAddress.area}, ${shippingAddress.city}`,
+          paymentMethod,
+        });
+        emailData.to = customerEmail;
+        await sendEmail(emailData);
+      }
+
+      // Admin alert
+      const adminAlert = newOrderAlertEmail({
+        orderNumber,
+        customerName: shippingAddress.name,
+        total,
+        itemCount: items.length,
+      });
+      await sendEmail(adminAlert);
+    } catch (emailError) {
+      console.error("[ORDER] Email notification failed:", emailError);
+    }
+
+    revalidatePath("/admin/orders");
+
+    return { success: true, orderNumber: order.orderNumber, orderId: order.id };
   } catch (error) {
-    console.error("Order creation error:", error);
-    return { success: false, error: error instanceof Error ? error.message : "Failed to place order. Unknown error." };
+    console.error("[ORDER] createOrder error:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to place order",
+    };
+  }
+}
+
+/**
+ * Track order by order number + phone (Guest — no login required)
+ */
+export async function trackOrder(orderNumber: string, phone: string) {
+  try {
+    const order = await prisma.order.findFirst({
+      where: {
+        orderNumber,
+        guestPhone: phone,
+      },
+      include: {
+        items: {
+          include: {
+            variant: {
+              include: {
+                product: { select: { name: true, slug: true } },
+              },
+            },
+          },
+        },
+        timeline: {
+          orderBy: { createdAt: "desc" },
+        },
+      },
+    });
+
+    if (!order) {
+      return { success: false, error: "Order not found. Check your order number and phone." };
+    }
+
+    return { success: true, order };
+  } catch (error) {
+    console.error("[ORDER] trackOrder error:", error);
+    return { success: false, error: "Failed to track order" };
+  }
+}
+
+/**
+ * Get orders for logged-in user
+ */
+export async function getMyOrders(page = 1, pageSize = 10) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return { success: false, orders: [], error: "Not authenticated" };
+  }
+
+  try {
+    const skip = (page - 1) * pageSize;
+
+    const [orders, total] = await Promise.all([
+      prisma.order.findMany({
+        where: { userId: session.user.id },
+        orderBy: { createdAt: "desc" },
+        skip,
+        take: pageSize,
+        include: {
+          items: {
+            include: {
+              variant: {
+                include: {
+                  product: { select: { name: true, slug: true } },
+                },
+              },
+            },
+          },
+        },
+      }),
+      prisma.order.count({ where: { userId: session.user.id } }),
+    ]);
+
+    return {
+      success: true,
+      orders,
+      pagination: { page, pageSize, total, totalPages: Math.ceil(total / pageSize) },
+    };
+  } catch (error) {
+    console.error("[ORDER] getMyOrders error:", error);
+    return { success: false, orders: [], error: "Failed to fetch orders" };
+  }
+}
+
+/**
+ * Get order detail (Auth or Guest with phone verification)
+ */
+export async function getOrderDetail(orderId: string) {
+  const session = await auth();
+
+  try {
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+      include: {
+        items: {
+          include: {
+            variant: {
+              include: {
+                product: { select: { name: true, slug: true, id: true } },
+              },
+            },
+          },
+        },
+        timeline: {
+          orderBy: { createdAt: "desc" },
+        },
+        payments: true,
+      },
+    });
+
+    if (!order) {
+      return { success: false, order: null, error: "Order not found" };
+    }
+
+    // Authorization: user can only see their own orders
+    if (session?.user?.id && order.userId !== session.user.id) {
+      const role = (session.user as { role?: string }).role;
+      if (!["STAFF", "MANAGER", "ADMIN", "SUPER_ADMIN"].includes(role || "")) {
+        return { success: false, order: null, error: "Unauthorized" };
+      }
+    }
+
+    return { success: true, order };
+  } catch (error) {
+    console.error("[ORDER] getOrderDetail error:", error);
+    return { success: false, order: null, error: "Failed to fetch order" };
+  }
+}
+
+/**
+ * Cancel order (Customer — only if PENDING or CONFIRMED)
+ */
+export async function cancelOrder(orderId: string, reason?: string) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return { success: false, error: "Not authenticated" };
+  }
+
+  try {
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+      include: { items: true },
+    });
+
+    if (!order) return { success: false, error: "Order not found" };
+    if (order.userId !== session.user.id) {
+      return { success: false, error: "Unauthorized" };
+    }
+
+    if (!["PENDING", "CONFIRMED"].includes(order.status)) {
+      return { success: false, error: "Order cannot be cancelled at this stage" };
+    }
+
+    // Update order status
+    await prisma.order.update({
+      where: { id: orderId },
+      data: { status: "CANCELLED" },
+    });
+
+    // Add timeline entry
+    await prisma.orderTimeline.create({
+      data: {
+        orderId,
+        status: "CANCELLED",
+        note: reason || "Cancelled by customer",
+        createdBy: session.user.id,
+      },
+    });
+
+    // Restore stock
+    for (const item of order.items) {
+      await prisma.productVariant.update({
+        where: { id: item.variantId },
+        data: { stock: { increment: item.quantity } },
+      });
+    }
+
+    revalidatePath("/account/orders");
+    revalidatePath("/admin/orders");
+
+    return { success: true };
+  } catch (error) {
+    console.error("[ORDER] cancelOrder error:", error);
+    return { success: false, error: "Failed to cancel order" };
+  }
+}
+
+// ═══════════════════════════════════════════
+// ADMIN ACTIONS
+// ═══════════════════════════════════════════
+
+/**
+ * Get all orders (Admin — with filters)
+ */
+export async function getAdminOrders(options?: {
+  status?: string;
+  paymentStatus?: string;
+  search?: string;
+  page?: number;
+  pageSize?: number;
+  dateFrom?: string;
+  dateTo?: string;
+}) {
+  const session = await auth();
+  if (!session?.user) return { success: false, orders: [], error: "Not authenticated" };
+
+  const role = (session.user as { role?: string }).role;
+  if (!["STAFF", "MANAGER", "ADMIN", "SUPER_ADMIN"].includes(role || "")) {
+    return { success: false, orders: [], error: "Insufficient permissions" };
+  }
+
+  try {
+    const {
+      status,
+      paymentStatus,
+      search,
+      page = 1,
+      pageSize = 20,
+      dateFrom,
+      dateTo,
+    } = options || {};
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const where: any = {};
+
+    if (status) where.status = status;
+    if (paymentStatus) where.paymentStatus = paymentStatus;
+
+    if (search) {
+      where.OR = [
+        { orderNumber: { contains: search } },
+        { guestName: { contains: search } },
+        { guestPhone: { contains: search } },
+        { guestEmail: { contains: search } },
+      ];
+    }
+
+    if (dateFrom || dateTo) {
+      where.createdAt = {};
+      if (dateFrom) where.createdAt.gte = new Date(dateFrom);
+      if (dateTo) where.createdAt.lte = new Date(dateTo);
+    }
+
+    const skip = (page - 1) * pageSize;
+
+    const [orders, total] = await Promise.all([
+      prisma.order.findMany({
+        where,
+        orderBy: { createdAt: "desc" },
+        skip,
+        take: pageSize,
+        include: {
+          items: {
+            include: {
+              variant: {
+                include: { product: { select: { name: true } } },
+              },
+            },
+          },
+          user: { select: { name: true, email: true } },
+        },
+      }),
+      prisma.order.count({ where }),
+    ]);
+
+    return {
+      success: true,
+      orders,
+      pagination: { page, pageSize, total, totalPages: Math.ceil(total / pageSize) },
+    };
+  } catch (error) {
+    console.error("[ORDER] getAdminOrders error:", error);
+    return { success: false, orders: [], error: "Failed to fetch orders" };
+  }
+}
+
+/**
+ * Update order status (Admin/Staff)
+ */
+export async function updateOrderStatus(data: UpdateOrderStatusInput) {
+  const session = await auth();
+  if (!session?.user) return { success: false, error: "Not authenticated" };
+
+  const role = (session.user as { role?: string }).role;
+  if (!["STAFF", "MANAGER", "ADMIN", "SUPER_ADMIN"].includes(role || "")) {
+    return { success: false, error: "Insufficient permissions" };
+  }
+
+  const parsed = updateOrderStatusSchema.safeParse(data);
+  if (!parsed.success) {
+    const firstIssue = parsed.error?.issues?.[0];
+    return { success: false, error: firstIssue?.message || "Invalid input" };
+  }
+
+  try {
+    const { orderId, status, note } = parsed.data;
+
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+      select: { status: true, items: true },
+    });
+
+    if (!order) return { success: false, error: "Order not found" };
+
+    // Update order status
+    await prisma.order.update({
+      where: { id: orderId },
+      data: { status },
+    });
+
+    // Add timeline entry
+    await prisma.orderTimeline.create({
+      data: {
+        orderId,
+        status,
+        note: note || `Status changed to ${status}`,
+        createdBy: session.user.id,
+      },
+    });
+
+    // If confirmed, mark payment as pending confirmation
+    if (status === "CONFIRMED" && order.status === "PENDING") {
+      // COD: payment collected on delivery
+    }
+
+    // If cancelled/returned, restore stock
+    if (
+      ["CANCELLED", "RETURNED"].includes(status) &&
+      !["CANCELLED", "RETURNED", "REFUNDED"].includes(order.status)
+    ) {
+      for (const item of order.items) {
+        await prisma.productVariant.update({
+          where: { id: item.variantId },
+          data: { stock: { increment: item.quantity } },
+        });
+      }
+    }
+
+    // Audit log
+    await prisma.auditLog.create({
+      data: {
+        adminId: session.user.id as string,
+        action: "UPDATE_ORDER_STATUS",
+        entity: "Order",
+        entityId: orderId,
+        oldValue: { status: order.status },
+        newValue: { status, note },
+      },
+    });
+
+    // Send email notifications on key status changes
+    try {
+      const { sendEmail, orderShippedEmail } = await import("@/lib/email");
+      const fullOrder = await prisma.order.findUnique({
+        where: { id: orderId },
+        select: { guestEmail: true, guestName: true, orderNumber: true },
+      });
+
+      if (fullOrder?.guestEmail) {
+        if (status === "SHIPPED") {
+          const emailData = orderShippedEmail({
+            orderNumber: fullOrder.orderNumber,
+            customerName: fullOrder.guestName || "Customer",
+            trackingNumber: parsed.data.trackingNumber,
+          });
+          emailData.to = fullOrder.guestEmail;
+          await sendEmail(emailData);
+        }
+      }
+    } catch (emailError) {
+      // Don't fail the status update if email fails
+      console.error("[ORDER] Email notification failed:", emailError);
+    }
+
+    revalidatePath("/admin/orders");
+    revalidatePath(`/admin/orders/${orderId}`);
+
+    return { success: true };
+  } catch (error) {
+    console.error("[ORDER] updateOrderStatus error:", error);
+    return { success: false, error: "Failed to update order status" };
+  }
+}
+
+/**
+ * Get admin dashboard stats
+ */
+export async function getAdminDashboardStats() {
+  const session = await auth();
+  if (!session?.user) return { success: false, error: "Not authenticated" };
+
+  const role = (session.user as { role?: string }).role;
+  if (!["STAFF", "MANAGER", "ADMIN", "SUPER_ADMIN"].includes(role || "")) {
+    return { success: false, error: "Insufficient permissions" };
+  }
+
+  try {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const [
+      todayOrders,
+      pendingOrders,
+      totalRevenue,
+      todayRevenue,
+      totalProducts,
+      lowStockCount,
+      totalCustomers,
+      recentOrders,
+    ] = await Promise.all([
+      prisma.order.count({ where: { createdAt: { gte: today } } }),
+      prisma.order.count({ where: { status: "PENDING" } }),
+      prisma.order.aggregate({
+        where: { status: { in: ["CONFIRMED", "PROCESSING", "SHIPPED", "DELIVERED"] } },
+        _sum: { total: true },
+      }),
+      prisma.order.aggregate({
+        where: {
+          createdAt: { gte: today },
+          status: { in: ["CONFIRMED", "PROCESSING", "SHIPPED", "DELIVERED"] },
+        },
+        _sum: { total: true },
+      }),
+      prisma.product.count({ where: { deletedAt: null } }),
+      prisma.productVariant.count({ where: { stock: { lt: 5 }, isActive: true } }),
+      prisma.user.count({ where: { role: "CUSTOMER" } }),
+      prisma.order.findMany({
+        orderBy: { createdAt: "desc" },
+        take: 10,
+        select: {
+          id: true,
+          orderNumber: true,
+          guestName: true,
+          total: true,
+          status: true,
+          paymentStatus: true,
+          createdAt: true,
+        },
+      }),
+    ]);
+
+    return {
+      success: true,
+      stats: {
+        todayOrders,
+        pendingOrders,
+        totalRevenue: Number(totalRevenue._sum.total || 0),
+        todayRevenue: Number(todayRevenue._sum.total || 0),
+        totalProducts,
+        lowStockCount,
+        totalCustomers,
+        recentOrders,
+      },
+    };
+  } catch (error) {
+    console.error("[ORDER] getAdminDashboardStats error:", error);
+    return { success: false, error: "Failed to fetch dashboard stats" };
+  }
+}
+
+/**
+ * Bulk update order status (Admin)
+ */
+export async function bulkUpdateOrderStatus(
+  orderIds: string[],
+  status: "CONFIRMED" | "PROCESSING" | "SHIPPED" | "DELIVERED" | "CANCELLED",
+  note?: string
+) {
+  const session = await auth();
+  if (!session?.user) return { success: false, error: "Not authenticated" };
+
+  const role = (session.user as { role?: string }).role;
+  if (!["ADMIN", "SUPER_ADMIN"].includes(role || "")) {
+    return { success: false, error: "Only admins can perform bulk updates" };
+  }
+
+  if (!orderIds.length) return { success: false, error: "No orders selected" };
+
+  try {
+    let updated = 0;
+
+    for (const orderId of orderIds) {
+      const order = await prisma.order.findUnique({
+        where: { id: orderId },
+        select: { status: true, items: true },
+      });
+
+      if (!order) continue;
+
+      // Skip if already in target status
+      if (order.status === status) continue;
+
+      await prisma.order.update({
+        where: { id: orderId },
+        data: { status },
+      });
+
+      await prisma.orderTimeline.create({
+        data: {
+          orderId,
+          status,
+          note: note || `Bulk status update to ${status}`,
+          createdBy: session.user.id,
+        },
+      });
+
+      // Restore stock if cancelling
+      if (status === "CANCELLED" && !["CANCELLED", "RETURNED", "REFUNDED"].includes(order.status)) {
+        for (const item of order.items) {
+          await prisma.productVariant.update({
+            where: { id: item.variantId },
+            data: { stock: { increment: item.quantity } },
+          });
+        }
+      }
+
+      updated++;
+    }
+
+    // Audit log
+    await prisma.auditLog.create({
+      data: {
+        adminId: session.user.id as string,
+        action: "BULK_UPDATE_ORDER_STATUS",
+        entity: "Order",
+        entityId: orderIds.join(","),
+        newValue: { status, count: updated, note },
+      },
+    });
+
+    revalidatePath("/admin/orders");
+    return { success: true, updated };
+  } catch (error) {
+    console.error("[ORDER] bulkUpdateOrderStatus error:", error);
+    return { success: false, error: "Failed to bulk update orders" };
   }
 }

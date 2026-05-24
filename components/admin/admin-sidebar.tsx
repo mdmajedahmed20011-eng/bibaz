@@ -20,6 +20,7 @@ import {
   ChevronRight,
   Star,
   Store,
+  Sparkles,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -36,6 +37,23 @@ const navSections = [
         href: "/admin",
         icon: LayoutDashboard,
         roles: ["STAFF", "MANAGER", "ADMIN", "SUPER_ADMIN"],
+      },
+    ],
+  },
+  {
+    title: "Storefront",
+    items: [
+      {
+        label: "Homepage Builder",
+        href: "/admin/homepage",
+        icon: LayoutDashboard,
+        roles: ["ADMIN", "SUPER_ADMIN"],
+      },
+      {
+        label: "Collections",
+        href: "/admin/collections",
+        icon: Sparkles,
+        roles: ["ADMIN", "SUPER_ADMIN"],
       },
     ],
   },

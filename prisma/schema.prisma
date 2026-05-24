@@ -155,7 +155,6 @@ model Product {
   slug        String        @unique
   description String        
   basePrice      Decimal        @map("base_price")
-  compareAtPrice Decimal?       @map("compare_at_price")
   categoryId     String         @map("category_id")
   status      ProductStatus @default(DRAFT)
   isFeatured  Boolean       @default(false) @map("is_featured")

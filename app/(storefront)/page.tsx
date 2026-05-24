@@ -10,18 +10,30 @@ export default async function HomePage() {
         select: { products: true },
       },
     },
-    take: 6, // Fetch top 6 for the layout
+    take: 6,
   });
 
   // Fetch real active products from DB (latest)
+  // Use select to avoid fetching compare_at_price (column may not exist in production DB yet)
   const products = await prisma.product.findMany({
     where: { status: "ACTIVE", deletedAt: null },
-    take: 8, // Need 8 for New Arrivals
-    include: {
-      category: true,
+    take: 8,
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      basePrice: true,
+      createdAt: true,
+      category: {
+        select: { name: true, slug: true },
+      },
       variants: {
         where: { isActive: true },
-        take: 1, // Get first variant for pricing/images
+        take: 1,
+        select: {
+          price: true,
+          images: true,
+        },
       },
     },
     orderBy: { createdAt: "desc" },

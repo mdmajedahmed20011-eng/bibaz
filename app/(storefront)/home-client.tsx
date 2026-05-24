@@ -122,7 +122,7 @@ export function HomeUI({
       name: p.name,
       slug: p.slug,
       price: variantPrice,
-      compareAtPrice: p.compareAtPrice ? Number(p.compareAtPrice) : Math.round(variantPrice * 1.2),
+      compareAtPrice: Math.round(variantPrice * 1.2),
       image:
         Array.isArray(variantImages) && variantImages.length > 0
           ? variantImages[0]

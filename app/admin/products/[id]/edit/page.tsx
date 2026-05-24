@@ -19,8 +19,34 @@ export default async function AdminEditProductPage({
     [
       prisma.product.findUnique({
         where: { id },
-        include: {
-          variants: { orderBy: { createdAt: "asc" } },
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          description: true,
+          basePrice: true,
+          categoryId: true,
+          status: true,
+          isFeatured: true,
+          seoTitle: true,
+          seoDesc: true,
+          ogImage: true,
+          createdAt: true,
+          updatedAt: true,
+          variants: {
+            orderBy: { createdAt: "asc" },
+            select: {
+              id: true,
+              sku: true,
+              size: true,
+              color: true,
+              price: true,
+              stock: true,
+              images: true,
+              isActive: true,
+              createdAt: true,
+            },
+          },
           category: { select: { id: true, name: true } },
         },
       }),
@@ -42,7 +68,7 @@ export default async function AdminEditProductPage({
   const serializedProduct = {
     ...product,
     basePrice: Number(product.basePrice),
-    compareAtPrice: product.compareAtPrice ? Number(product.compareAtPrice) : null,
+    compareAtPrice: null,
     variants: product.variants.map((v) => ({
       ...v,
       price: Number(v.price),

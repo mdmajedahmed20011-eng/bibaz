@@ -104,7 +104,15 @@ export async function getProducts(options?: {
         orderBy,
         skip,
         take: pageSize,
-        include: {
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          description: true,
+          basePrice: true,
+          status: true,
+          isFeatured: true,
+          createdAt: true,
           category: { select: { name: true, slug: true } },
           variants: {
             where: { isActive: true },
@@ -146,11 +154,32 @@ export async function getProductBySlug(slug: string) {
   try {
     const product = await prisma.product.findUnique({
       where: { slug, deletedAt: null },
-      include: {
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        description: true,
+        basePrice: true,
+        status: true,
+        isFeatured: true,
+        seoTitle: true,
+        seoDesc: true,
+        ogImage: true,
+        createdAt: true,
+        categoryId: true,
         category: { select: { id: true, name: true, slug: true } },
         variants: {
           where: { isActive: true },
           orderBy: { createdAt: "asc" },
+          select: {
+            id: true,
+            sku: true,
+            size: true,
+            color: true,
+            price: true,
+            stock: true,
+            images: true,
+          },
         },
         reviews: {
           where: { status: "APPROVED" },
@@ -280,7 +309,6 @@ export async function createProduct(data: CreateProductInput) {
         slug: finalSlug,
         description: parsed.data.description,
         basePrice: parsed.data.basePrice,
-        compareAtPrice: parsed.data.compareAtPrice,
         categoryId: parsed.data.categoryId,
         status: parsed.data.status || "DRAFT",
         isFeatured: parsed.data.isFeatured || false,

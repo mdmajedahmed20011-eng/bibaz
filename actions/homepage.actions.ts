@@ -133,27 +133,3 @@ export async function deleteHomepageSection(id: string) {
     return { success: false, error: "Failed to delete section" };
   }
 }
-
-export async function reorderHomepageSections(updates: { id: string; sortOrder: number }[]) {
-  const { authorized, error } = await requireAdmin();
-  if (!authorized) return { success: false, error };
-
-  try {
-    // Execute all updates in a single transaction
-    await prisma.$transaction(
-      updates.map((update) =>
-        prisma.homepageSection.update({
-          where: { id: update.id },
-          data: { sortOrder: update.sortOrder },
-        })
-      )
-    );
-
-    revalidatePath("/");
-    revalidatePath("/admin/homepage");
-    return { success: true };
-  } catch (error) {
-    console.error("[HOMEPAGE] reorderHomepageSections error:", error);
-    return { success: false, error: "Failed to reorder sections" };
-  }
-}

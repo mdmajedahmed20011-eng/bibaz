@@ -44,9 +44,12 @@ export function LoginForm() {
       if (res?.error) {
         setError("Invalid email or password. Please try again.");
         setIsLoading(false);
+      } else if (res?.ok) {
+        // Successful login — force full page reload to pick up session
+        window.location.replace(callbackUrl);
       } else {
-        // Successful login, redirect to callbackUrl
-        window.location.href = callbackUrl;
+        setError("Login failed. Please try again.");
+        setIsLoading(false);
       }
     } catch (err: unknown) {
       console.error(err);

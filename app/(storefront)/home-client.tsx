@@ -150,7 +150,7 @@ export function HomeClient({ dbSections = [] }: { dbSections: SectionData[] }) {
 
   const products = ALL_PRODUCTS.slice(0, 8);
 
-  const renderCategoryGrid = (section: SectionData, key: string) => (
+  const renderCategoryGrid = (section: SectionData | null, key: string) => (
     <section key={key} className="py-20 md:py-24 bg-[#f8f5f0] border-b border-border/40">
       <div className="container mx-auto px-6 md:px-12 lg:px-16 max-w-7xl">
         <div className="text-center max-w-lg mx-auto mb-14 md:mb-16">
@@ -200,7 +200,7 @@ export function HomeClient({ dbSections = [] }: { dbSections: SectionData[] }) {
     </section>
   );
 
-  const renderProductGrid = (section: SectionData, key: string) => (
+  const renderProductGrid = (section: SectionData | null, key: string) => (
     <section key={key} className="py-20 md:py-28 bg-white border-b border-border/20">
       <div className="container mx-auto px-6 md:px-12 lg:px-16 max-w-7xl">
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 md:mb-16 gap-6">
@@ -233,7 +233,7 @@ export function HomeClient({ dbSections = [] }: { dbSections: SectionData[] }) {
     </section>
   );
 
-  const renderLookbook = (section: SectionData, key: string) => (
+  const renderLookbook = (section: SectionData | null, key: string) => (
     <section
       key={key}
       className="py-20 md:py-24 bg-[#f8f5f0] border-b border-border/40 overflow-hidden relative"
@@ -337,7 +337,7 @@ export function HomeClient({ dbSections = [] }: { dbSections: SectionData[] }) {
     </section>
   );
 
-  const renderTestimonials = (section: SectionData, key: string) => (
+  const renderTestimonials = (section: SectionData | null, key: string) => (
     <section key={key} className="py-20 md:py-24 bg-[#f8f5f0] border-b border-border/20">
       <div className="container mx-auto px-6 md:px-12 lg:px-16 max-w-5xl">
         <div className="text-center max-w-sm mx-auto mb-10">
@@ -386,11 +386,11 @@ export function HomeClient({ dbSections = [] }: { dbSections: SectionData[] }) {
     </section>
   );
 
-  const renderCustomHtml = (section: SectionData, key: string) => (
+  const renderCustomHtml = (section: SectionData | null, key: string) => (
     <section key={key} className="py-12 border-b border-border/20">
       <div
         className="container mx-auto px-6"
-        dangerouslySetInnerHTML={{ __html: section.content?.html || "" }}
+        dangerouslySetInnerHTML={{ __html: section?.content?.html || "" }}
       />
     </section>
   );

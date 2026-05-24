@@ -59,7 +59,8 @@ export async function sendEmail(options: EmailOptions): Promise<EmailResult> {
 
 async function sendViaSMTP(options: EmailOptions): Promise<EmailResult> {
   // Dynamic import to avoid bundling nodemailer when not needed
-  const nodemailer = await import("nodemailer");
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const nodemailer = require("nodemailer") as typeof import("nodemailer");
 
   const transporter = nodemailer.createTransport({
     host: process.env.SMTP_HOST || "smtp.hostinger.com",

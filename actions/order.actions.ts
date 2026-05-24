@@ -92,7 +92,15 @@ export async function createOrder(data: CreateOrderInput | any) {
 
     // Validate all variants exist and are active
     if (variants.length !== items.length) {
-      return { success: false, error: "Some products are no longer available" };
+      // Find which variants are missing
+      const foundIds = new Set(variants.map((v) => v.id));
+      const missingIds = variantIds.filter((id) => !foundIds.has(id));
+      console.error("[ORDER] Missing variant IDs:", missingIds);
+      return {
+        success: false,
+        error:
+          "Your cart contains items that are no longer available. Please clear your cart and re-add products.",
+      };
     }
 
     // Validate stock

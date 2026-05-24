@@ -18,6 +18,7 @@ import { Separator } from "@/components/ui/separator";
 import { COUPON_CODES } from "@/lib/constants";
 import { ShoppingBag, Tag, CheckCircle2, XCircle, X, Ticket } from "lucide-react";
 import { createOrder } from "@/actions/order.actions";
+import { validateCartItems } from "@/actions/validate-cart.actions";
 
 interface AddressData {
   name: string;
@@ -151,7 +152,23 @@ export function CheckoutForm() {
     e.preventDefault();
     if (!validateAddress()) return;
     setIsSubmitting(true);
-    
+
+    // Validate cart items against DB before order
+    const variantIds = items.map((i) => i.variantId);
+    const validation = await validateCartItems(variantIds);
+
+    if (validation.invalidIds && validation.invalidIds.length > 0) {
+      // Remove invalid items from cart
+      for (const invalidId of validation.invalidIds) {
+        useCartStore.getState().removeItem(invalidId);
+      }
+      alert(
+        `${validation.invalidIds.length} item(s) in your cart are no longer available and have been removed. Please review and try again.`
+      );
+      setIsSubmitting(false);
+      return;
+    }
+
     const orderData = {
       address,
       paymentMethod,
@@ -161,9 +178,9 @@ export function CheckoutForm() {
       discount: discountAmount,
       total,
     };
-    
+
     const res = await createOrder(orderData);
-    
+
     if (res.success && res.orderNumber) {
       setPlacedOrderNumber(res.orderNumber);
       setOrderPlaced(true);
@@ -172,7 +189,7 @@ export function CheckoutForm() {
     } else {
       alert(res.error || "Something went wrong. Please try again.");
     }
-    
+
     setIsSubmitting(false);
   };
 

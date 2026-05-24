@@ -44,12 +44,6 @@ const navSections = [
     title: "Storefront",
     items: [
       {
-        label: "Homepage Builder",
-        href: "/admin/homepage",
-        icon: LayoutDashboard,
-        roles: ["ADMIN", "SUPER_ADMIN"],
-      },
-      {
         label: "Collections",
         href: "/admin/collections",
         icon: Sparkles,

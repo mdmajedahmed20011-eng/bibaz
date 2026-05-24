@@ -21,6 +21,7 @@ import {
   Star,
   Store,
   Sparkles,
+  SlidersHorizontal,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -67,6 +68,12 @@ const navSections = [
         roles: ["MANAGER", "ADMIN", "SUPER_ADMIN"],
       },
       {
+        label: "Bulk Stock",
+        href: "/admin/products/bulk-stock",
+        icon: SlidersHorizontal,
+        roles: ["STAFF", "MANAGER", "ADMIN", "SUPER_ADMIN"],
+      },
+      {
         label: "Reviews",
         href: "/admin/reviews",
         icon: Star,
@@ -74,6 +81,7 @@ const navSections = [
       },
     ],
   },
+
   {
     title: "Sales",
     items: [
@@ -205,7 +213,7 @@ export function AdminSidebar({ role }: AdminSidebarProps) {
         {!collapsed ? (
           <div className="rounded-lg bg-gradient-to-r from-blue-50 to-indigo-50 p-3">
             <p className="text-[11px] font-semibold text-blue-900">BIBAZ Admin</p>
-            <p className="text-[10px] text-blue-600">v1.0 • Phase 3 Complete</p>
+            <p className="text-[10px] text-blue-600">v1.1 • Premium Suite Live</p>
           </div>
         ) : (
           <div className="flex justify-center">

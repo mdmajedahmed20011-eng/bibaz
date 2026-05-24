@@ -635,3 +635,51 @@ export async function updateProductCollections(productId: string, collectionIds:
     return { success: false, error: "Failed to update product collections" };
   }
 }
+
+/**
+ * Bulk update stock for multiple variants in a single transaction (Staff+)
+ */
+export async function bulkUpdateStock(updates: { variantId: string; stock: number }[]) {
+  const session = await auth();
+  if (!session?.user) return { success: false, error: "Not authenticated" };
+
+  const role = (session.user as { role?: string }).role;
+  const allowedRoles = ["STAFF", "MANAGER", "ADMIN", "SUPER_ADMIN"];
+  if (!allowedRoles.includes(role || "")) {
+    return { success: false, error: "Insufficient permissions" };
+  }
+
+  if (!updates || updates.length === 0) {
+    return { success: false, error: "No updates provided" };
+  }
+
+  try {
+    // Perform bulk updates inside a single secure transactional block
+    await prisma.$transaction(
+      updates.map((up) =>
+        prisma.productVariant.update({
+          where: { id: up.variantId },
+          data: { stock: up.stock },
+        })
+      )
+    );
+
+    // Audit log
+    await prisma.auditLog.create({
+      data: {
+        adminId: session.user.id!,
+        action: "BULK_UPDATE_STOCK",
+        entity: "ProductVariant",
+        entityId: "BULK",
+        newValue: { updates },
+      },
+    });
+
+    revalidatePath("/admin/products");
+
+    return { success: true };
+  } catch (error) {
+    console.error("[PRODUCT] bulkUpdateStock error:", error);
+    return { success: false, error: "Failed to bulk update stock" };
+  }
+}

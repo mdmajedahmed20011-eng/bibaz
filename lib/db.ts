@@ -36,7 +36,7 @@ function createPrismaClient() {
     user,
     password,
     database,
-    connectionLimit: 5,
+    connectionLimit: 2,
     connectTimeout: 30000,
     acquireTimeout: 30000,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -50,6 +50,5 @@ function createPrismaClient() {
 
 export const prisma = globalForPrisma.prisma ?? createPrismaClient();
 
-if (process.env.NODE_ENV !== "production") {
-  globalForPrisma.prisma = prisma;
-}
+// Always store prisma in globalThis in all environments to prevent connection leaks in Next.js Server Actions
+globalForPrisma.prisma = prisma;

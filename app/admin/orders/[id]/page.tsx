@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * BIBAZ — Admin Order Detail Page
  * SOP §৬F — Order detail + status update + timeline
@@ -23,14 +24,20 @@ export default async function AdminOrderDetailPage({
   }
 
   const order = result.order;
-  const address = order.shippingAddress as {
-    name: string;
-    phone: string;
-    street: string;
-    city: string;
-    area: string;
-    postalCode: string;
-  };
+
+  // Safely parse shipping address to prevent any JSON parsing or null pointer crashes
+  let address: any = {};
+  if (order.shippingAddress) {
+    if (typeof order.shippingAddress === "string") {
+      try {
+        address = JSON.parse(order.shippingAddress);
+      } catch {
+        address = { street: order.shippingAddress };
+      }
+    } else {
+      address = order.shippingAddress;
+    }
+  }
 
   // Parse initial delivery date and clean notes
   let deliveryDate = "";
@@ -76,7 +83,7 @@ export default async function AdminOrderDetailPage({
           <div className="rounded-xl border border-gray-200 bg-white p-6">
             <h2 className="mb-4 text-lg font-semibold text-gray-900">Order Items</h2>
             <div className="space-y-3">
-              {order.items.map((item) => (
+              {order.items.map((item: any) => (
                 <div
                   key={item.id}
                   className="flex items-center justify-between rounded-lg border border-gray-100 p-3"
@@ -143,7 +150,7 @@ export default async function AdminOrderDetailPage({
           <div className="rounded-xl border border-gray-200 bg-white p-6">
             <h2 className="mb-4 text-lg font-semibold text-gray-900">Order Timeline</h2>
             <div className="space-y-4">
-              {order.timeline.map((entry, index) => (
+              {order.timeline.map((entry: any, index: number) => (
                 <div key={entry.id} className="flex gap-3">
                   <div className="flex flex-col items-center">
                     <div
@@ -216,13 +223,15 @@ export default async function AdminOrderDetailPage({
           <div className="rounded-xl border border-gray-200 bg-white p-6">
             <h2 className="mb-4 text-lg font-semibold text-gray-900">Shipping Address</h2>
             <div className="text-sm text-gray-700">
-              <p className="font-medium">{address.name}</p>
-              <p>{address.street}</p>
+              <p className="font-medium">{address?.name || order.guestName || "—"}</p>
+              <p>{address?.street || "—"}</p>
               <p>
-                {address.area}, {address.city}
+                {address?.area || ""}
+                {address?.area && address?.city ? ", " : ""}
+                {address?.city || ""}
               </p>
-              <p>{address.postalCode}</p>
-              <p className="mt-2 text-gray-500">{address.phone}</p>
+              <p>{address?.postalCode || ""}</p>
+              <p className="mt-2 text-gray-500">{address?.phone || order.guestPhone}</p>
             </div>
           </div>
 

@@ -419,7 +419,7 @@ export async function createVariant(data: CreateVariantInput) {
         color: parsed.data.color,
         price: parsed.data.price,
         stock: parsed.data.stock,
-        images: [],
+        images: parsed.data.images || [],
       },
     });
 

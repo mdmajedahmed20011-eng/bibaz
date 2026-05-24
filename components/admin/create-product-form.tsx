@@ -79,6 +79,7 @@ export function CreateProductForm({ categories }: CreateProductFormProps) {
         color: variantColor || undefined,
         price: parseFloat(basePrice),
         stock: variantStock,
+        images: images,
       });
 
       if (variantResult.success && variantResult.variant) {

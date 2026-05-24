@@ -37,6 +37,7 @@ export default async function AdminEditProductPage({
             orderBy: { createdAt: "asc" },
             select: {
               id: true,
+              productId: true,
               sku: true,
               size: true,
               color: true,
@@ -45,6 +46,7 @@ export default async function AdminEditProductPage({
               images: true,
               isActive: true,
               createdAt: true,
+              updatedAt: true,
             },
           },
           category: { select: { id: true, name: true } },

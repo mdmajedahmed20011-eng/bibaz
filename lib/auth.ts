@@ -16,7 +16,9 @@ import { prisma } from "./db";
 import { loginSchema } from "./validators/auth";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
-  adapter: PrismaAdapter(prisma),
+  // Note: adapter removed for JWT strategy compatibility
+  // PrismaAdapter is only needed for database sessions, not JWT
+  // OAuth account linking handled manually in jwt callback
   session: {
     strategy: "jwt",
     maxAge: 7 * 24 * 60 * 60, // 7 days

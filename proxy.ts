@@ -1,28 +1,25 @@
 /**
  * BIBAZ — Proxy (Next.js 16)
- * Formerly middleware.ts — renamed in Next.js 16
- *
- * Purpose:
- * - Protect admin routes (auth check)
- * - Add security headers
- * - Handle redirects
+ * 
+ * ONLY protects /admin routes.
+ * All other routes (including /account) handle their own auth via session checks.
  */
 
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 export function proxy(request: NextRequest) {
-  const { pathname } = request.nextUrl;
-
-  // Protect admin and account routes
-  if (pathname.startsWith("/admin") || pathname.startsWith("/account")) {
+  // Only protect admin routes
+  if (request.nextUrl.pathname.startsWith("/admin")) {
     const sessionToken =
+      request.cookies.get("authjs.session-token")?.value ||
+      request.cookies.get("__Secure-authjs.session-token")?.value ||
       request.cookies.get("next-auth.session-token")?.value ||
       request.cookies.get("__Secure-next-auth.session-token")?.value;
 
     if (!sessionToken) {
       const loginUrl = new URL("/login", request.url);
-      loginUrl.searchParams.set("callbackUrl", pathname);
+      loginUrl.searchParams.set("callbackUrl", request.nextUrl.pathname);
       return NextResponse.redirect(loginUrl);
     }
   }
@@ -30,12 +27,7 @@ export function proxy(request: NextRequest) {
   return NextResponse.next();
 }
 
-// Routes that proxy should run on
+// ONLY run on admin routes — nothing else
 export const config = {
-  matcher: [
-    // Admin routes (protected)
-    "/admin/:path*",
-    // Skip static files and API routes
-    "/((?!_next/static|_next/image|favicon.ico|api).*)",
-  ],
+  matcher: ["/admin/:path*"],
 };

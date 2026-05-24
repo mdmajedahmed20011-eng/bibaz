@@ -111,10 +111,13 @@ export default async function ProductPage({ params }: ProductPageProps) {
     description: product.description,
     basePrice: minPrice,
     compareAtPrice,
-    category: { name: product.category.name, slug: product.category.slug },
+    category: {
+      name: product.category?.name || "Uncategorized",
+      slug: product.category?.slug || "uncategorized",
+    },
     images,
     variants: mappedVariants,
-    features: getFeatures(product.category.name),
+    features: getFeatures(product.category?.name || "Uncategorized"),
     deliveryInfo: "Dhaka: ৳80 (2-3 days) | Outside Dhaka: ৳150 (3-5 days)",
   };
 

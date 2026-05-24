@@ -39,7 +39,7 @@ export default async function AdminBulkStockPage() {
   const serializedProducts = products.map((prod) => ({
     id: prod.id,
     name: prod.name,
-    category: { name: prod.category.name },
+    category: { name: prod.category?.name || "Uncategorized" },
     variants: prod.variants.map((v) => ({
       id: v.id,
       sku: v.sku,

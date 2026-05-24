@@ -61,10 +61,10 @@ export function serializeDecimals<T>(obj: T): T {
   if (obj === null || obj === undefined) return obj;
 
   if (typeof obj === "object") {
-    // Check if it's a Prisma Decimal (Prisma's Decimal implements decimal.js with a toNumber method)
     if (
-      (obj as any).constructor &&
-      (obj as any).constructor.name === "Decimal" &&
+      obj !== null &&
+      typeof obj === "object" &&
+      "toNumber" in obj &&
       typeof (obj as any).toNumber === "function"
     ) {
       return (obj as any).toNumber() as unknown as T;

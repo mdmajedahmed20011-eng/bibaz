@@ -832,3 +832,94 @@ export async function bulkUpdateOrderStatus(
     return { success: false, error: "Failed to bulk update orders" };
   }
 }
+
+/**
+ * Update internal notes / delivery date for an order (Admin+)
+ */
+export async function updateOrderNotes(orderId: string, notes: string) {
+  const session = await auth();
+  if (!session?.user) return { success: false, error: "Not authenticated" };
+
+  const role = (session.user as { role?: string }).role;
+  if (!["STAFF", "MANAGER", "ADMIN", "SUPER_ADMIN"].includes(role || "")) {
+    return { success: false, error: "Insufficient permissions" };
+  }
+
+  try {
+    await prisma.order.update({
+      where: { id: orderId },
+      data: { notes },
+    });
+
+    revalidatePath("/admin/orders");
+    revalidatePath(`/admin/orders/${orderId}`);
+
+    return { success: true };
+  } catch (error) {
+    console.error("[ORDER] updateOrderNotes error:", error);
+    return { success: false, error: "Failed to update internal notes" };
+  }
+}
+
+/**
+ * Export orders list as CSV (Admin+)
+ */
+export async function exportOrdersToCSV() {
+  const session = await auth();
+  if (!session?.user) return { success: false, csv: "", error: "Not authenticated" };
+
+  const role = (session.user as { role?: string }).role;
+  if (!["STAFF", "MANAGER", "ADMIN", "SUPER_ADMIN"].includes(role || "")) {
+    return { success: false, csv: "", error: "Insufficient permissions" };
+  }
+
+  try {
+    const orders = await prisma.order.findMany({
+      orderBy: { createdAt: "desc" },
+    });
+
+    const headers = [
+      "Order Number",
+      "Customer Name",
+      "Phone",
+      "Email",
+      "Subtotal",
+      "Shipping Charge",
+      "Discount",
+      "Total",
+      "Payment Method",
+      "Payment Status",
+      "Status",
+      "Date",
+    ];
+
+    const rows = orders.map((o) => {
+      const address =
+        (o.shippingAddress as { name?: string; phone?: string; email?: string }) || {};
+      return [
+        o.orderNumber,
+        o.guestName || address.name || "",
+        o.guestPhone || address.phone || "",
+        o.guestEmail || address.email || "",
+        o.subtotal.toString(),
+        o.shippingCharge.toString(),
+        o.discount.toString(),
+        o.total.toString(),
+        o.paymentMethod,
+        o.paymentStatus,
+        o.status,
+        new Date(o.createdAt).toLocaleDateString("en-BD"),
+      ];
+    });
+
+    const csvContent = [
+      headers.join(","),
+      ...rows.map((row) => row.map((val) => `"${String(val).replace(/"/g, '""')}"`).join(",")),
+    ].join("\n");
+
+    return { success: true, csv: csvContent };
+  } catch (error) {
+    console.error("[ORDER] exportOrdersToCSV error:", error);
+    return { success: false, csv: "", error: "Failed to export orders" };
+  }
+}

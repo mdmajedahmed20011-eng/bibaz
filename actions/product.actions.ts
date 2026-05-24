@@ -568,3 +568,70 @@ export async function createCategory(data: CreateCategoryInput) {
     return { success: false, error: "Failed to create category" };
   }
 }
+
+/**
+ * Get all collection IDs that a product belongs to
+ */
+export async function getProductCollections(productId: string) {
+  try {
+    const collections = await prisma.collection.findMany({
+      select: {
+        id: true,
+        productIds: true,
+      },
+    });
+
+    const activeCollectionIds = collections
+      .filter((col) => {
+        const productIds = (col.productIds as string[]) || [];
+        return productIds.includes(productId);
+      })
+      .map((col) => col.id);
+
+    return { success: true, collectionIds: activeCollectionIds };
+  } catch (error) {
+    console.error("[PRODUCT] getProductCollections error:", error);
+    return { success: false, collectionIds: [], error: "Failed to fetch product collections" };
+  }
+}
+
+/**
+ * Update collections a product belongs to (Admin+)
+ */
+export async function updateProductCollections(productId: string, collectionIds: string[]) {
+  const { authorized, error } = await requireAdmin();
+  if (!authorized) return { success: false, error };
+
+  try {
+    const collections = await prisma.collection.findMany();
+
+    for (const col of collections) {
+      const currentProductIds = (col.productIds as string[]) || [];
+      const isCurrentlyInCollection = currentProductIds.includes(productId);
+      const shouldBeInCollection = collectionIds.includes(col.id);
+
+      if (isCurrentlyInCollection && !shouldBeInCollection) {
+        const updated = currentProductIds.filter((id) => id !== productId);
+        await prisma.collection.update({
+          where: { id: col.id },
+          data: { productIds: updated as unknown as object },
+        });
+      } else if (!isCurrentlyInCollection && shouldBeInCollection) {
+        const updated = [...currentProductIds, productId];
+        await prisma.collection.update({
+          where: { id: col.id },
+          data: { productIds: updated as unknown as object },
+        });
+      }
+    }
+
+    revalidatePath("/admin/products");
+    revalidatePath("/admin/collections");
+    revalidatePath("/");
+
+    return { success: true };
+  } catch (error) {
+    console.error("[PRODUCT] updateProductCollections error:", error);
+    return { success: false, error: "Failed to update product collections" };
+  }
+}

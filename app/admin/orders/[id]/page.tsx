@@ -6,8 +6,9 @@
 import { getOrderDetail } from "@/actions/order.actions";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Clock } from "lucide-react";
 import { OrderStatusUpdateForm } from "@/components/admin/order-status-form";
+import { OrderNotesForm } from "@/components/admin/order-notes-form";
 
 export default async function AdminOrderDetailPage({
   params,
@@ -30,6 +31,18 @@ export default async function AdminOrderDetailPage({
     area: string;
     postalCode: string;
   };
+
+  // Parse initial delivery date and clean notes
+  let deliveryDate = "";
+  let cleanNotes = order.notes || "";
+
+  if (cleanNotes.startsWith("Estimated Delivery: ")) {
+    const match = cleanNotes.match(/^Estimated Delivery: ([^\n]+)\n?([\s\S]*)$/);
+    if (match) {
+      deliveryDate = match[1] || "";
+      cleanNotes = match[2] || "";
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -113,10 +126,17 @@ export default async function AdminOrderDetailPage({
             </div>
           </div>
 
-          {/* Status Update */}
-          <div className="rounded-xl border border-gray-200 bg-white p-6">
-            <h2 className="mb-4 text-lg font-semibold text-gray-900">Update Status</h2>
-            <OrderStatusUpdateForm orderId={order.id} currentStatus={order.status} />
+          {/* Status Update & Delivery Form */}
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+            <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+              <h2 className="mb-4 text-base font-bold text-gray-900">Fulfillment Status</h2>
+              <OrderStatusUpdateForm orderId={order.id} currentStatus={order.status} />
+            </div>
+
+            <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+              <h2 className="mb-4 text-base font-bold text-gray-900">Delivery Date & Remarks</h2>
+              <OrderNotesForm orderId={order.id} initialNotes={order.notes || ""} />
+            </div>
           </div>
 
           {/* Timeline */}
@@ -150,6 +170,27 @@ export default async function AdminOrderDetailPage({
 
         {/* Right Column — Customer Info + Payment */}
         <div className="space-y-6">
+          {/* Estimated Delivery Date Badge */}
+          {deliveryDate && (
+            <div className="rounded-xl border border-blue-100 bg-blue-50/50 p-4 flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100 text-blue-700">
+                <Clock className="h-5 w-5 animate-pulse" />
+              </div>
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-blue-500">
+                  Estimated Delivery
+                </p>
+                <p className="text-sm font-bold text-blue-900">
+                  {new Date(deliveryDate).toLocaleDateString("en-BD", {
+                    day: "numeric",
+                    month: "long",
+                    year: "numeric",
+                  })}
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* Customer Info */}
           <div className="rounded-xl border border-gray-200 bg-white p-6">
             <h2 className="mb-4 text-lg font-semibold text-gray-900">Customer</h2>
@@ -207,10 +248,10 @@ export default async function AdminOrderDetailPage({
           </div>
 
           {/* Admin Notes */}
-          {order.notes && (
+          {cleanNotes && (
             <div className="rounded-xl border border-gray-200 bg-white p-6">
               <h2 className="mb-4 text-lg font-semibold text-gray-900">Internal Notes</h2>
-              <p className="text-sm text-gray-700">{order.notes}</p>
+              <p className="text-sm text-gray-700 whitespace-pre-wrap">{cleanNotes}</p>
             </div>
           )}
         </div>

@@ -20,6 +20,7 @@ export function CreateCouponForm() {
 
     const formData = new FormData(e.currentTarget);
 
+    const expiresAtRaw = formData.get("expiresAt") as string;
     const data = {
       code: (formData.get("code") as string).toUpperCase(),
       type: formData.get("type") as "PERCENTAGE" | "FIXED" | "FREE_SHIPPING",
@@ -28,9 +29,7 @@ export function CreateCouponForm() {
         ? parseFloat(formData.get("minOrder") as string)
         : undefined,
       maxUses: formData.get("maxUses") ? parseInt(formData.get("maxUses") as string) : undefined,
-      expiresAt: formData.get("expiresAt")
-        ? new Date(formData.get("expiresAt") as string).toISOString()
-        : undefined,
+      expiresAt: expiresAtRaw ? new Date(expiresAtRaw).toISOString() : undefined,
     };
 
     const result = await createCoupon(data);

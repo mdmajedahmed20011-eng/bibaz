@@ -10,6 +10,7 @@ import {
   createVariant,
   updateVariant,
   deleteProduct,
+  updateProductCollections,
 } from "@/actions/product.actions";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -35,6 +36,11 @@ interface Category {
   slug: string;
 }
 
+interface Collection {
+  id: string;
+  name: string;
+}
+
 interface Product {
   id: string;
   name: string;
@@ -52,14 +58,23 @@ interface Product {
 interface EditProductFormProps {
   product: Product;
   categories: Category[];
+  collections: Collection[];
+  initialCollectionIds: string[];
 }
 
-export function EditProductForm({ product, categories }: EditProductFormProps) {
+export function EditProductForm({
+  product,
+  categories,
+  collections,
+  initialCollectionIds,
+}: EditProductFormProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [variants, setVariants] = useState(product.variants);
+  const [selectedCollectionIds, setSelectedCollectionIds] =
+    useState<string[]>(initialCollectionIds);
 
   // Variant form state
   const [showVariantForm, setShowVariantForm] = useState(false);
@@ -90,36 +105,69 @@ export function EditProductForm({ product, categories }: EditProductFormProps) {
     };
 
     const result = await updateProduct(product.id, data);
-    setLoading(false);
 
     if (result.success) {
-      setSuccess("Product updated successfully!");
+      // Save collections
+      const colResult = await updateProductCollections(product.id, selectedCollectionIds);
+      if (colResult.success) {
+        setSuccess("Product and collections updated successfully!");
+      } else {
+        setError(colResult.error || "Failed to update collections");
+      }
     } else {
       setError(result.error || "Failed to update product");
     }
+    setLoading(false);
   }
 
   async function handleAddVariant(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    setSuccess(null);
 
-    const result = await createVariant({
-      productId: product.id,
-      size: newVariant.size || undefined,
-      color: newVariant.color || undefined,
-      price: newVariant.price,
-      stock: newVariant.stock,
-    });
+    const sizes = newVariant.size
+      ? newVariant.size
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean)
+      : ["Free Size"];
+    const colors = newVariant.color
+      ? newVariant.color
+          .split(",")
+          .map((c) => c.trim())
+          .filter(Boolean)
+      : [""];
 
-    if (result.success && result.variant) {
-      setVariants([
-        ...variants,
-        { ...result.variant, price: Number(result.variant.price) } as unknown as Variant,
-      ]);
+    let successCount = 0;
+    const addedVariants: Variant[] = [];
+
+    for (const size of sizes) {
+      for (const color of colors) {
+        const result = await createVariant({
+          productId: product.id,
+          size: size || undefined,
+          color: color || undefined,
+          price: newVariant.price,
+          stock: newVariant.stock,
+        });
+
+        if (result.success && result.variant) {
+          successCount++;
+          addedVariants.push({
+            ...result.variant,
+            price: Number(result.variant.price),
+          } as unknown as Variant);
+        }
+      }
+    }
+
+    if (successCount > 0) {
+      setVariants([...variants, ...addedVariants]);
       setShowVariantForm(false);
       setNewVariant({ size: "", color: "", price: product.basePrice, stock: 0 });
+      setSuccess(`Successfully added ${successCount} variant(s)!`);
     } else {
-      setError(result.error || "Failed to add variant");
+      setError("Failed to add variant(s)");
     }
   }
 
@@ -225,6 +273,47 @@ export function EditProductForm({ product, categories }: EditProductFormProps) {
             </select>
           </div>
         </div>
+
+        {/* Collections */}
+        {collections.length > 0 && (
+          <div className="border-t border-gray-100 pt-4">
+            <label className="mb-2 block text-xs font-semibold text-gray-700 uppercase tracking-wider">
+              Marketing Collections
+            </label>
+            <div className="flex flex-wrap gap-2.5">
+              {collections.map((col) => {
+                const isSelected = selectedCollectionIds.includes(col.id);
+                return (
+                  <button
+                    key={col.id}
+                    type="button"
+                    onClick={() => {
+                      if (isSelected) {
+                        setSelectedCollectionIds(
+                          selectedCollectionIds.filter((id) => id !== col.id)
+                        );
+                      } else {
+                        setSelectedCollectionIds([...selectedCollectionIds, col.id]);
+                      }
+                    }}
+                    className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium border transition-all cursor-pointer ${
+                      isSelected
+                        ? "bg-blue-50 text-blue-700 border-blue-200 shadow-sm"
+                        : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"
+                    }`}
+                  >
+                    <span
+                      className={`h-1.5 w-1.5 rounded-full ${
+                        isSelected ? "bg-blue-600" : "bg-gray-300"
+                      }`}
+                    />
+                    {col.name}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Status + Featured */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

@@ -117,7 +117,7 @@ export async function updateSetting(
     });
 
     revalidatePath("/admin/settings");
-    revalidatePath("/");
+    revalidatePath("/", "layout");
     return { success: true };
   } catch (error) {
     console.error("[SETTINGS] updateSetting error:", error);
@@ -165,7 +165,7 @@ export async function bulkUpdateSettings(
     });
 
     revalidatePath("/admin/settings");
-    revalidatePath("/");
+    revalidatePath("/", "layout");
     return { success: true };
   } catch (error) {
     console.error("[SETTINGS] bulkUpdateSettings error:", error);

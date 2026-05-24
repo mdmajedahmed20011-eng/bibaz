@@ -205,3 +205,37 @@ export async function getCustomerDetail(userId: string) {
     return { success: false, error: "Failed to fetch customer" };
   }
 }
+
+/**
+ * Hard delete a customer (Admin)
+ */
+export async function deleteCustomer(userId: string) {
+  const session = await auth();
+  if (!session?.user) return { success: false, error: "Not authenticated" };
+
+  const role = (session.user as { role?: string }).role;
+  if (!["ADMIN", "SUPER_ADMIN"].includes(role || "")) {
+    return { success: false, error: "Only admins can delete customers" };
+  }
+
+  try {
+    await prisma.user.delete({
+      where: { id: userId },
+    });
+
+    await prisma.auditLog.create({
+      data: {
+        adminId: session.user.id as string,
+        action: "DELETE_CUSTOMER",
+        entity: "User",
+        entityId: userId,
+      },
+    });
+
+    revalidatePath("/admin/customers");
+    return { success: true };
+  } catch (error) {
+    console.error("[CUSTOMER] deleteCustomer error:", error);
+    return { success: false, error: "Failed to delete customer" };
+  }
+}

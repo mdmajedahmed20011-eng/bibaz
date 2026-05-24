@@ -3,7 +3,8 @@
  */
 
 import { prisma } from "@/lib/db";
-import { getCategories } from "@/actions/product.actions";
+import { getCategories, getProductCollections } from "@/actions/product.actions";
+import { getAdminCollections } from "@/actions/collection.actions";
 import { notFound } from "next/navigation";
 import { EditProductForm } from "@/components/admin/edit-product-form";
 
@@ -14,22 +15,28 @@ export default async function AdminEditProductPage({
 }) {
   const { id } = await params;
 
-  const [product, categoriesResult] = await Promise.all([
-    prisma.product.findUnique({
-      where: { id },
-      include: {
-        variants: { orderBy: { createdAt: "asc" } },
-        category: { select: { id: true, name: true } },
-      },
-    }),
-    getCategories(),
-  ]);
+  const [product, categoriesResult, collectionsResult, activeCollectionsResult] = await Promise.all(
+    [
+      prisma.product.findUnique({
+        where: { id },
+        include: {
+          variants: { orderBy: { createdAt: "asc" } },
+          category: { select: { id: true, name: true } },
+        },
+      }),
+      getCategories(),
+      getAdminCollections(),
+      getProductCollections(id),
+    ]
+  );
 
   if (!product) {
     notFound();
   }
 
   const categories = categoriesResult.categories || [];
+  const collections = collectionsResult.collections || [];
+  const initialCollectionIds = activeCollectionsResult.collectionIds || [];
 
   // Serialize Decimal fields for client component
   const serializedProduct = {
@@ -48,7 +55,12 @@ export default async function AdminEditProductPage({
         <p className="text-sm text-gray-500">{product.name}</p>
       </div>
 
-      <EditProductForm product={serializedProduct} categories={categories} />
+      <EditProductForm
+        product={serializedProduct}
+        categories={categories}
+        collections={collections}
+        initialCollectionIds={initialCollectionIds}
+      />
     </div>
   );
 }

@@ -6,6 +6,7 @@
 import { getAdminOrders } from "@/actions/order.actions";
 import Link from "next/link";
 import { Search } from "lucide-react";
+import { OrderExportButton } from "@/components/admin/order-export-button";
 
 export default async function AdminOrdersPage({
   searchParams,
@@ -37,9 +38,14 @@ export default async function AdminOrdersPage({
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Orders</h1>
-        <p className="text-sm text-gray-500">Manage and track all customer orders</p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Orders</h1>
+          <p className="text-sm text-gray-500">Manage and track all customer orders</p>
+        </div>
+        <div>
+          <OrderExportButton />
+        </div>
       </div>
 
       {/* Filters */}

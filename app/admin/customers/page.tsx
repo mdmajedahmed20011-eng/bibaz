@@ -1,10 +1,7 @@
-/**
- * BIBAZ — Admin Customers Page
- */
-
 import { prisma } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
+import Link from "next/link";
 
 export default async function AdminCustomersPage() {
   const session = await auth();
@@ -57,7 +54,14 @@ export default async function AdminCustomersPage() {
             ) : (
               customers.map((customer) => (
                 <tr key={customer.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-3 text-sm font-medium text-gray-900">{customer.name}</td>
+                  <td className="px-6 py-3 text-sm font-medium text-gray-900">
+                    <Link
+                      href={`/admin/customers/${customer.id}`}
+                      className="text-blue-600 hover:underline"
+                    >
+                      {customer.name}
+                    </Link>
+                  </td>
                   <td className="px-6 py-3 text-sm text-gray-600">{customer.email}</td>
                   <td className="px-6 py-3 text-sm text-gray-600">{customer.phone || "—"}</td>
                   <td className="px-6 py-3 text-sm text-gray-600">{customer._count.orders}</td>

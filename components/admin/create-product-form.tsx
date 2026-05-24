@@ -5,7 +5,7 @@
  * Now with image upload, multi-image support
  */
 
-import { createProduct, createVariant } from "@/actions/product.actions";
+import { createProduct, createVariant, updateProductCollections } from "@/actions/product.actions";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { ImageUpload } from "./image-upload";
@@ -17,11 +17,17 @@ interface Category {
   slug: string;
 }
 
-interface CreateProductFormProps {
-  categories: Category[];
+interface Collection {
+  id: string;
+  name: string;
 }
 
-export function CreateProductForm({ categories }: CreateProductFormProps) {
+interface CreateProductFormProps {
+  categories: Category[];
+  collections: Collection[];
+}
+
+export function CreateProductForm({ categories, collections }: CreateProductFormProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -36,6 +42,7 @@ export function CreateProductForm({ categories }: CreateProductFormProps) {
   const [isFeatured, setIsFeatured] = useState(false);
   const [seoTitle, setSeoTitle] = useState("");
   const [seoDesc, setSeoDesc] = useState("");
+  const [selectedCollectionIds, setSelectedCollectionIds] = useState<string[]>([]);
 
   // Initial variant
   const [variantSize, setVariantSize] = useState("Free Size");
@@ -72,19 +79,36 @@ export function CreateProductForm({ categories }: CreateProductFormProps) {
         return;
       }
 
-      // 2. Create initial variant with images
-      const variantResult = await createVariant({
-        productId: productResult.product.id,
-        size: variantSize || undefined,
-        color: variantColor || undefined,
-        price: parseFloat(basePrice),
-        stock: variantStock,
-        images: images,
-      });
+      // 2. Assign collections
+      if (selectedCollectionIds.length > 0) {
+        await updateProductCollections(productResult.product.id, selectedCollectionIds);
+      }
 
-      if (variantResult.success && variantResult.variant) {
-        // Update variant with images via direct DB call would need another action
-        // For now, the variant is created — images can be added via edit page
+      // 3. Create all split variants!
+      const sizes = variantSize
+        ? variantSize
+            .split(",")
+            .map((s) => s.trim())
+            .filter(Boolean)
+        : ["Free Size"];
+      const colors = variantColor
+        ? variantColor
+            .split(",")
+            .map((c) => c.trim())
+            .filter(Boolean)
+        : [""];
+
+      for (const size of sizes) {
+        for (const color of colors) {
+          await createVariant({
+            productId: productResult.product.id,
+            size: size || undefined,
+            color: color || undefined,
+            price: parseFloat(basePrice),
+            stock: variantStock,
+            images: images,
+          });
+        }
       }
 
       router.push(`/admin/products/${productResult.product.id}/edit`);
@@ -160,6 +184,47 @@ export function CreateProductForm({ categories }: CreateProductFormProps) {
               </select>
             </div>
           </div>
+
+          {/* Collections */}
+          {collections.length > 0 && (
+            <div className="border-t border-gray-100 pt-4">
+              <label className="mb-2 block text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                Marketing Collections
+              </label>
+              <div className="flex flex-wrap gap-2.5">
+                {collections.map((col) => {
+                  const isSelected = selectedCollectionIds.includes(col.id);
+                  return (
+                    <button
+                      key={col.id}
+                      type="button"
+                      onClick={() => {
+                        if (isSelected) {
+                          setSelectedCollectionIds(
+                            selectedCollectionIds.filter((id) => id !== col.id)
+                          );
+                        } else {
+                          setSelectedCollectionIds([...selectedCollectionIds, col.id]);
+                        }
+                      }}
+                      className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium border transition-all cursor-pointer ${
+                        isSelected
+                          ? "bg-blue-50 text-blue-700 border-blue-200 shadow-sm"
+                          : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"
+                      }`}
+                    >
+                      <span
+                        className={`h-1.5 w-1.5 rounded-full ${
+                          isSelected ? "bg-blue-600" : "bg-gray-300"
+                        }`}
+                      />
+                      {col.name}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

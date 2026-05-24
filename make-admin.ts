@@ -9,6 +9,10 @@ async function makeFirstUserAdmin() {
   }
 
   const user = users[0];
+  if (!user) {
+    console.log("No users found in the database. Please register an account first.");
+    return;
+  }
   console.log(`Found user: ${user.email} (${user.name}). Updating to SUPER_ADMIN...`);
 
   await prisma.user.update({

@@ -47,6 +47,7 @@ interface Product {
   slug: string;
   description: string;
   basePrice: number;
+  compareAtPrice: number | null;
   categoryId: string;
   status: string;
   isFeatured: boolean;
@@ -93,10 +94,12 @@ export function EditProductForm({
 
     const formData = new FormData(e.currentTarget);
 
+    const comparePriceInput = formData.get("compareAtPrice") as string;
     const data = {
       name: formData.get("name") as string,
       description: formData.get("description") as string,
       basePrice: parseFloat(formData.get("basePrice") as string),
+      compareAtPrice: comparePriceInput ? parseFloat(comparePriceInput) : null,
       categoryId: formData.get("categoryId") as string,
       status: formData.get("status") as "DRAFT" | "ACTIVE",
       isFeatured: formData.get("isFeatured") === "on",
@@ -238,7 +241,7 @@ export function EditProductForm({
         </div>
 
         {/* Price + Category */}
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <div>
             <label htmlFor="basePrice" className="mb-1 block text-sm font-medium text-gray-700">
               Base Price (৳) *
@@ -252,6 +255,24 @@ export function EditProductForm({
               step="0.01"
               defaultValue={product.basePrice}
               className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm focus:border-gray-400 focus:outline-none"
+            />
+          </div>
+          <div>
+            <label
+              htmlFor="compareAtPrice"
+              className="mb-1 block text-sm font-medium text-gray-700"
+            >
+              Compare at Price (Original/Crossed-out) (৳)
+            </label>
+            <input
+              type="number"
+              id="compareAtPrice"
+              name="compareAtPrice"
+              min={1}
+              step="0.01"
+              defaultValue={product.compareAtPrice || ""}
+              className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm focus:border-gray-400 focus:outline-none"
+              placeholder="e.g., 2500"
             />
           </div>
           <div>

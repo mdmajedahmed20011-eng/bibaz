@@ -42,6 +42,7 @@ export default async function AdminEditProductPage({
   const serializedProduct = {
     ...product,
     basePrice: Number(product.basePrice),
+    compareAtPrice: product.compareAtPrice ? Number(product.compareAtPrice) : null,
     variants: product.variants.map((v) => ({
       ...v,
       price: Number(v.price),

@@ -280,6 +280,7 @@ export async function createProduct(data: CreateProductInput) {
         slug: finalSlug,
         description: parsed.data.description,
         basePrice: parsed.data.basePrice,
+        compareAtPrice: parsed.data.compareAtPrice,
         categoryId: parsed.data.categoryId,
         status: parsed.data.status || "DRAFT",
         isFeatured: parsed.data.isFeatured || false,

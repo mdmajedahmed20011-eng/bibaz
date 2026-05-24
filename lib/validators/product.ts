@@ -13,6 +13,12 @@ export const createProductSchema = z.object({
     .max(200, "Product name is too long"),
   description: z.string().min(10, "Description must be at least 10 characters"),
   basePrice: z.number().positive("Price must be positive").max(999999, "Price is too high"),
+  compareAtPrice: z
+    .number()
+    .positive("Discount price must be positive")
+    .max(999999, "Discount price is too high")
+    .nullable()
+    .optional(),
   categoryId: z.string().min(1, "Category is required"),
   status: z.enum(["DRAFT", "ACTIVE"]).default("DRAFT"),
   isFeatured: z.boolean().default(false),

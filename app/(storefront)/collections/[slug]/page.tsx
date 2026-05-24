@@ -129,7 +129,7 @@ export default async function CollectionPage({ params, searchParams }: Collectio
       name: p.name,
       slug: p.slug,
       price: variantPrice,
-      compareAtPrice: Math.round(variantPrice * 1.2),
+      compareAtPrice: p.compareAtPrice ? Number(p.compareAtPrice) : Math.round(variantPrice * 1.2),
       image,
       category: p.category?.name || categoryName,
       isNew: p.isFeatured,

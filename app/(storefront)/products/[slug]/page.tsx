@@ -87,10 +87,12 @@ export default async function ProductPage({ params }: ProductPageProps) {
       ? (variantImages as string[])
       : ["/images/products/placeholder.jpg"];
 
-  // Compute compareAtPrice from variants (highest price as compare)
+  // Compute compareAtPrice from database or calculate dynamic fallback
   const prices = product.variants.map((v) => Number(v.price));
   const minPrice = prices.length > 0 ? Math.min(...prices) : Number(product.basePrice);
-  const compareAtPrice = Math.round(minPrice * 1.2); // 20% markup as "compare at"
+  const compareAtPrice = product.compareAtPrice
+    ? Number(product.compareAtPrice)
+    : Math.round(minPrice * 1.2); // 20% markup as "compare at" fallback
 
   // Map DB variants to ProductInfo expected format
   const mappedVariants = product.variants.map((v) => ({

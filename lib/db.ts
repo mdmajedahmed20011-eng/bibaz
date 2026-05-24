@@ -10,11 +10,11 @@ const globalForPrisma = globalThis as unknown as {
 };
 
 function createPrismaClient() {
-  let host = "127.0.0.1";
-  let port = 3306;
-  let user = "root";
-  let password = "";
-  let database = "bibaz";
+  let host = process.env.DB_HOST || "127.0.0.1";
+  let port = process.env.DB_PORT ? parseInt(process.env.DB_PORT) : 3306;
+  let user = process.env.DB_USER || "root";
+  let password = process.env.DB_PASSWORD || "";
+  let database = process.env.DB_NAME || "bibaz";
 
   const dbUrl = process.env.DATABASE_URL;
   if (dbUrl) {

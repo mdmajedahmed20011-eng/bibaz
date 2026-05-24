@@ -111,7 +111,7 @@ type SectionData = {
   subtitle?: string | null;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   content?: any;
-} | null;
+};
 
 export function HomeClient({ dbSections = [] }: { dbSections: SectionData[] }) {
   const [currentSlide, setCurrentSlide] = useState(0);

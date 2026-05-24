@@ -3,7 +3,7 @@
  * SOP §৮.৫ — Single Prisma instance for the entire app
  * 
  * Prisma 7: Uses @prisma/adapter-mariadb (compatible with MySQL)
- * Connection limit: 10 (Hostinger buffer strategy)
+ * Hostinger: Uses separate DB env vars to avoid URL parsing issues
  */
 
 import { PrismaClient } from "@prisma/client";
@@ -13,11 +13,24 @@ const globalForPrisma = globalThis as unknown as {
     prisma: PrismaClient | undefined;
 };
 
-function createPrismaClient() {
-    // Remove connection_limit from URL if present (not supported by adapter)
-    let connectionString = process.env.DATABASE_URL || "mysql://root:@localhost:3306/bibaz";
-    connectionString = connectionString.replace(/[?&]connection_limit=\d+/, "");
+function buildConnectionString(): string {
+    // If individual DB vars are set, build URL from them (avoids special char issues)
+    const host = process.env.DB_HOST;
+    const user = process.env.DB_USER;
+    const password = process.env.DB_PASSWORD;
+    const database = process.env.DB_NAME;
+    const port = process.env.DB_PORT || "3306";
 
+    if (host && user && password && database) {
+        return `mysql://${user}:${encodeURIComponent(password)}@${host}:${port}/${database}`;
+    }
+
+    // Fallback to DATABASE_URL
+    return process.env.DATABASE_URL || "mysql://root:@localhost:3306/bibaz";
+}
+
+function createPrismaClient() {
+    const connectionString = buildConnectionString();
     const adapter = new PrismaMariaDb(connectionString);
 
     return new PrismaClient({

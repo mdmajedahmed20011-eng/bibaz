@@ -43,6 +43,7 @@ const nextConfig: NextConfig = {
 
   // Image optimization (Cloudinary)
   images: {
+    unoptimized: true,
     remotePatterns: [
       {
         protocol: "https",

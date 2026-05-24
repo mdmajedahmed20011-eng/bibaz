@@ -35,7 +35,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       async authorize(credentials) {
         // Validate input with Zod
         const parsed = loginSchema.safeParse(credentials);
-        if (!parsed.success) return null;
+        if (!parsed.success) {
+          console.error("[AUTH] Zod validation failed:", parsed.error.issues);
+          return null;
+        }
 
         const { email, password } = parsed.data;
 
@@ -54,12 +57,24 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           },
         });
 
-        if (!user || !user.passwordHash) return null;
+        if (!user) {
+          console.error("[AUTH] User not found for email:", email.toLowerCase());
+          return null;
+        }
+
+        if (!user.passwordHash) {
+          console.error("[AUTH] User has no password (OAuth-only account):", email);
+          return null;
+        }
 
         // Verify password (bcrypt)
         const isValid = await bcrypt.compare(password, user.passwordHash);
-        if (!isValid) return null;
+        if (!isValid) {
+          console.error("[AUTH] Password mismatch for:", email);
+          return null;
+        }
 
+        console.log("[AUTH] Login successful for:", email);
         // Return user (without password hash)
         return {
           id: user.id,

@@ -17,6 +17,7 @@ import { formatPrice, calculateDeliveryCharge } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
 import { COUPON_CODES } from "@/lib/constants";
 import { ShoppingBag, Tag, CheckCircle2, XCircle, X, Ticket } from "lucide-react";
+import { createOrder } from "@/actions/order.actions";
 
 interface AddressData {
   name: string;
@@ -50,6 +51,7 @@ export function CheckoutForm() {
   const [errors, setErrors] = useState<Partial<Record<keyof AddressData, string>>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [orderPlaced, setOrderPlaced] = useState(false);
+  const [placedOrderNumber, setPlacedOrderNumber] = useState("ORD-2026-89421");
 
   // Coupon State
   const [couponInput, setCouponInput] = useState("");
@@ -149,10 +151,28 @@ export function CheckoutForm() {
     e.preventDefault();
     if (!validateAddress()) return;
     setIsSubmitting(true);
-    await new Promise((resolve) => setTimeout(resolve, 1800));
-    setOrderPlaced(true);
-    clearCart();
-    localStorage.removeItem("bibaz_applied_coupon");
+    
+    const orderData = {
+      address,
+      paymentMethod,
+      items,
+      subtotal,
+      shippingCharge,
+      discount: discountAmount,
+      total,
+    };
+    
+    const res = await createOrder(orderData);
+    
+    if (res.success && res.orderNumber) {
+      setPlacedOrderNumber(res.orderNumber);
+      setOrderPlaced(true);
+      clearCart();
+      localStorage.removeItem("bibaz_applied_coupon");
+    } else {
+      alert("Something went wrong. Please try again.");
+    }
+    
     setIsSubmitting(false);
   };
 
@@ -211,7 +231,7 @@ export function CheckoutForm() {
             Order Identifier
           </p>
           <p className="text-sm font-mono font-bold text-foreground bg-white border border-border/40 inline-block px-4 py-1.5 shadow-sm">
-            ORD-2026-89421
+            {placedOrderNumber}
           </p>
         </div>
 

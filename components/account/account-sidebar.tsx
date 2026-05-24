@@ -24,17 +24,17 @@ export function AccountSidebar() {
   return (
     <nav aria-label="Account navigation">
       {/* Mobile: Horizontal scroll */}
-      <div className="md:hidden flex gap-1 overflow-x-auto pb-2 -mx-1 px-1">
+      <div className="md:hidden flex gap-2 overflow-x-auto pb-4 mb-2 -mx-4 px-4 snap-x snap-mandatory scrollbar-hide border-b border-border/40">
         {accountLinks.map((link) => {
           const isActive = pathname === link.href;
           return (
             <Link
               key={link.href}
               href={link.href}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium whitespace-nowrap transition-colors ${
+              className={`flex items-center gap-1.5 px-4 py-2.5 rounded-full text-[13px] font-semibold whitespace-nowrap transition-all shadow-sm snap-start shrink-0 ${
                 isActive
                   ? "bg-foreground text-background"
-                  : "bg-muted text-muted-foreground hover:text-foreground"
+                  : "bg-white border border-border/60 text-muted-foreground hover:text-foreground"
               }`}
             >
               <link.icon className="h-3.5 w-3.5" />
@@ -42,6 +42,15 @@ export function AccountSidebar() {
             </Link>
           );
         })}
+        
+        {/* Mobile Logout */}
+        <button
+          onClick={() => signOut({ callbackUrl: "/" })}
+          className="flex items-center gap-1.5 px-4 py-2.5 rounded-full text-[13px] font-semibold whitespace-nowrap transition-all shadow-sm snap-start shrink-0 bg-white border border-border/60 text-destructive hover:bg-destructive/5"
+        >
+          <LogOut className="h-3.5 w-3.5" />
+          Sign Out
+        </button>
       </div>
 
       {/* Desktop: Vertical sidebar */}

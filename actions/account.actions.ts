@@ -516,3 +516,26 @@ export async function getUserWishlist() {
     return { success: false, error: (err as Error).message || "Failed to fetch wishlist." };
   }
 }
+
+export async function toggleWishlist(productId: string) {
+  try {
+    const session = await getAuthSession();
+    const existing = await prisma.wishlist.findFirst({
+      where: { userId: session.user.id, productId },
+    });
+
+    if (existing) {
+      await prisma.wishlist.delete({ where: { id: existing.id } });
+      revalidatePath("/account/wishlist");
+      return { success: true, isWishlisted: false, message: "Removed from wishlist." };
+    } else {
+      await prisma.wishlist.create({
+        data: { userId: session.user.id, productId },
+      });
+      revalidatePath("/account/wishlist");
+      return { success: true, isWishlisted: true, message: "Added to wishlist." };
+    }
+  } catch (err) {
+    return { success: false, error: (err as Error).message || "Failed to update wishlist." };
+  }
+}

@@ -8,6 +8,7 @@ import { formatPrice } from "@/lib/utils";
 import { useCartStore } from "@/store/cart-store";
 import { SizeGuideModal } from "./size-guide-modal";
 import { StickyAddToCart } from "./sticky-add-to-cart";
+import { toggleWishlist } from "@/actions/account.actions";
 
 interface Variant {
   id: string;
@@ -112,6 +113,21 @@ export function ProductInfo({ product }: ProductInfoProps) {
     });
 
     router.push("/checkout");
+  };
+
+  const handleToggleWishlist = async () => {
+    const res = await toggleWishlist(product.id);
+    if (res.success) {
+      setIsWishlisted(res.isWishlisted ?? false);
+      toast.success(res.message);
+    } else {
+      if (res.error?.includes("Unauthorized")) {
+        toast.error("Please login to use wishlist");
+        router.push("/login?callbackUrl=/product/" + product.slug);
+      } else {
+        toast.error(res.error || "Failed to update wishlist");
+      }
+    }
   };
 
   const toggleSection = (section: string) => {
@@ -234,7 +250,7 @@ export function ProductInfo({ product }: ProductInfoProps) {
             disabled={!selectedSize || !isInStock}
             className={`flex-1 flex items-center justify-center gap-2 h-12 text-xs font-bold uppercase tracking-[0.12em] transition-all rounded-sm cursor-pointer ${
               !selectedSize
-                ? "bg-neutral-100 border border-neutral-200 text-neutral-400 opacity-60 cursor-not-allowed"
+                ? "bg-neutral-200 border border-neutral-300 text-neutral-600 font-bold opacity-100 cursor-not-allowed"
                 : "bg-foreground hover:bg-neutral-800 text-background"
             }`}
           >
@@ -247,7 +263,7 @@ export function ProductInfo({ product }: ProductInfoProps) {
             disabled={!selectedSize || !isInStock}
             className={`flex-1 flex items-center justify-center gap-2 h-12 text-xs font-bold uppercase tracking-[0.12em] transition-all rounded-sm cursor-pointer shadow-sm ${
               !selectedSize
-                ? "bg-neutral-100 border border-neutral-200 text-neutral-400 opacity-60 cursor-not-allowed"
+                ? "bg-neutral-200 border border-neutral-300 text-neutral-600 font-bold opacity-100 cursor-not-allowed"
                 : "bg-[#b33a3a] hover:bg-[#9c2f2f] text-white"
             }`}
           >
@@ -256,7 +272,7 @@ export function ProductInfo({ product }: ProductInfoProps) {
 
           {/* Wishlist */}
           <button
-            onClick={() => setIsWishlisted(!isWishlisted)}
+            onClick={handleToggleWishlist}
             className={`flex items-center justify-center h-12 w-12 border transition-colors shrink-0 ${
               isWishlisted
                 ? "border-sale text-sale"

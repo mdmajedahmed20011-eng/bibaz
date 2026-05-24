@@ -95,17 +95,24 @@ export function MobileNav({ links }: MobileNavProps) {
                         </button>
                     </div>
 
-                    {/* Integrated Mobile Search experience (Resolves hidden search on mobile) */}
                     <div className="px-6 py-4 bg-neutral-50/50 border-b border-border/30">
-                        <form onSubmit={handleSearch} className="relative">
-                            <input
-                                type="text"
-                                placeholder="Search products, styles..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-full h-11 pl-11 pr-4 bg-white border border-border/80 rounded-lg text-sm placeholder:text-muted-foreground focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-all duration-200"
-                            />
-                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" strokeWidth={1.5} />
+                        <form onSubmit={handleSearch} className="flex gap-2">
+                            <div className="relative flex-1">
+                                <input
+                                    type="text"
+                                    placeholder="Search products, styles..."
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    className="w-full h-11 pl-11 pr-4 bg-white border border-border/80 rounded-lg text-sm placeholder:text-muted-foreground focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-all duration-200"
+                                />
+                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" strokeWidth={1.5} />
+                            </div>
+                            <button
+                                type="submit"
+                                className="h-11 px-4 bg-foreground text-background text-sm font-semibold rounded-lg hover:bg-neutral-800 transition-colors shrink-0"
+                            >
+                                Search
+                            </button>
                         </form>
                     </div>
 

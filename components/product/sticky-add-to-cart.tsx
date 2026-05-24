@@ -48,7 +48,7 @@ export function StickyAddToCart({
             disabled={disabled}
             className={`flex-1 flex items-center justify-center gap-1.5 h-11 text-[10px] font-bold uppercase tracking-[0.12em] transition-all rounded-sm cursor-pointer ${
               disabled
-                ? "bg-neutral-100 border border-neutral-200 text-neutral-400 opacity-60 cursor-not-allowed"
+                ? "bg-neutral-200 border border-neutral-300 text-neutral-600 font-bold opacity-100 cursor-not-allowed"
                 : "bg-foreground hover:bg-neutral-800 text-background"
             }`}
           >
@@ -60,7 +60,7 @@ export function StickyAddToCart({
             disabled={disabled}
             className={`flex-1 flex items-center justify-center gap-1.5 h-11 text-[10px] font-bold uppercase tracking-[0.12em] transition-all rounded-sm cursor-pointer shadow-sm ${
               disabled
-                ? "bg-neutral-100 border border-neutral-200 text-neutral-400 opacity-60 cursor-not-allowed"
+                ? "bg-neutral-200 border border-neutral-300 text-neutral-600 font-bold opacity-100 cursor-not-allowed"
                 : "bg-[#b33a3a] hover:bg-[#9c2f2f] text-white"
             }`}
           >

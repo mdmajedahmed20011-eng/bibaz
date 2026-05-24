@@ -118,14 +118,26 @@ export default async function AdminDashboardPage() {
               <span className="text-xs font-semibold text-emerald-700">Active</span>
             </div>
           </div>
-          <div className="flex items-end gap-3">
-            <p className="text-3xl font-bold text-gray-900 sm:text-4xl">
-              ৳{stats.totalRevenue.toLocaleString()}
-            </p>
-            <span className="mb-1 text-xs text-gray-400">total revenue</span>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div>
+              <p className="text-xs text-gray-500 mb-1">Today</p>
+              <p className="text-xl font-bold text-gray-900">৳{stats.todayRevenue.toLocaleString()}</p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 mb-1">This Week</p>
+              <p className="text-xl font-bold text-gray-900">৳{stats.weeklyRevenue.toLocaleString()}</p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 mb-1">This Month</p>
+              <p className="text-xl font-bold text-gray-900">৳{stats.monthlyRevenue.toLocaleString()}</p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 mb-1">All Time</p>
+              <p className="text-xl font-bold text-emerald-600">৳{stats.totalRevenue.toLocaleString()}</p>
+            </div>
           </div>
           {/* Mini chart placeholder */}
-          <div className="mt-5 flex h-20 items-end gap-1 rounded-lg bg-gray-50 p-3">
+          <div className="mt-2 flex h-20 items-end gap-1 rounded-lg bg-gray-50 p-3">
             {[40, 65, 45, 80, 55, 90, 70, 85, 60, 95, 75, 88].map((h, i) => (
               <div
                 key={i}
@@ -144,30 +156,27 @@ export default async function AdminDashboardPage() {
           </div>
         </div>
 
-        {/* Quick Stats */}
+        {/* Quick Stats (Order Summary) */}
         <div className="space-y-3">
           <QuickStatCard
-            label="Total Products"
-            value={stats.totalProducts.toString()}
-            icon={<Package className="h-4 w-4" />}
-            href="/admin/products"
-            color="purple"
+            label="Pending Orders"
+            value={stats.pendingOrders.toString()}
+            icon={<Clock className="h-4 w-4" />}
+            href="/admin/orders?status=PENDING"
+            color="amber"
           />
           <QuickStatCard
-            label="Total Customers"
-            value={stats.totalCustomers.toString()}
-            icon={<Users className="h-4 w-4" />}
-            href="/admin/customers"
+            label="Processing Orders"
+            value={stats.processingOrders.toString()}
+            icon={<Package className="h-4 w-4" />}
+            href="/admin/orders?status=PROCESSING"
             color="indigo"
           />
           <QuickStatCard
-            label="Avg Order Value"
-            value={
-              stats.todayOrders > 0
-                ? `৳${Math.round(stats.todayRevenue / stats.todayOrders).toLocaleString()}`
-                : "—"
-            }
-            icon={<TrendingUp className="h-4 w-4" />}
+            label="Delivered Orders"
+            value={stats.deliveredOrders.toString()}
+            icon={<ShoppingCart className="h-4 w-4" />}
+            href="/admin/orders?status=DELIVERED"
             color="teal"
           />
         </div>
@@ -374,12 +383,13 @@ function QuickStatCard({
   value: string;
   icon: React.ReactNode;
   href?: string;
-  color: "purple" | "indigo" | "teal";
+  color: "purple" | "indigo" | "teal" | "amber";
 }) {
   const colorMap = {
     purple: "bg-purple-50 text-purple-600",
     indigo: "bg-indigo-50 text-indigo-600",
     teal: "bg-teal-50 text-teal-600",
+    amber: "bg-amber-50 text-amber-600",
   };
 
   const Wrapper = href ? Link : "div";

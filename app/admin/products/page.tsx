@@ -7,6 +7,7 @@ import { getProducts } from "@/actions/product.actions";
 import Link from "next/link";
 import { Plus, Search } from "lucide-react";
 import { ProductStatusBadge } from "@/components/admin/product-status-badge";
+import { ProductExportImport } from "@/components/admin/product-export-import";
 
 export default async function AdminProductsPage({
   searchParams,
@@ -36,13 +37,16 @@ export default async function AdminProductsPage({
           <h1 className="text-2xl font-bold text-gray-900">Products</h1>
           <p className="text-sm text-gray-500">Manage your product catalog</p>
         </div>
-        <Link
-          href="/admin/products/new"
-          className="inline-flex items-center gap-2 rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-gray-800"
-        >
-          <Plus className="h-4 w-4" />
-          Add Product
-        </Link>
+        <div className="flex items-center gap-2">
+          <ProductExportImport />
+          <Link
+            href="/admin/products/new"
+            className="inline-flex items-center gap-2 rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-gray-800"
+          >
+            <Plus className="h-4 w-4" />
+            Add Product
+          </Link>
+        </div>
       </div>
 
       {/* Filters */}

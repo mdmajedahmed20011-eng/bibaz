@@ -727,3 +727,133 @@ export async function bulkUpdateStock(updates: { variantId: string; stock: numbe
     return { success: false, error: "Failed to bulk update stock" };
   }
 }
+
+/**
+ * Export products as CSV data (Admin+)
+ */
+export async function exportProductsCSV() {
+  const { authorized, error } = await requireAdmin();
+  if (!authorized) return { success: false, error };
+
+  try {
+    const products = await prisma.product.findMany({
+      where: { deletedAt: null },
+      include: {
+        category: { select: { name: true } },
+        variants: { where: { isActive: true } },
+      },
+    });
+
+    // Create CSV header
+    let csv = "ID,Name,Category,Status,BasePrice,SKU,VariantName,Stock,VariantPrice\n";
+
+    // Populate rows
+    products.forEach((product) => {
+      const pId = product.id;
+      const pName = `"${product.name.replace(/"/g, '""')}"`;
+      const pCat = `"${product.category.name.replace(/"/g, '""')}"`;
+      const pStatus = product.status;
+      const pPrice = product.basePrice.toString();
+
+      if (product.variants.length === 0) {
+        csv += `${pId},${pName},${pCat},${pStatus},${pPrice},,,,0\n`;
+      } else {
+        product.variants.forEach((variant) => {
+          const vSku = `"${variant.sku.replace(/"/g, '""')}"`;
+          const vName = `"${(variant.size || "") + (variant.size && variant.color ? " - " : "") + (variant.color || "")}"`;
+          const vStock = variant.stock;
+          const vPrice = variant.price.toString();
+          csv += `${pId},${pName},${pCat},${pStatus},${pPrice},${vSku},${vName},${vStock},${vPrice}\n`;
+        });
+      }
+    });
+
+    return { success: true, csvData: csv };
+  } catch (error) {
+    console.error("[PRODUCT] exportProductsCSV error:", error);
+    return { success: false, error: "Failed to export products" };
+  }
+}
+
+/**
+ * Import products/variants from CSV data (Admin+)
+ * Currently focuses on updating stock and prices for existing SKUs to prevent complex creates via CSV.
+ */
+export async function importProductsCSV(csvData: string) {
+  const session = await auth();
+  if (!session?.user) return { success: false, error: "Not authenticated" };
+
+  const role = (session.user as { role?: string }).role;
+  const allowedRoles = ["MANAGER", "ADMIN", "SUPER_ADMIN"];
+  if (!allowedRoles.includes(role || "")) {
+    return { success: false, error: "Insufficient permissions" };
+  }
+
+  try {
+    const lines = csvData.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+    if (lines.length <= 1 || !lines[0]) return { success: false, error: "Empty or invalid CSV file" };
+
+    const header = lines[0].split(',');
+    const skuIndex = header.indexOf('SKU');
+    const stockIndex = header.indexOf('Stock');
+    const priceIndex = header.indexOf('VariantPrice');
+
+    if (skuIndex === -1 || stockIndex === -1) {
+      return { success: false, error: "CSV must contain SKU and Stock columns" };
+    }
+
+    let updatedCount = 0;
+
+    for (let i = 1; i < lines.length; i++) {
+      // Basic CSV parsing handling quotes
+      const regex = /(".*?"|[^",\s]+)(?=\s*,|\s*$)/g;
+      const row = [];
+      let match;
+      while ((match = regex.exec(lines[i])) !== null) {
+        row.push(match[1].replace(/^"|"$/g, '').replace(/""/g, '"'));
+      }
+
+      const sku = row[skuIndex];
+      const stock = parseInt(row[stockIndex] || "0", 10);
+      let price: number | undefined;
+      
+      if (priceIndex !== -1 && row[priceIndex]) {
+        price = parseFloat(row[priceIndex]);
+      }
+
+      if (sku && !isNaN(stock)) {
+        const updateData: any = { stock };
+        if (price !== undefined && !isNaN(price)) {
+          updateData.price = price;
+        }
+
+        const variant = await prisma.productVariant.findFirst({ where: { sku } });
+        if (variant) {
+          await prisma.productVariant.update({
+            where: { id: variant.id },
+            data: updateData,
+          });
+          updatedCount++;
+        }
+      }
+    }
+
+    // Audit log
+    await prisma.auditLog.create({
+      data: {
+        adminId: session.user.id!,
+        action: "IMPORT_CSV",
+        entity: "Product",
+        entityId: "BULK",
+        newValue: { updatedCount },
+      },
+    });
+
+    revalidatePath("/admin/products");
+    return { success: true, updatedCount };
+  } catch (error) {
+    console.error("[PRODUCT] importProductsCSV error:", error);
+    return { success: false, error: "Failed to import products" };
+  }
+}
+

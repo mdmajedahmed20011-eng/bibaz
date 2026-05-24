@@ -81,6 +81,17 @@ const navSections = [
       },
     ],
   },
+  {
+    title: "Marketing",
+    items: [
+      {
+        label: "Campaigns",
+        href: "/admin/campaigns",
+        icon: Sparkles, // Or Timer if imported, but Sparkles is already imported
+        roles: ["MANAGER", "ADMIN", "SUPER_ADMIN"],
+      },
+    ],
+  },
 
   {
     title: "Sales",
@@ -88,6 +99,12 @@ const navSections = [
       {
         label: "Orders",
         href: "/admin/orders",
+        icon: ShoppingCart,
+        roles: ["STAFF", "MANAGER", "ADMIN", "SUPER_ADMIN"],
+      },
+      {
+        label: "Abandoned Carts",
+        href: "/admin/abandoned-carts",
         icon: ShoppingCart,
         roles: ["STAFF", "MANAGER", "ADMIN", "SUPER_ADMIN"],
       },
@@ -118,6 +135,12 @@ const navSections = [
         label: "Settings",
         href: "/admin/settings",
         icon: Settings,
+        roles: ["ADMIN", "SUPER_ADMIN"],
+      },
+      {
+        label: "Staff",
+        href: "/admin/staff",
+        icon: Shield,
         roles: ["ADMIN", "SUPER_ADMIN"],
       },
       { label: "Audit Log", href: "/admin/audit-log", icon: Shield, roles: ["SUPER_ADMIN"] },

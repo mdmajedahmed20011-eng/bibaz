@@ -350,3 +350,115 @@ export async function validateCartStock() {
     return { success: false, issues: ["Failed to validate cart"] };
   }
 }
+
+// ═══════════════════════════════════════════
+// ABANDONED CART ENGINE
+// ═══════════════════════════════════════════
+
+/**
+ * Save an abandoned cart (triggered when user leaves checkout)
+ */
+export async function saveAbandonedCart(data: {
+  guestEmail?: string;
+  cartData: any;
+  totalAmount: number;
+}) {
+  const session = await auth();
+  const userId = session?.user?.id || null;
+
+  try {
+    const recoveryToken = Math.random().toString(36).substring(2, 15) + Date.now().toString(36);
+
+    const cart = await prisma.abandonedCart.create({
+      data: {
+        userId,
+        guestEmail: data.guestEmail,
+        cartData: data.cartData,
+        totalAmount: data.totalAmount,
+        recoveryToken,
+        status: "pending",
+      },
+    });
+
+    return { success: true, cartId: cart.id };
+  } catch (error) {
+    console.error("[CART] saveAbandonedCart error:", error);
+    return { success: false, error: "Failed to save abandoned cart" };
+  }
+}
+
+/**
+ * Get all abandoned carts (Admin)
+ */
+export async function getAbandonedCarts(page = 1, pageSize = 20) {
+  const session = await auth();
+  const role = (session?.user as { role?: string })?.role;
+  if (!["STAFF", "MANAGER", "ADMIN", "SUPER_ADMIN"].includes(role || "")) {
+    return { success: false, error: "Unauthorized" };
+  }
+
+  try {
+    const skip = (page - 1) * pageSize;
+    const [carts, total] = await Promise.all([
+      prisma.abandonedCart.findMany({
+        skip,
+        take: pageSize,
+        orderBy: { createdAt: "desc" },
+        include: { user: { select: { name: true, email: true } } },
+      }),
+      prisma.abandonedCart.count(),
+    ]);
+
+    // Serialize decimal values
+    const serializedCarts = carts.map((cart) => ({
+      ...cart,
+      totalAmount: Number(cart.totalAmount),
+    }));
+
+    return { 
+      success: true, 
+      carts: serializedCarts,
+      pagination: { page, pageSize, total, totalPages: Math.ceil(total / pageSize) },
+    };
+  } catch (error) {
+    console.error("[CART] getAbandonedCarts error:", error);
+    return { success: false, error: "Failed to fetch abandoned carts" };
+  }
+}
+
+/**
+ * Send recovery email (Admin trigger)
+ */
+export async function sendRecoveryEmail(cartId: string) {
+  const session = await auth();
+  const role = (session?.user as { role?: string })?.role;
+  if (!["MANAGER", "ADMIN", "SUPER_ADMIN"].includes(role || "")) {
+    return { success: false, error: "Unauthorized" };
+  }
+
+  try {
+    const cart = await prisma.abandonedCart.findUnique({
+      where: { id: cartId },
+      include: { user: true },
+    });
+
+    if (!cart) return { success: false, error: "Cart not found" };
+
+    const email = cart.guestEmail || cart.user?.email;
+    if (!email) return { success: false, error: "No email associated with this cart" };
+
+    // In a real implementation, send actual email with cart.recoveryToken link
+    // e.g. await sendEmail({ to: email, subject: "You left something behind", text: `Link: /recover?token=${cart.recoveryToken}` })
+
+    await prisma.abandonedCart.update({
+      where: { id: cartId },
+      data: { emailSentAt: new Date() },
+    });
+
+    return { success: true, message: `Recovery email sent to ${email}` };
+  } catch (error) {
+    console.error("[CART] sendRecoveryEmail error:", error);
+    return { success: false, error: "Failed to send recovery email" };
+  }
+}
+

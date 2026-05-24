@@ -695,11 +695,21 @@ export async function getAdminDashboardStats() {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
+    const weekAgo = new Date(today);
+    weekAgo.setDate(today.getDate() - 7);
+
+    const monthAgo = new Date(today);
+    monthAgo.setMonth(today.getMonth() - 1);
+
     const [
       todayOrders,
       pendingOrders,
+      processingOrders,
+      deliveredOrders,
       totalRevenue,
       todayRevenue,
+      weeklyRevenue,
+      monthlyRevenue,
       totalProducts,
       lowStockCount,
       totalCustomers,
@@ -707,6 +717,8 @@ export async function getAdminDashboardStats() {
     ] = await Promise.all([
       prisma.order.count({ where: { createdAt: { gte: today } } }),
       prisma.order.count({ where: { status: "PENDING" } }),
+      prisma.order.count({ where: { status: "PROCESSING" } }),
+      prisma.order.count({ where: { status: "DELIVERED" } }),
       prisma.order.aggregate({
         where: { status: { in: ["CONFIRMED", "PROCESSING", "SHIPPED", "DELIVERED"] } },
         _sum: { total: true },
@@ -714,6 +726,20 @@ export async function getAdminDashboardStats() {
       prisma.order.aggregate({
         where: {
           createdAt: { gte: today },
+          status: { in: ["CONFIRMED", "PROCESSING", "SHIPPED", "DELIVERED"] },
+        },
+        _sum: { total: true },
+      }),
+      prisma.order.aggregate({
+        where: {
+          createdAt: { gte: weekAgo },
+          status: { in: ["CONFIRMED", "PROCESSING", "SHIPPED", "DELIVERED"] },
+        },
+        _sum: { total: true },
+      }),
+      prisma.order.aggregate({
+        where: {
+          createdAt: { gte: monthAgo },
           status: { in: ["CONFIRMED", "PROCESSING", "SHIPPED", "DELIVERED"] },
         },
         _sum: { total: true },
@@ -741,8 +767,12 @@ export async function getAdminDashboardStats() {
       stats: {
         todayOrders,
         pendingOrders,
+        processingOrders,
+        deliveredOrders,
         totalRevenue: Number(totalRevenue._sum.total || 0),
         todayRevenue: Number(todayRevenue._sum.total || 0),
+        weeklyRevenue: Number(weeklyRevenue._sum.total || 0),
+        monthlyRevenue: Number(monthlyRevenue._sum.total || 0),
         totalProducts,
         lowStockCount,
         totalCustomers,

@@ -1,15 +1,16 @@
 "use client";
 
 /**
- * BIBAZ — Settings Manager (Tabbed, Editable)
- * Groups: Store Info, Shipping, Social, Branding, SEO
+ * BIBAZ — Settings Manager (Advanced 5x)
+ * Groups: Store Info, Branding, Shipping, Taxes, Email, Social, SEO
  */
 
 import { useState } from "react";
 import { bulkUpdateSettings } from "@/actions/settings.actions";
 import { ImageUpload } from "./image-upload";
-import { Save, Store, Truck, Share2, Image as ImageIcon, Search, CheckCircle2 } from "lucide-react";
+import { Save, Store, Truck, Share2, Image as ImageIcon, Search, CheckCircle2, Percent, Mail } from "lucide-react";
 import { BUSINESS, DELIVERY_CHARGE } from "@/lib/constants";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface Setting {
   key: string;
@@ -27,6 +28,8 @@ const TABS = [
   { id: "general", label: "Store Info", icon: Store },
   { id: "branding", label: "Branding", icon: ImageIcon },
   { id: "shipping", label: "Shipping", icon: Truck },
+  { id: "taxes", label: "Taxes", icon: Percent },
+  { id: "email", label: "Email Config", icon: Mail },
   { id: "social", label: "Social Media", icon: Share2 },
   { id: "seo", label: "SEO", icon: Search },
 ];
@@ -49,10 +52,12 @@ const DEFAULTS: Record<string, { value: unknown; group: string; label: string; t
     label: "Tagline",
     type: "text",
   },
+  currency_symbol: { value: "৳", group: "general", label: "Currency Symbol", type: "text" },
 
   // Branding
   store_logo: { value: "", group: "branding", label: "Store Logo", type: "image" },
   store_favicon: { value: "", group: "branding", label: "Favicon", type: "image" },
+  primary_color: { value: "#000000", group: "branding", label: "Primary Brand Color (Hex)", type: "text" },
 
   // Shipping
   shipping_dhaka: {
@@ -73,6 +78,19 @@ const DEFAULTS: Record<string, { value: unknown; group: string; label: string; t
     label: "Free Shipping Above (৳, 0 = disabled)",
     type: "number",
   },
+  enable_international_shipping: { value: false, group: "shipping", label: "Enable International Shipping", type: "boolean" },
+
+  // Taxes
+  enable_taxes: { value: false, group: "taxes", label: "Enable Tax Calculation", type: "boolean" },
+  tax_rate: { value: 0, group: "taxes", label: "Default Tax Rate (%)", type: "number" },
+  prices_include_tax: { value: true, group: "taxes", label: "Product Prices Include Tax", type: "boolean" },
+
+  // Email Config
+  smtp_host: { value: "", group: "email", label: "SMTP Host", type: "text" },
+  smtp_port: { value: 465, group: "email", label: "SMTP Port", type: "number" },
+  smtp_user: { value: "", group: "email", label: "SMTP Username", type: "text" },
+  smtp_pass: { value: "", group: "email", label: "SMTP Password", type: "text" },
+  email_from_name: { value: BUSINESS.NAME, group: "email", label: "Email From Name", type: "text" },
 
   // Social
   social_facebook: {
@@ -156,53 +174,89 @@ export function SettingsManager({ initialSettings }: SettingsManagerProps) {
   const tabSettings = Object.entries(DEFAULTS).filter(([, def]) => def.group === activeTab);
 
   return (
-    <div className="space-y-4">
-      {/* Tabs */}
-      <div className="flex gap-1 overflow-x-auto rounded-xl border border-gray-200 bg-white p-1">
+    <div className="space-y-6">
+      {/* Scrollable Tabs */}
+      <div className="flex gap-2 overflow-x-auto rounded-2xl border border-white/20 bg-white/40 p-2 shadow-sm backdrop-blur-md pb-2 custom-scrollbar">
         {TABS.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`flex shrink-0 items-center gap-2 rounded-lg px-4 py-2 text-xs font-medium transition-all ${
-              activeTab === tab.id ? "bg-gray-900 text-white" : "text-gray-600 hover:bg-gray-100"
+            className={`relative flex shrink-0 items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-medium transition-colors ${
+              activeTab === tab.id ? "text-white" : "text-gray-600 hover:bg-white/50"
             }`}
           >
-            <tab.icon className="h-3.5 w-3.5" />
-            {tab.label}
+            {activeTab === tab.id && (
+              <motion.div
+                layoutId="activeTab"
+                className="absolute inset-0 rounded-xl bg-gray-900 shadow-sm"
+                transition={{ type: "spring", duration: 0.5, bounce: 0.2 }}
+              />
+            )}
+            <span className="relative z-10 flex items-center gap-2">
+              <tab.icon className="h-4 w-4" />
+              {tab.label}
+            </span>
           </button>
         ))}
       </div>
 
-      {/* Settings Form */}
-      <div className="rounded-2xl border border-gray-200 bg-white p-5 sm:p-6">
-        <div className="space-y-5">
-          {tabSettings.map(([key, def]) => (
-            <SettingField
-              key={key}
-              settingKey={key}
-              def={def}
-              value={values[key]}
-              onChange={(val) => setValue(key, val)}
-            />
-          ))}
-        </div>
+      {/* Settings Form Container (Glassmorphism) */}
+      <div className="relative overflow-hidden rounded-3xl border border-white/40 bg-white/60 p-6 shadow-xl shadow-black/[0.03] backdrop-blur-xl sm:p-8">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeTab}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.2 }}
+            className="space-y-6"
+          >
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {tabSettings.map(([key, def]) => (
+                <div key={key} className={def.type === "textarea" ? "md:col-span-2 lg:col-span-3" : ""}>
+                  <SettingField
+                    settingKey={key}
+                    def={def}
+                    value={values[key]}
+                    onChange={(val) => setValue(key, val)}
+                  />
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        </AnimatePresence>
       </div>
 
-      {/* Save Bar */}
-      <div className="sticky bottom-0 flex items-center justify-end gap-3 rounded-xl border border-gray-200 bg-white/95 p-3 shadow-lg backdrop-blur lg:bottom-6">
-        {savedMsg && (
-          <span className="flex items-center gap-1.5 text-xs font-medium text-green-600">
-            <CheckCircle2 className="h-4 w-4" />
-            Settings saved successfully
-          </span>
-        )}
+      {/* Floating Save Bar */}
+      <div className="sticky bottom-6 z-50 flex items-center justify-end gap-4 rounded-2xl border border-white/50 bg-white/80 p-4 shadow-2xl backdrop-blur-xl">
+        <AnimatePresence>
+          {savedMsg && (
+            <motion.span
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0 }}
+              className="flex items-center gap-2 text-sm font-semibold text-emerald-600"
+            >
+              <CheckCircle2 className="h-5 w-5" />
+              Settings saved!
+            </motion.span>
+          )}
+        </AnimatePresence>
         <button
           onClick={handleSave}
           disabled={saving}
-          className="inline-flex items-center gap-2 rounded-lg bg-gray-900 px-5 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-gray-800 disabled:opacity-50"
+          className="group relative inline-flex items-center gap-2 overflow-hidden rounded-xl bg-gray-900 px-6 py-3 text-sm font-semibold text-white shadow-md transition-all hover:bg-gray-800 disabled:opacity-50"
         >
-          <Save className="h-4 w-4" />
-          {saving ? "Saving..." : "Save Changes"}
+          {saving ? (
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+              className="h-4 w-4 rounded-full border-2 border-white/20 border-t-white"
+            />
+          ) : (
+            <Save className="h-4 w-4 transition-transform group-hover:scale-110" />
+          )}
+          {saving ? "Saving Changes..." : "Save Changes"}
         </button>
       </div>
     </div>
@@ -225,8 +279,8 @@ function SettingField({
   onChange: (val: unknown) => void;
 }) {
   return (
-    <div>
-      <label htmlFor={settingKey} className="mb-1.5 block text-xs font-semibold text-gray-700">
+    <div className="group">
+      <label htmlFor={settingKey} className="mb-2 block text-sm font-semibold text-gray-700 transition-colors group-hover:text-gray-900">
         {def.label}
       </label>
 
@@ -236,7 +290,7 @@ function SettingField({
           type="text"
           value={(value as string) || ""}
           onChange={(e) => onChange(e.target.value)}
-          className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100"
+          className="w-full rounded-xl border-0 bg-white/50 px-4 py-3 text-sm shadow-inner ring-1 ring-inset ring-gray-200/60 transition-all focus:bg-white focus:ring-2 focus:ring-inset focus:ring-blue-500"
         />
       )}
 
@@ -246,7 +300,7 @@ function SettingField({
           value={(value as string) || ""}
           onChange={(e) => onChange(e.target.value)}
           rows={3}
-          className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100"
+          className="w-full rounded-xl border-0 bg-white/50 px-4 py-3 text-sm shadow-inner ring-1 ring-inset ring-gray-200/60 transition-all focus:bg-white focus:ring-2 focus:ring-inset focus:ring-blue-500"
         />
       )}
 
@@ -256,32 +310,36 @@ function SettingField({
           type="number"
           value={(value as number) || 0}
           onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
-          className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100"
+          className="w-full rounded-xl border-0 bg-white/50 px-4 py-3 text-sm shadow-inner ring-1 ring-inset ring-gray-200/60 transition-all focus:bg-white focus:ring-2 focus:ring-inset focus:ring-blue-500"
         />
       )}
 
       {def.type === "image" && (
-        <ImageUpload
-          images={value ? [value as string] : []}
-          onChange={(imgs) => onChange(imgs[0] || "")}
-          single
-          folder="branding"
-          label=""
-          aspectRatio="aspect-square"
-        />
+        <div className="rounded-xl border border-dashed border-gray-300 bg-white/40 p-2 transition-colors hover:bg-white/60">
+          <ImageUpload
+            images={value ? [value as string] : []}
+            onChange={(imgs) => onChange(imgs[0] || "")}
+            single
+            folder="branding"
+            label=""
+            aspectRatio="aspect-square"
+          />
+        </div>
       )}
 
       {def.type === "boolean" && (
-        <label className="flex items-center gap-2">
+        <label className="relative inline-flex cursor-pointer items-center gap-3">
           <input
             type="checkbox"
             checked={!!value}
             onChange={(e) => onChange(e.target.checked)}
-            className="h-4 w-4 rounded border-gray-300"
+            className="peer sr-only"
           />
-          <span className="text-sm text-gray-700">Enabled</span>
+          <div className="peer h-6 w-11 rounded-full bg-gray-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-blue-600 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:border-gray-600 dark:bg-gray-700 dark:peer-focus:ring-blue-800"></div>
+          <span className="text-sm font-medium text-gray-700">Enabled</span>
         </label>
       )}
     </div>
   );
 }
+

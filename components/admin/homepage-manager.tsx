@@ -13,13 +13,8 @@ import Image from "next/image";
 export function HomepageManager({
   initialSections,
 }: {
-  initialSections: {
-    id: string;
-    title?: string | null;
-    subtitle?: string | null;
-    content?: Record<string, unknown> | null;
-    isActive?: boolean;
-  }[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  initialSections: any[];
 }) {
   const [sections, setSections] = useState(initialSections);
   const [showCreate, setShowCreate] = useState(false);

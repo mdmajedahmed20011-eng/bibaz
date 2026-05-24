@@ -31,7 +31,8 @@ export async function createHomepageSection(data: {
   type: string;
   title?: string;
   subtitle?: string;
-  content: Record<string, unknown>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  content: any;
   sortOrder?: number;
   isActive?: boolean;
 }) {
@@ -74,7 +75,8 @@ export async function updateHomepageSection(
   data: {
     title?: string;
     subtitle?: string;
-    content?: Record<string, unknown>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    content?: any;
     sortOrder?: number;
     isActive?: boolean;
   }

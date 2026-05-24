@@ -49,6 +49,12 @@ const navSections = [
         icon: Sparkles,
         roles: ["ADMIN", "SUPER_ADMIN"],
       },
+      {
+        label: "Homepage Banners",
+        href: "/admin/homepage",
+        icon: Store,
+        roles: ["ADMIN", "SUPER_ADMIN"],
+      },
     ],
   },
   {

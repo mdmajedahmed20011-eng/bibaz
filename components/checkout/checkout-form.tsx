@@ -170,7 +170,7 @@ export function CheckoutForm() {
       clearCart();
       localStorage.removeItem("bibaz_applied_coupon");
     } else {
-      alert("Something went wrong. Please try again.");
+      alert(res.error || "Something went wrong. Please try again.");
     }
     
     setIsSubmitting(false);

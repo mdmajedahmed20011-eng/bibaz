@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function createOrder(data: any) {
   try {
     const session = await auth();
@@ -28,6 +29,7 @@ export async function createOrder(data: any) {
         paymentMethod: data.paymentMethod,
         status: "PENDING",
         items: {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           create: data.items.map((item: any) => ({
             variantId: item.variantId,
             quantity: item.quantity,
@@ -46,6 +48,6 @@ export async function createOrder(data: any) {
     return { success: true, orderNumber: order.orderNumber };
   } catch (error) {
     console.error("Order creation error:", error);
-    return { success: false, error: "Failed to place order." };
+    return { success: false, error: error instanceof Error ? error.message : "Failed to place order. Unknown error." };
   }
 }

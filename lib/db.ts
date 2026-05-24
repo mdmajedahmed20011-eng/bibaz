@@ -14,19 +14,9 @@ const globalForPrisma = globalThis as unknown as {
 };
 
 function buildConnectionString(): string {
-    // If individual DB vars are set, build URL from them (avoids special char issues)
-    const host = process.env.DB_HOST;
-    const user = process.env.DB_USER;
-    const password = process.env.DB_PASSWORD;
-    const database = process.env.DB_NAME;
-    const port = process.env.DB_PORT || "3306";
-
-    if (host && user && password && database) {
-        return `mysql://${user}:${encodeURIComponent(password)}@${host}:${port}/${database}`;
-    }
-
-    // Fallback to DATABASE_URL
-    return process.env.DATABASE_URL || "mysql://root:@localhost:3306/bibaz";
+    // ALWAYS fallback to DATABASE_URL to guarantee it uses the .env configuration
+    // This prevents accidental connection to local databases via system environment variables.
+    return process.env.DATABASE_URL?.replace('mysql://', 'mariadb://') || "mariadb://root:@localhost:3306/bibaz";
 }
 
 function createPrismaClient() {

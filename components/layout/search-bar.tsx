@@ -13,6 +13,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { Search, X } from "lucide-react";
+import { createPortal } from "react-dom";
 
 const popularSearches = [
   "Borka",
@@ -143,9 +144,9 @@ export function SearchBar() {
       </button>
 
       {/* Full-Screen Overlay (Mobile) */}
-      {isOpen && (
+      {isOpen && typeof document !== "undefined" && createPortal(
         <div
-          className="fixed inset-0 bg-white z-[99999] flex flex-col p-6 md:p-12 animate-[fadeIn_0.25s_ease-out]"
+          className="fixed top-0 left-0 w-screen h-[100dvh] bg-white z-[99999] flex flex-col p-6 md:p-12 animate-[fadeIn_0.25s_ease-out]"
           style={{ backgroundColor: "#fdfcfa" }}
         >
           <div className="max-w-4xl w-full mx-auto flex-1 flex flex-col justify-start">
@@ -260,7 +261,8 @@ export function SearchBar() {
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );

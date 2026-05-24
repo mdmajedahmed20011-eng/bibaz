@@ -8,9 +8,9 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { Menu, X, Search, ShoppingBag, User, ChevronDown, ChevronUp } from "lucide-react";
+import { Menu, X, ShoppingBag, User, ChevronDown, ChevronUp } from "lucide-react";
 import Image from "next/image";
+import { createPortal } from "react-dom";
 import { useCartStore } from "@/store/cart-store";
 
 interface MobileNavProps {
@@ -20,8 +20,6 @@ interface MobileNavProps {
 export function MobileNav({ links }: MobileNavProps) {
     const [open, setOpen] = useState(false);
     const [activeAccordion, setActiveAccordion] = useState<string | null>(null);
-    const [searchQuery, setSearchQuery] = useState("");
-    const router = useRouter();
     
     // Read cart items count dynamically from Zustand store
     const cartCount = useCartStore((state) => state.items.reduce((sum, item) => sum + item.quantity, 0));
@@ -37,15 +35,6 @@ export function MobileNav({ links }: MobileNavProps) {
             document.body.style.overflow = "";
         };
     }, [open]);
-
-    const handleSearch = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (searchQuery.trim()) {
-            router.push(`/collections/new-arrivals?search=${encodeURIComponent(searchQuery.trim())}`);
-            setOpen(false);
-            setSearchQuery("");
-        }
-    };
 
     const toggleAccordion = (label: string) => {
         setActiveAccordion(activeAccordion === label ? null : label);
@@ -71,8 +60,8 @@ export function MobileNav({ links }: MobileNavProps) {
             </button>
 
             {/* Premium Full-Screen Navigation Panel Overlay */}
-            {open && (
-                <div className="fixed inset-0 bg-white z-[9999] flex flex-col overflow-y-auto animate-slide-up">
+            {open && typeof document !== "undefined" && createPortal(
+                <div className="fixed top-0 left-0 w-screen h-[100dvh] bg-white z-[9999] flex flex-col overflow-y-auto animate-slide-up">
                     {/* Header bar within overlay */}
                     <div className="flex h-16 items-center justify-between px-6 border-b border-border/50 bg-white">
                         <Link href="/" onClick={() => setOpen(false)} className="flex items-center">
@@ -95,26 +84,7 @@ export function MobileNav({ links }: MobileNavProps) {
                         </button>
                     </div>
 
-                    <div className="px-6 py-4 bg-neutral-50/50 border-b border-border/30">
-                        <form onSubmit={handleSearch} className="flex gap-2">
-                            <div className="relative flex-1">
-                                <input
-                                    type="text"
-                                    placeholder="Search products, styles..."
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="w-full h-11 pl-11 pr-4 bg-white border border-border/80 rounded-lg text-sm placeholder:text-muted-foreground focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-all duration-200"
-                                />
-                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" strokeWidth={1.5} />
-                            </div>
-                            <button
-                                type="submit"
-                                className="h-11 px-4 bg-foreground text-background text-sm font-semibold rounded-lg hover:bg-neutral-800 transition-colors shrink-0"
-                            >
-                                Search
-                            </button>
-                        </form>
-                    </div>
+
 
                     {/* Touch-Optimized Accordion Navigation Links */}
                     <nav className="flex-1 px-6 py-4" aria-label="Mobile navigation">
@@ -219,7 +189,8 @@ export function MobileNav({ links }: MobileNavProps) {
                             Bag ({cartCount})
                         </Link>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
         </>
     );

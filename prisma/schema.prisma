@@ -224,6 +224,7 @@ model Order {
   notes           String?       
   createdAt       DateTime      @default(now()) @map("created_at")
   updatedAt       DateTime      @updatedAt @map("updated_at")
+  deletedAt       DateTime?     @map("deleted_at")
 
   user     User?     @relation(fields: [userId], references: [id])
   address  Address?  @relation(fields: [addressId], references: [id])
@@ -249,6 +250,7 @@ model OrderItem {
   quantity   Int
   unitPrice  Decimal  @map("unit_price")
   totalPrice Decimal  @map("total_price")
+  updatedAt  DateTime @updatedAt @map("updated_at")
 
   order   Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
   variant ProductVariant @relation(fields: [variantId], references: [id])
@@ -267,6 +269,7 @@ model OrderTimeline {
   note      String?
   createdBy String?     @map("created_by")
   createdAt DateTime    @default(now()) @map("created_at")
+  updatedAt DateTime    @updatedAt @map("updated_at")
 
   order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
@@ -286,6 +289,7 @@ model Payment {
   status          PaymentStatus
   gatewayResponse Json?         @map("gateway_response")
   createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
 
   order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
@@ -307,6 +311,7 @@ model Coupon {
   isActive  Boolean    @default(true) @map("is_active")
   expiresAt DateTime?  @map("expires_at")
   createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
 
   orders Order[]
 
@@ -326,6 +331,7 @@ model Review {
   isVerified Boolean      @default(false) @map("is_verified")
   status     ReviewStatus @default(PENDING)
   createdAt  DateTime     @default(now()) @map("created_at")
+  updatedAt  DateTime     @updatedAt @map("updated_at")
 
   product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
   user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -342,6 +348,7 @@ model Wishlist {
   userId    String   @map("user_id")
   productId String   @map("product_id")
   createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   product Product @relation(fields: [productId], references: [id], onDelete: Cascade)

@@ -1,3 +1,5 @@
+"use client";
+
 /**
  * BIBAZ — Header (Premium v2.0)
  * Clean, minimal, luxury feel
@@ -6,7 +8,8 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { User } from "lucide-react";
+import { User, X } from "lucide-react";
+import { useState } from "react";
 import { MobileNav } from "./mobile-nav";
 import { CartButton } from "./cart-button";
 import { SearchBar } from "./search-bar";
@@ -107,12 +110,23 @@ const megaMenuData: Record<string, {
 };
 
 export function Header() {
+  const [showAnnouncement, setShowAnnouncement] = useState(true);
+
   return (
     <header className="sticky top-0 z-50 w-full bg-white/95 backdrop-blur-md supports-[backdrop-filter]:bg-white/80 transition-shadow duration-300">
       {/* Announcement Bar — subtle */}
-      <div className="bg-foreground text-background text-center text-[11px] tracking-wide py-2 px-4">
-        <p>Free delivery on orders above ৳10,000 &nbsp;|&nbsp; Cash on Delivery available</p>
-      </div>
+      {showAnnouncement && (
+        <div className="bg-foreground text-background text-center text-[11px] tracking-wide py-2 px-4 relative">
+          <p>Free delivery on orders above ৳10,000 &nbsp;|&nbsp; Cash on Delivery available</p>
+          <button 
+            onClick={() => setShowAnnouncement(false)} 
+            className="absolute right-4 top-1/2 -translate-y-1/2 text-background/80 hover:text-background transition-colors"
+            aria-label="Close announcement"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      )}
 
       {/* Main Header — 64px */}
       <div className="border-b border-border/60 relative">

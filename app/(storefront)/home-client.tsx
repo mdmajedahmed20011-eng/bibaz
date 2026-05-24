@@ -105,8 +105,8 @@ const testimonials = [
 /* ──────────────── Component ──────────────── */
 
 type SectionData = {
-  id?: string;
-  type?: string;
+  id: string;
+  type: string;
   title?: string | null;
   subtitle?: string | null;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

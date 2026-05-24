@@ -14,14 +14,14 @@ import { z } from "zod";
 // VALIDATORS
 // ═══════════════════════════════════════════
 
-export const categorySchema = z.object({
+const categorySchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   parentId: z.string().nullable().optional(),
   image: z.string().nullable().optional(),
   sortOrder: z.number().int().default(0),
 });
 
-export const updateCategorySchema = z.object({
+const updateCategorySchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters").optional(),
   parentId: z.string().nullable().optional(),
   image: z.string().nullable().optional(),

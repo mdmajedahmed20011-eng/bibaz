@@ -10,7 +10,74 @@ const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
 
-function createPrismaClient() {
+function createDummyPrisma() {
+  const dummy: any = new Proxy({} as any, {
+    get(target, prop) {
+      if (typeof prop === "symbol") return undefined;
+
+      // Prisma special methods
+      if (
+        prop === "$connect" ||
+        prop === "$disconnect" ||
+        prop === "$use" ||
+        prop === "$transaction"
+      ) {
+        return async (args?: any) => {
+          if (typeof args === "function") {
+            return await args(dummy);
+          }
+          return args;
+        };
+      }
+      if (prop === "$on") {
+        return () => {};
+      }
+      if (prop.startsWith("$")) {
+        return async () => null;
+      }
+
+      // Return a nested proxy for model operations (e.g. prisma.user.findMany)
+      return new Proxy({} as any, {
+        get(modelTarget, modelProp) {
+          if (typeof modelProp === "symbol") return undefined;
+
+          // Return an async function for any model method (findMany, findUnique, findFirst, create, etc.)
+          return async (...args: any[]) => {
+            // Log access during build to see what is queried
+            console.log(`[PRISMA MOCK] Called: ${String(prop)}.${String(modelProp)}`);
+
+            // Return appropriate empty types based on the method name
+            if (modelProp === "findMany") {
+              return [];
+            }
+            if (modelProp === "count") {
+              return 0;
+            }
+
+            // For settings, return a default favicon if requested during build
+            if (prop === "siteSetting" && modelProp === "findUnique") {
+              const whereKey = args[0]?.where?.key;
+              if (whereKey === "favicon_url") {
+                return { key: "favicon_url", value: "/favicon.ico" };
+              }
+            }
+
+            return null;
+          };
+        },
+      });
+    },
+  });
+  return dummy;
+}
+
+function createPrismaClient(): PrismaClient {
+  // If we are in the Next.js build phase, return a dummy mock proxy to prevent database connection attempts
+  if (process.env.NEXT_PHASE === "phase-production-build") {
+    console.log("[PRISMA] Next.js build phase detected. Bypassing database connection.");
+    return createDummyPrisma() as unknown as PrismaClient;
+  }
+
   let host = process.env.DB_HOST || "127.0.0.1";
   let port = process.env.DB_PORT ? parseInt(process.env.DB_PORT) : 3306;
   let user = process.env.DB_USER || "root";

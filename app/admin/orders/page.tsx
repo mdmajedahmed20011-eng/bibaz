@@ -5,6 +5,7 @@
 
 import { getAdminOrders } from "@/actions/order.actions";
 import Link from "next/link";
+import Form from "next/form";
 import { Search } from "lucide-react";
 import { OrderExportButton } from "@/components/admin/order-export-button";
 
@@ -50,16 +51,16 @@ export default async function AdminOrdersPage({
 
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-3">
-        <form className="relative flex-1" action="/admin/orders">
+        <Form className="relative flex-1" action="/admin/orders">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
           <input
             type="text"
             name="search"
             defaultValue={search}
-            placeholder="Search by order #, name, phone..."
+            placeholder="Search by order #, name, phone... (Press Enter)"
             className="w-full rounded-lg border border-gray-200 py-2.5 pl-10 pr-4 text-sm focus:border-gray-400 focus:outline-none"
           />
-        </form>
+        </Form>
         <div className="flex flex-wrap gap-2">
           {["ALL", "PENDING", "CONFIRMED", "PROCESSING", "SHIPPED", "DELIVERED", "CANCELLED"].map(
             (s) => (

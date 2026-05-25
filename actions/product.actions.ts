@@ -23,6 +23,8 @@ import {
   type UpdateVariantInput,
   type CreateCategoryInput,
 } from "@/lib/validators/product";
+import { withCache } from "@/lib/redis";
+import { getActiveCampaign } from "@/actions/campaign.actions";
 
 // ═══════════════════════════════════════════
 // PUBLIC ACTIONS
@@ -51,96 +53,144 @@ export async function getProducts(options?: {
       isFeatured,
     } = options || {};
 
-    // Build where clause
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const where: any = {
-      deletedAt: null,
-    };
+    const cacheKey = `products:${JSON.stringify(options || {})}`;
 
-    if (status) {
-      where.status = status;
-    }
+    return await withCache(cacheKey, async () => {
+      // Build where clause
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const where: any = {
+        deletedAt: null,
+      };
 
-    if (categorySlug) {
-      where.category = { slug: categorySlug };
-    }
+      if (status) {
+        where.status = status;
+      }
 
-    if (isFeatured !== undefined) {
-      where.isFeatured = isFeatured;
-    }
+      if (categorySlug) {
+        where.category = { slug: categorySlug };
+      }
 
-    if (search) {
-      where.OR = [{ name: { contains: search } }, { description: { contains: search } }];
-    }
+      if (isFeatured !== undefined) {
+        where.isFeatured = isFeatured;
+      }
 
-    // Build orderBy
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let orderBy: any = { createdAt: "desc" };
-    switch (sort) {
-      case "price-asc":
-        orderBy = { basePrice: "asc" };
-        break;
-      case "price-desc":
-        orderBy = { basePrice: "desc" };
-        break;
-      case "name-asc":
-        orderBy = { name: "asc" };
-        break;
-      case "name-desc":
-        orderBy = { name: "desc" };
-        break;
-      case "oldest":
-        orderBy = { createdAt: "asc" };
-        break;
-      default:
-        orderBy = { createdAt: "desc" };
-    }
+      if (search) {
+        where.OR = [{ name: { contains: search } }, { description: { contains: search } }];
+      }
 
-    const skip = (page - 1) * pageSize;
+      // Build orderBy
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      let orderBy: any = { createdAt: "desc" };
+      switch (sort) {
+        case "price-asc":
+          orderBy = { basePrice: "asc" };
+          break;
+        case "price-desc":
+          orderBy = { basePrice: "desc" };
+          break;
+        case "name-asc":
+          orderBy = { name: "asc" };
+          break;
+        case "name-desc":
+          orderBy = { name: "desc" };
+          break;
+        case "oldest":
+          orderBy = { createdAt: "asc" };
+          break;
+        default:
+          orderBy = { createdAt: "desc" };
+      }
 
-    const [products, total] = await Promise.all([
-      prisma.product.findMany({
-        where,
-        orderBy,
-        skip,
-        take: pageSize,
-        select: {
-          id: true,
-          name: true,
-          slug: true,
-          description: true,
-          basePrice: true,
-          status: true,
-          isFeatured: true,
-          createdAt: true,
-          category: { select: { name: true, slug: true } },
-          variants: {
-            where: { isActive: true },
-            select: {
-              id: true,
-              sku: true,
-              size: true,
-              color: true,
-              price: true,
-              stock: true,
-              images: true,
+      const skip = (page - 1) * pageSize;
+
+      const [products, total] = await Promise.all([
+        prisma.product.findMany({
+          where,
+          orderBy,
+          skip,
+          take: pageSize,
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            description: true,
+            basePrice: true,
+            status: true,
+            isFeatured: true,
+            createdAt: true,
+            category: { select: { name: true, slug: true } },
+            variants: {
+              where: { isActive: true },
+              select: {
+                id: true,
+                sku: true,
+                size: true,
+                color: true,
+                price: true,
+                stock: true,
+                images: true,
+              },
             },
           },
-        },
-      }),
-      prisma.product.count({ where }),
-    ]);
+        }),
+        prisma.product.count({ where }),
+      ]);
 
-    return {
-      success: true,
-      products: serializeDecimals(products),
-      pagination: {
-        page,
-        pageSize,
-        total,
-        totalPages: Math.ceil(total / pageSize),
-      },
-    };
+      const campaignRes = await getActiveCampaign();
+      const activeCampaign = campaignRes.success ? campaignRes.campaign : null;
+
+      const modifiedProducts = products.map((product) => {
+        let basePrice = Number(product.basePrice);
+        let compareAtPrice = Math.round(basePrice * 1.2);
+
+        if (
+          activeCampaign &&
+          (!activeCampaign.productIds ||
+            (activeCampaign.productIds as string[]).length === 0 ||
+            (activeCampaign.productIds as string[]).includes(product.id))
+        ) {
+          compareAtPrice = basePrice;
+          if (activeCampaign.discountType === "percentage") {
+            basePrice = Math.round(basePrice - (basePrice * activeCampaign.discountValue) / 100);
+          } else {
+            basePrice = Math.max(0, basePrice - activeCampaign.discountValue);
+          }
+        }
+
+        return {
+          ...product,
+          basePrice,
+          compareAtPrice,
+          variants: product.variants.map((v) => {
+            let vPrice = Number(v.price);
+            if (
+              activeCampaign &&
+              (!activeCampaign.productIds ||
+                (activeCampaign.productIds as string[]).length === 0 ||
+                (activeCampaign.productIds as string[]).includes(product.id))
+            ) {
+              if (activeCampaign.discountType === "percentage") {
+                vPrice = Math.round(vPrice - (vPrice * activeCampaign.discountValue) / 100);
+              } else {
+                vPrice = Math.max(0, vPrice - activeCampaign.discountValue);
+              }
+            }
+            return { ...v, price: vPrice };
+          }),
+        };
+      });
+
+      return {
+        success: true,
+        products: serializeDecimals(modifiedProducts),
+        pagination: {
+          page,
+          pageSize,
+          total,
+          totalPages: Math.ceil(total / pageSize),
+        },
+      };
+    });
   } catch (error) {
     console.error("[PRODUCT] getProducts error:", error);
     return { success: false, products: [], pagination: null, error: "Failed to fetch products" };
@@ -196,7 +246,49 @@ export async function getProductBySlug(slug: string) {
       return { success: false, product: null, error: "Product not found" };
     }
 
-    return { success: true, product: serializeDecimals(product) };
+    const campaignRes = await getActiveCampaign();
+    const activeCampaign = campaignRes.success ? campaignRes.campaign : null;
+
+    let basePrice = Number(product.basePrice);
+    let compareAtPrice = Math.round(basePrice * 1.2);
+
+    if (
+      activeCampaign &&
+      (!activeCampaign.productIds ||
+        (activeCampaign.productIds as string[]).length === 0 ||
+        (activeCampaign.productIds as string[]).includes(product.id))
+    ) {
+      compareAtPrice = basePrice;
+      if (activeCampaign.discountType === "percentage") {
+        basePrice = Math.round(basePrice - (basePrice * activeCampaign.discountValue) / 100);
+      } else {
+        basePrice = Math.max(0, basePrice - activeCampaign.discountValue);
+      }
+    }
+
+    const modifiedProduct = {
+      ...product,
+      basePrice,
+      compareAtPrice,
+      variants: product.variants.map((v) => {
+        let vPrice = Number(v.price);
+        if (
+          activeCampaign &&
+          (!activeCampaign.productIds ||
+            (activeCampaign.productIds as string[]).length === 0 ||
+            (activeCampaign.productIds as string[]).includes(product.id))
+        ) {
+          if (activeCampaign.discountType === "percentage") {
+            vPrice = Math.round(vPrice - (vPrice * activeCampaign.discountValue) / 100);
+          } else {
+            vPrice = Math.max(0, vPrice - activeCampaign.discountValue);
+          }
+        }
+        return { ...v, price: vPrice };
+      }),
+    };
+
+    return { success: true, product: serializeDecimals(modifiedProduct) };
   } catch (error) {
     console.error("[PRODUCT] getProductBySlug error:", error);
     return { success: false, product: null, error: "Failed to fetch product" };
@@ -208,19 +300,25 @@ export async function getProductBySlug(slug: string) {
  */
 export async function getCategories() {
   try {
-    const categories = await prisma.category.findMany({
-      where: { isActive: true },
-      orderBy: { sortOrder: "asc" },
-      include: {
-        _count: { select: { products: true } },
-        children: {
+    return await withCache(
+      "categories:all",
+      async () => {
+        const categories = await prisma.category.findMany({
           where: { isActive: true },
           orderBy: { sortOrder: "asc" },
-        },
-      },
-    });
+          include: {
+            _count: { select: { products: true } },
+            children: {
+              where: { isActive: true },
+              orderBy: { sortOrder: "asc" },
+            },
+          },
+        });
 
-    return { success: true, categories };
+        return { success: true, categories };
+      },
+      3600
+    ); // cache for 1 hour
   } catch (error) {
     console.error("[PRODUCT] getCategories error:", error);
     return { success: false, categories: [], error: "Failed to fetch categories" };

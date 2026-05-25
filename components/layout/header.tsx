@@ -22,12 +22,15 @@ const navLinks = [
   { href: "/collections/new-arrivals", label: "New Arrivals" },
 ];
 
-const megaMenuData: Record<string, {
-  categories: { label: string; href: string }[];
-  styles: { label: string; href: string }[];
-  featured: { title: string; subtitle: string; image: string; href: string };
-}> = {
-  "Borka": {
+const megaMenuData: Record<
+  string,
+  {
+    categories: { label: string; href: string }[];
+    styles: { label: string; href: string }[];
+    featured: { title: string; subtitle: string; image: string; href: string };
+  }
+> = {
+  Borka: {
     categories: [
       { label: "Shop All Borka", href: "/collections/borka" },
       { label: "New Arrivals", href: "/collections/borka?filter=new" },
@@ -45,9 +48,9 @@ const megaMenuData: Record<string, {
       subtitle: "Handcrafted detailing and fine fabrics.",
       image: "/images/products/borka/borka 3.jpg",
       href: "/collections/borka",
-    }
+    },
   },
-  "Saree": {
+  Saree: {
     categories: [
       { label: "Shop All Saree", href: "/collections/saree" },
       { label: "New Saree Designs", href: "/collections/saree?filter=new" },
@@ -65,9 +68,9 @@ const megaMenuData: Record<string, {
       subtitle: "Royal violet and golden patterns.",
       image: "/images/products/saree/shari 3.webp",
       href: "/collections/saree",
-    }
+    },
   },
-  "Boutique": {
+  Boutique: {
     categories: [
       { label: "Shop All Boutique", href: "/collections/boutique" },
       { label: "New Boutique Suits", href: "/collections/boutique?filter=new" },
@@ -85,7 +88,7 @@ const megaMenuData: Record<string, {
       subtitle: "Limited designer runs.",
       image: "/images/products/boutique/bouthik 3.webp",
       href: "/collections/boutique",
-    }
+    },
   },
   "Three Piece": {
     categories: [
@@ -105,8 +108,8 @@ const megaMenuData: Record<string, {
       subtitle: "Artisanal block prints and zardozi.",
       image: "/images/products/three-piece/tree prices 1.webp",
       href: "/collections/three-piece",
-    }
-  }
+    },
+  },
 };
 
 export function Header() {
@@ -118,8 +121,8 @@ export function Header() {
       {showAnnouncement && (
         <div className="bg-foreground text-background text-center text-[11px] tracking-wide py-2 px-4 relative">
           <p>Free delivery on orders above ৳10,000 &nbsp;|&nbsp; Cash on Delivery available</p>
-          <button 
-            onClick={() => setShowAnnouncement(false)} 
+          <button
+            onClick={() => setShowAnnouncement(false)}
             className="absolute right-4 top-1/2 -translate-y-1/2 text-background/80 hover:text-background transition-colors"
             aria-label="Close announcement"
           >
@@ -156,6 +159,7 @@ export function Header() {
                   <div key={link.href} className="group static">
                     <Link
                       href={link.href}
+                      prefetch={true}
                       className="text-[13px] font-medium text-foreground/70 tracking-[0.02em] hover:text-foreground py-6 block transition-colors relative after:absolute after:bottom-0 after:left-0 after:w-full after:h-[2px] after:bg-accent after:scale-x-0 group-hover:after:scale-x-100 after:transition-transform after:duration-300"
                     >
                       {link.label}
@@ -209,13 +213,17 @@ export function Header() {
                             </h4>
                             <div className="space-y-4 pr-4">
                               <div>
-                                <p className="text-[12px] font-medium text-foreground">100% Handcrafted</p>
+                                <p className="text-[12px] font-medium text-foreground">
+                                  100% Handcrafted
+                                </p>
                                 <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">
                                   Every item is made by skilled local artisans using fine materials.
                                 </p>
                               </div>
                               <div>
-                                <p className="text-[12px] font-medium text-foreground">Easy Size Exchange</p>
+                                <p className="text-[12px] font-medium text-foreground">
+                                  Easy Size Exchange
+                                </p>
                                 <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">
                                   Hassle-free size replacement within 7 days of delivery.
                                 </p>

@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { prisma } from "./lib/db";
 
 async function runTest() {
@@ -14,6 +15,7 @@ async function runTest() {
         description: "Best winter clothes",
         isActive: true,
         isFeatured: true,
+        productIds: [],
       },
     });
 

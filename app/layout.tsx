@@ -4,6 +4,7 @@ import "./globals.css";
 import { cn } from "@/lib/utils";
 import { OrganizationJsonLd, WebsiteJsonLd } from "@/components/seo/json-ld";
 import { Toaster } from "@/components/ui/sonner";
+import NextTopLoader from "nextjs-toploader";
 
 // Body font — clean, modern, highly readable
 const inter = Inter({
@@ -60,6 +61,12 @@ export default function RootLayout({
         <a href="#main-content" className="skip-link">
           Skip to main content
         </a>
+        <NextTopLoader
+          color="#1a1a1a"
+          height={2}
+          showSpinner={false}
+          shadow="0 0 10px #1a1a1a,0 0 5px #1a1a1a"
+        />
         {/* Structured Data — SEO (SOP §৭) */}
         <OrganizationJsonLd />
         <WebsiteJsonLd />

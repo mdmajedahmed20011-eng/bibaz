@@ -1,4 +1,5 @@
 /* eslint-disable */
+require('dotenv').config();
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
@@ -14,6 +15,7 @@ async function runTest() {
         description: "Best winter clothes",
         isActive: true,
         isFeatured: true,
+        productIds: [],
       }
     });
 

@@ -20,6 +20,7 @@ import {
   CheckCircle2,
   X,
 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useCartStore } from "@/store/cart-store";
 import { formatPrice } from "@/lib/utils";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -156,86 +157,95 @@ export function CartDrawer() {
           <>
             {/* Cart Items */}
             <div className="flex-1 overflow-y-auto -mx-6 px-6 space-y-6 scrollbar-thin">
-              {items.map((item) => (
-                <div key={item.variantId} className="flex gap-4 group">
-                  {/* Item Image */}
-                  <div className="relative h-24 w-18 shrink-0 overflow-hidden bg-[#faf9f6] border border-border/40 aspect-[3/4] rounded-none">
-                    {item.image && (
-                      <Image
-                        src={item.image}
-                        alt={item.productName}
-                        fill
-                        sizes="96px"
-                        className="object-cover transition-transform duration-500 group-hover:scale-105"
-                      />
-                    )}
-                  </div>
+              <AnimatePresence initial={false}>
+                {items.map((item) => (
+                  <motion.div
+                    key={item.variantId}
+                    initial={{ opacity: 0, height: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, height: "auto", scale: 1 }}
+                    exit={{ opacity: 0, height: 0, scale: 0.95, overflow: "hidden" }}
+                    transition={{ duration: 0.2, ease: "easeOut" }}
+                    className="flex gap-4 group"
+                  >
+                    {/* Item Image */}
+                    <div className="relative h-24 w-18 shrink-0 overflow-hidden bg-[#faf9f6] border border-border/40 aspect-[3/4] rounded-none">
+                      {item.image && (
+                        <Image
+                          src={item.image}
+                          alt={item.productName}
+                          fill
+                          sizes="96px"
+                          className="object-cover transition-transform duration-500 group-hover:scale-105"
+                        />
+                      )}
+                    </div>
 
-                  {/* Item Details */}
-                  <div className="flex-1 min-w-0 flex flex-col justify-between">
-                    <div>
-                      <div className="flex items-start justify-between gap-2">
-                        <Link
-                          href={`/products/${item.productSlug}`}
-                          onClick={closeCart}
-                          className="text-sm font-medium leading-tight text-foreground hover:text-accent line-clamp-2 transition-colors"
-                        >
-                          {item.productName}
-                        </Link>
-                        {/* Remove Button */}
-                        <button
-                          onClick={() => removeItem(item.variantId)}
-                          className="p-1 text-muted-foreground hover:text-sale transition-colors cursor-pointer shrink-0"
-                          aria-label={`Remove ${item.productName} from cart`}
-                        >
-                          <Trash2 className="h-4 w-4" strokeWidth={1.5} />
-                        </button>
-                      </div>
+                    {/* Item Details */}
+                    <div className="flex-1 min-w-0 flex flex-col justify-between">
+                      <div>
+                        <div className="flex items-start justify-between gap-2">
+                          <Link
+                            href={`/products/${item.productSlug}`}
+                            onClick={closeCart}
+                            className="text-sm font-medium leading-tight text-foreground hover:text-accent line-clamp-2 transition-colors"
+                          >
+                            {item.productName}
+                          </Link>
+                          {/* Remove Button */}
+                          <button
+                            onClick={() => removeItem(item.variantId)}
+                            className="p-1 text-muted-foreground hover:text-sale transition-colors cursor-pointer shrink-0"
+                            aria-label={`Remove ${item.productName} from cart`}
+                          >
+                            <Trash2 className="h-4 w-4" strokeWidth={1.5} />
+                          </button>
+                        </div>
 
-                      <div className="flex items-center gap-1.5 mt-1.5">
-                        <span className="text-[10px] uppercase tracking-wider bg-[#f8f5f0] text-muted-foreground px-2 py-0.5 font-medium">
-                          Size {item.size}
-                        </span>
-                        {item.color && (
+                        <div className="flex items-center gap-1.5 mt-1.5">
                           <span className="text-[10px] uppercase tracking-wider bg-[#f8f5f0] text-muted-foreground px-2 py-0.5 font-medium">
-                            {item.color}
+                            Size {item.size}
                           </span>
-                        )}
+                          {item.color && (
+                            <span className="text-[10px] uppercase tracking-wider bg-[#f8f5f0] text-muted-foreground px-2 py-0.5 font-medium">
+                              {item.color}
+                            </span>
+                          )}
+                        </div>
                       </div>
-                    </div>
 
-                    <div className="flex items-center justify-between mt-3">
-                      {/* Quantity Selector */}
-                      <div className="flex items-center border border-border/60">
-                        <button
-                          onClick={() => updateQuantity(item.variantId, item.quantity - 1)}
-                          disabled={item.quantity <= 1}
-                          className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-foreground disabled:opacity-30 transition-colors cursor-pointer"
-                          aria-label="Decrease quantity"
-                        >
-                          <Minus className="h-3 w-3" />
-                        </button>
-                        <span className="h-8 w-8 flex items-center justify-center text-xs font-semibold text-foreground">
-                          {item.quantity}
+                      <div className="flex items-center justify-between mt-3">
+                        {/* Quantity Selector */}
+                        <div className="flex items-center border border-border/60">
+                          <button
+                            onClick={() => updateQuantity(item.variantId, item.quantity - 1)}
+                            disabled={item.quantity <= 1}
+                            className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-foreground disabled:opacity-30 transition-colors cursor-pointer"
+                            aria-label="Decrease quantity"
+                          >
+                            <Minus className="h-3 w-3" />
+                          </button>
+                          <span className="h-8 w-8 flex items-center justify-center text-xs font-semibold text-foreground">
+                            {item.quantity}
+                          </span>
+                          <button
+                            onClick={() => updateQuantity(item.variantId, item.quantity + 1)}
+                            disabled={item.quantity >= item.maxStock}
+                            className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-foreground disabled:opacity-30 transition-colors cursor-pointer"
+                            aria-label="Increase quantity"
+                          >
+                            <Plus className="h-3 w-3" />
+                          </button>
+                        </div>
+
+                        {/* Price */}
+                        <span className="text-sm font-semibold text-foreground">
+                          {formatPrice(item.price * item.quantity)}
                         </span>
-                        <button
-                          onClick={() => updateQuantity(item.variantId, item.quantity + 1)}
-                          disabled={item.quantity >= item.maxStock}
-                          className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-foreground disabled:opacity-30 transition-colors cursor-pointer"
-                          aria-label="Increase quantity"
-                        >
-                          <Plus className="h-3 w-3" />
-                        </button>
                       </div>
-
-                      {/* Price */}
-                      <span className="text-sm font-semibold text-foreground">
-                        {formatPrice(item.price * item.quantity)}
-                      </span>
                     </div>
-                  </div>
-                </div>
-              ))}
+                  </motion.div>
+                ))}
+              </AnimatePresence>
             </div>
 
             <Separator className="my-4 opacity-50" />

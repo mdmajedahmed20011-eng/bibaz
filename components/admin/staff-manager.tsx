@@ -2,13 +2,25 @@
 
 import { useState } from "react";
 import { assignRole, searchUsersByEmail } from "@/actions/staff.actions";
-import { UserPlus, Shield, Search, CheckCircle2, User as UserIcon } from "lucide-react";
+import { UserPlus, Shield, Search, User as UserIcon } from "lucide-react";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function StaffManager({ initialStaff, currentUserRole }: { initialStaff: any[]; currentUserRole: string }) {
-  const [staff, setStaff] = useState(initialStaff);
+export interface StaffMember {
+  id: string;
+  name: string | null;
+  email: string;
+  role: string;
+}
+
+export function StaffManager({
+  initialStaff,
+  currentUserRole,
+}: {
+  initialStaff: StaffMember[];
+  currentUserRole: string;
+}) {
+  const [staff] = useState<StaffMember[]>(initialStaff);
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [searchResults, setSearchResults] = useState<StaffMember[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [updating, setUpdating] = useState<string | null>(null);
 
@@ -70,7 +82,10 @@ export function StaffManager({ initialStaff, currentUserRole }: { initialStaff: 
             <div className="absolute z-10 mt-1 w-full rounded-xl border border-gray-100 bg-white shadow-lg">
               <ul className="max-h-60 overflow-y-auto py-1">
                 {searchResults.map((user) => (
-                  <li key={user.id} className="flex items-center justify-between px-4 py-2 hover:bg-gray-50">
+                  <li
+                    key={user.id}
+                    className="flex items-center justify-between px-4 py-2 hover:bg-gray-50"
+                  >
                     <div>
                       <p className="text-sm font-medium text-gray-900">{user.name || "Unknown"}</p>
                       <p className="text-xs text-gray-500">{user.email}</p>
@@ -82,7 +97,9 @@ export function StaffManager({ initialStaff, currentUserRole }: { initialStaff: 
                         disabled={updating === user.id}
                         className="rounded-lg border-gray-300 text-xs py-1 pl-2 pr-6 focus:ring-indigo-500 focus:border-indigo-500"
                       >
-                        <option value="" disabled>Assign Role</option>
+                        <option value="" disabled>
+                          Assign Role
+                        </option>
                         <option value="STAFF">Staff</option>
                         <option value="MANAGER">Manager</option>
                         {currentUserRole === "SUPER_ADMIN" && <option value="ADMIN">Admin</option>}
@@ -110,7 +127,9 @@ export function StaffManager({ initialStaff, currentUserRole }: { initialStaff: 
               <tr>
                 <th className="px-6 py-3 font-medium text-gray-500 text-xs uppercase">User</th>
                 <th className="px-6 py-3 font-medium text-gray-500 text-xs uppercase">Role</th>
-                <th className="px-6 py-3 font-medium text-gray-500 text-xs uppercase text-right">Actions</th>
+                <th className="px-6 py-3 font-medium text-gray-500 text-xs uppercase text-right">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -137,7 +156,7 @@ export function StaffManager({ initialStaff, currentUserRole }: { initialStaff: 
                       onChange={(e) => handleAssignRole(member.id, e.target.value)}
                       value={member.role}
                       disabled={
-                        updating === member.id || 
+                        updating === member.id ||
                         (member.role === "SUPER_ADMIN" && currentUserRole !== "SUPER_ADMIN")
                       }
                       className="rounded-lg border-gray-200 text-xs py-1.5 pl-3 pr-8 focus:ring-indigo-500 focus:border-indigo-500 disabled:opacity-50 disabled:bg-gray-50"
@@ -146,7 +165,9 @@ export function StaffManager({ initialStaff, currentUserRole }: { initialStaff: 
                       <option value="STAFF">Staff</option>
                       <option value="MANAGER">Manager</option>
                       <option value="ADMIN">Admin</option>
-                      {member.role === "SUPER_ADMIN" && <option value="SUPER_ADMIN">Super Admin</option>}
+                      {member.role === "SUPER_ADMIN" && (
+                        <option value="SUPER_ADMIN">Super Admin</option>
+                      )}
                     </select>
                   </td>
                 </tr>

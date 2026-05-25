@@ -94,6 +94,32 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     // Facebook({...}),
   ],
   callbacks: {
+    async signIn({ user, account }) {
+      if (account?.provider !== "credentials" && user.email) {
+        try {
+          const existingUser = await prisma.user.findUnique({
+            where: { email: user.email.toLowerCase() },
+          });
+
+          if (!existingUser) {
+            await prisma.user.create({
+              data: {
+                name: user.name || "OAuth User",
+                email: user.email.toLowerCase(),
+                image: user.image,
+                role: "CUSTOMER",
+                emailVerified: new Date(),
+              },
+            });
+            console.log(`[AUTH] Created new OAuth user in database: ${user.email}`);
+          }
+        } catch (error) {
+          console.error("[AUTH] Error syncing OAuth user to database:", error);
+          return false;
+        }
+      }
+      return true;
+    },
     async jwt({ token, user, account }) {
       // On initial sign in, add user data to token
       if (user) {

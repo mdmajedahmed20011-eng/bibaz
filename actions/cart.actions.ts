@@ -9,6 +9,7 @@
  */
 
 import { prisma } from "@/lib/db";
+import { Prisma } from "@prisma/client";
 import { auth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 
@@ -360,7 +361,7 @@ export async function validateCartStock() {
  */
 export async function saveAbandonedCart(data: {
   guestEmail?: string;
-  cartData: any;
+  cartData: Prisma.InputJsonValue;
   totalAmount: number;
 }) {
   const session = await auth();
@@ -415,8 +416,8 @@ export async function getAbandonedCarts(page = 1, pageSize = 20) {
       totalAmount: Number(cart.totalAmount),
     }));
 
-    return { 
-      success: true, 
+    return {
+      success: true,
       carts: serializedCarts,
       pagination: { page, pageSize, total, totalPages: Math.ceil(total / pageSize) },
     };
@@ -461,4 +462,3 @@ export async function sendRecoveryEmail(cartId: string) {
     return { success: false, error: "Failed to send recovery email" };
   }
 }
-

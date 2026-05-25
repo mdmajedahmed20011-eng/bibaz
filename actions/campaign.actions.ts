@@ -53,7 +53,18 @@ export async function getActiveCampaign() {
   }
 }
 
-export async function createCampaign(data: any) {
+export interface CampaignInput {
+  name: string;
+  description?: string;
+  startDate: string | Date;
+  endDate: string | Date;
+  discountType: string;
+  discountValue: number;
+  isActive: boolean;
+  productIds?: string[];
+}
+
+export async function createCampaign(data: CampaignInput) {
   const session = await auth();
   const role = (session?.user as { role?: string })?.role;
   if (!["MANAGER", "ADMIN", "SUPER_ADMIN"].includes(role || "")) {
@@ -82,7 +93,7 @@ export async function createCampaign(data: any) {
   }
 }
 
-export async function updateCampaign(id: string, data: any) {
+export async function updateCampaign(id: string, data: Partial<CampaignInput>) {
   const session = await auth();
   const role = (session?.user as { role?: string })?.role;
   if (!["MANAGER", "ADMIN", "SUPER_ADMIN"].includes(role || "")) {

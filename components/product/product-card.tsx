@@ -103,8 +103,8 @@ export function ProductCard({
           sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
           className={`object-cover transition-all duration-[800ms] cubic-bezier(0.25, 1, 0.5, 1) ${
             hasSecondaryImage
-              ? "group-hover:opacity-0 scale-100 group-hover:scale-103"
-              : "group-hover:scale-[1.03]"
+              ? "group-hover:opacity-0 scale-100 group-hover:scale-105"
+              : "group-hover:scale-105"
           }`}
         />
 

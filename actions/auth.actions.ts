@@ -9,8 +9,19 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
 import { registerSchema, type RegisterInput } from "@/lib/validators/auth";
 
+import { checkRateLimit, getClientIP } from "@/lib/rate-limit";
+import { headers } from "next/headers";
+
 export async function registerUserAction(input: RegisterInput) {
   try {
+    // Rate limit check
+    const headersList = await headers();
+    const ip = getClientIP(headersList);
+    const rateLimit = await checkRateLimit(ip, "register");
+    if (!rateLimit.success) {
+      return { success: false, error: "Too many registration attempts. Please try again later." };
+    }
+
     // 1. Zod schema validation (Mandatory under SOP)
     const validated = registerSchema.safeParse(input);
     if (!validated.success) {
@@ -81,8 +92,6 @@ export async function registerUserAction(input: RegisterInput) {
 
 import { forgotPasswordSchema, resetPasswordSchema } from "@/lib/validators/auth";
 import { sendEmail } from "@/lib/email";
-import { checkRateLimit, getClientIP } from "@/lib/rate-limit";
-import { headers } from "next/headers";
 import crypto from "crypto";
 
 /**

@@ -5,9 +5,9 @@
 
 import { getProducts } from "@/actions/product.actions";
 import Link from "next/link";
+import Form from "next/form";
 import { Plus, Search } from "lucide-react";
 import { ProductStatusBadge } from "@/components/admin/product-status-badge";
-import { ProductExportImport } from "@/components/admin/product-export-import";
 
 export default async function AdminProductsPage({
   searchParams,
@@ -37,30 +37,27 @@ export default async function AdminProductsPage({
           <h1 className="text-2xl font-bold text-gray-900">Products</h1>
           <p className="text-sm text-gray-500">Manage your product catalog</p>
         </div>
-        <div className="flex items-center gap-2">
-          <ProductExportImport />
-          <Link
-            href="/admin/products/new"
-            className="inline-flex items-center gap-2 rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-gray-800"
-          >
-            <Plus className="h-4 w-4" />
-            Add Product
-          </Link>
-        </div>
+        <Link
+          href="/admin/products/new"
+          className="inline-flex items-center gap-2 rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-gray-800"
+        >
+          <Plus className="h-4 w-4" />
+          Add Product
+        </Link>
       </div>
 
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-3">
-        <form className="relative flex-1" action="/admin/products">
+        <Form className="relative flex-1" action="/admin/products">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
           <input
             type="text"
             name="search"
             defaultValue={search}
-            placeholder="Search products..."
+            placeholder="Search products... (Press Enter)"
             className="w-full rounded-lg border border-gray-200 py-2.5 pl-10 pr-4 text-sm focus:border-gray-400 focus:outline-none"
           />
-        </form>
+        </Form>
         <div className="flex gap-2">
           {["ALL", "ACTIVE", "DRAFT", "OUT_OF_STOCK", "ARCHIVED"].map((s) => (
             <Link

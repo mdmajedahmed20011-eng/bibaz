@@ -37,6 +37,7 @@ interface ProductInfoProps {
 export function ProductInfo({ product }: ProductInfoProps) {
   const router = useRouter();
   const addItem = useCartStore((state) => state.addItem);
+  const openCart = useCartStore((state) => state.openCart);
 
   const availableSizes = useMemo(
     () => [...new Set(product.variants.map((v) => v.size))],
@@ -86,6 +87,9 @@ export function ProductInfo({ product }: ProductInfoProps) {
     toast.success("Added to bag", {
       description: `${product.name} — Size ${selectedVariant.size} × ${quantity}`,
     });
+
+    // Open cart drawer for premium feel
+    openCart();
   };
 
   const handleBuyNow = () => {
@@ -248,7 +252,7 @@ export function ProductInfo({ product }: ProductInfoProps) {
           <button
             onClick={handleAddToCart}
             disabled={!selectedSize || !isInStock}
-            className={`flex-1 flex items-center justify-center gap-2 h-12 text-xs font-bold uppercase tracking-[0.12em] transition-all rounded-sm cursor-pointer ${
+            className={`flex-1 flex items-center justify-center gap-2 h-12 text-xs font-bold uppercase tracking-[0.12em] transition-all duration-200 rounded-sm cursor-pointer active:scale-[0.98] ${
               !selectedSize
                 ? "bg-neutral-200 border border-neutral-300 text-neutral-600 font-bold opacity-100 cursor-not-allowed"
                 : "bg-foreground hover:bg-neutral-800 text-background"
@@ -261,7 +265,7 @@ export function ProductInfo({ product }: ProductInfoProps) {
           <button
             onClick={handleBuyNow}
             disabled={!selectedSize || !isInStock}
-            className={`flex-1 flex items-center justify-center gap-2 h-12 text-xs font-bold uppercase tracking-[0.12em] transition-all rounded-sm cursor-pointer shadow-sm ${
+            className={`flex-1 flex items-center justify-center gap-2 h-12 text-xs font-bold uppercase tracking-[0.12em] transition-all duration-200 rounded-sm cursor-pointer shadow-sm active:scale-[0.98] ${
               !selectedSize
                 ? "bg-neutral-200 border border-neutral-300 text-neutral-600 font-bold opacity-100 cursor-not-allowed"
                 : "bg-[#b33a3a] hover:bg-[#9c2f2f] text-white"

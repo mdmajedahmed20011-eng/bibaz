@@ -3,20 +3,10 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import {
-  ChevronLeft,
-  ChevronRight,
-  ArrowUpRight,
-  Star,
-  ShieldCheck,
-  Truck,
-  Clock,
-  Sparkles,
-  ShoppingBag,
-  Gift,
-} from "lucide-react";
+import { ChevronLeft, ChevronRight, ArrowUpRight, Star, Sparkles, ShoppingBag } from "lucide-react";
 import { ProductCard } from "@/components/product/product-card";
 import { formatPrice } from "@/lib/utils";
+import { TrustBadges } from "@/components/home/trust-badges";
 
 /* ──────────────── Static Data ──────────────── */
 
@@ -280,65 +270,8 @@ export function HomeUI({
         </div>
       </section>
 
-      {/* 2. TRUST BADGES */}
-      <section className="relative z-20 -mt-4 bg-[#f8f5f0] border-y border-border/50 shadow-sm py-6 md:py-8 overflow-hidden">
-        <div className="container mx-auto px-6 md:px-8 max-w-5xl">
-          <div className="grid grid-cols-2 gap-5 md:gap-6">
-            <div className="flex items-center gap-3 py-3 md:px-4">
-              <div className="p-2.5 bg-white rounded-full text-accent shadow-sm shrink-0">
-                <Truck className="h-4 w-4 md:h-5 md:w-5" strokeWidth={1.5} />
-              </div>
-              <div>
-                <p className="text-[10px] md:text-xs font-bold uppercase tracking-wider text-foreground">
-                  Express Shipping
-                </p>
-                <p className="text-[10px] text-muted-foreground mt-0.5">
-                  ৳80 Dhaka | ৳150 Nationwide
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3 py-3 md:px-4">
-              <div className="p-2.5 bg-white rounded-full text-accent shadow-sm shrink-0">
-                <ShieldCheck className="h-4 w-4 md:h-5 md:w-5" strokeWidth={1.5} />
-              </div>
-              <div>
-                <p className="text-[10px] md:text-xs font-bold uppercase tracking-wider text-foreground">
-                  Premium Quality
-                </p>
-                <p className="text-[10px] text-muted-foreground mt-0.5">
-                  100% hand-crafted fabrics
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3 py-3 md:px-4">
-              <div className="p-2.5 bg-white rounded-full text-accent shadow-sm shrink-0">
-                <Clock className="h-4 w-4 md:h-5 md:w-5" strokeWidth={1.5} />
-              </div>
-              <div>
-                <p className="text-[10px] md:text-xs font-bold uppercase tracking-wider text-foreground">
-                  Easy Returns
-                </p>
-                <p className="text-[10px] text-muted-foreground mt-0.5">
-                  7-day size exchange support
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3 py-3 md:px-4">
-              <div className="p-2.5 bg-white rounded-full text-accent shadow-sm shrink-0">
-                <Gift className="h-4 w-4 md:h-5 md:w-5" strokeWidth={1.5} />
-              </div>
-              <div>
-                <p className="text-[10px] md:text-xs font-bold uppercase tracking-wider text-foreground">
-                  Gift Packaging
-                </p>
-                <p className="text-[10px] text-muted-foreground mt-0.5">
-                  Premium gift wrap available
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* 2. TRUST BADGES / ADVANTAGE CARDS */}
+      <TrustBadges />
 
       {/* 3. CATEGORY GRID */}
       {mappedCategories.length > 0 && (

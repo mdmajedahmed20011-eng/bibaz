@@ -8,7 +8,6 @@ import {
   ShoppingCart,
   DollarSign,
   Package,
-  Users,
   AlertTriangle,
   Clock,
   TrendingUp,
@@ -121,19 +120,27 @@ export default async function AdminDashboardPage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
             <div>
               <p className="text-xs text-gray-500 mb-1">Today</p>
-              <p className="text-xl font-bold text-gray-900">৳{stats.todayRevenue.toLocaleString()}</p>
+              <p className="text-xl font-bold text-gray-900">
+                ৳{stats.todayRevenue.toLocaleString()}
+              </p>
             </div>
             <div>
               <p className="text-xs text-gray-500 mb-1">This Week</p>
-              <p className="text-xl font-bold text-gray-900">৳{stats.weeklyRevenue.toLocaleString()}</p>
+              <p className="text-xl font-bold text-gray-900">
+                ৳{stats.weeklyRevenue.toLocaleString()}
+              </p>
             </div>
             <div>
               <p className="text-xs text-gray-500 mb-1">This Month</p>
-              <p className="text-xl font-bold text-gray-900">৳{stats.monthlyRevenue.toLocaleString()}</p>
+              <p className="text-xl font-bold text-gray-900">
+                ৳{stats.monthlyRevenue.toLocaleString()}
+              </p>
             </div>
             <div>
               <p className="text-xs text-gray-500 mb-1">All Time</p>
-              <p className="text-xl font-bold text-emerald-600">৳{stats.totalRevenue.toLocaleString()}</p>
+              <p className="text-xl font-bold text-emerald-600">
+                ৳{stats.totalRevenue.toLocaleString()}
+              </p>
             </div>
           </div>
           {/* Mini chart placeholder */}

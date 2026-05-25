@@ -1,30 +1,18 @@
-/**
- * BIBAZ — Storefront Loading State
- * Shows while page content is loading
- */
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function StorefrontLoading() {
   return (
-    <div className="container mx-auto px-4 py-8">
-      {/* Hero skeleton */}
-      <div className="w-full h-[300px] md:h-[400px] rounded-xl bg-muted animate-pulse mb-12" />
+    <div className="min-h-screen px-4 md:px-6 lg:px-8 max-w-7xl mx-auto pt-8 pb-16">
+      {/* Subtle pulsing header skeleton */}
+      <Skeleton className="h-10 w-1/3 mb-10 max-w-sm rounded-sm" />
 
-      {/* Section heading skeleton */}
-      <div className="space-y-2 mb-8">
-        <div className="h-7 w-48 rounded bg-muted animate-pulse" />
-        <div className="h-4 w-72 rounded bg-muted animate-pulse" />
-      </div>
-
-      {/* Product grid skeleton */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+      {/* Product Grid Skeleton */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-8 md:gap-x-6 md:gap-y-10">
         {Array.from({ length: 8 }).map((_, i) => (
-          <div key={i} className="space-y-3 animate-pulse">
-            <div className="aspect-[3/4] rounded-lg bg-muted" />
-            <div className="space-y-2">
-              <div className="h-3 w-16 rounded bg-muted" />
-              <div className="h-4 w-3/4 rounded bg-muted" />
-              <div className="h-4 w-20 rounded bg-muted" />
-            </div>
+          <div key={i} className="flex flex-col gap-3">
+            <Skeleton className="aspect-[3/4] w-full rounded-sm" />
+            <Skeleton className="h-4 w-3/4 rounded-sm" />
+            <Skeleton className="h-4 w-1/4 rounded-sm" />
           </div>
         ))}
       </div>

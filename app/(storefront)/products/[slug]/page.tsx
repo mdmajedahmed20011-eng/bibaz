@@ -149,6 +149,27 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
       {/* Related Products */}
       <RelatedProducts categorySlug={displayProduct.category.slug} />
+
+      {/* JSON-LD Structured Data */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Product",
+            name: displayProduct.name,
+            description: displayProduct.description,
+            image: displayProduct.images,
+            offers: {
+              "@type": "AggregateOffer",
+              priceCurrency: "BDT",
+              lowPrice: displayProduct.basePrice,
+              highPrice: displayProduct.compareAtPrice || displayProduct.basePrice,
+              offerCount: displayProduct.variants.length,
+            },
+          }),
+        }}
+      />
     </div>
   );
 }

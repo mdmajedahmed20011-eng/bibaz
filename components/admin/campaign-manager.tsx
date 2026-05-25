@@ -4,11 +4,22 @@ import { useState } from "react";
 import { createCampaign, updateCampaign, deleteCampaign } from "@/actions/campaign.actions";
 import { Plus, Edit2, Trash2, Calendar, Percent, ToggleLeft, ToggleRight, X } from "lucide-react";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function CampaignManager({ initialCampaigns }: { initialCampaigns: any[] }) {
-  const [campaigns, setCampaigns] = useState(initialCampaigns);
+export interface Campaign {
+  id: string;
+  name: string;
+  description?: string | null;
+  startDate: string | Date;
+  endDate: string | Date;
+  discountType: string;
+  discountValue: number;
+  isActive: boolean;
+  productIds?: unknown;
+}
+
+export function CampaignManager({ initialCampaigns }: { initialCampaigns: Campaign[] }) {
+  const [campaigns, setCampaigns] = useState<Campaign[]>(initialCampaigns);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingCampaign, setEditingCampaign] = useState<any | null>(null);
+  const [editingCampaign, setEditingCampaign] = useState<Campaign | null>(null);
 
   // Form State
   const [formData, setFormData] = useState({
@@ -37,7 +48,7 @@ export function CampaignManager({ initialCampaigns }: { initialCampaigns: any[] 
     setIsModalOpen(true);
   };
 
-  const handleOpenEdit = (campaign: any) => {
+  const handleOpenEdit = (campaign: Campaign) => {
     setEditingCampaign(campaign);
     setFormData({
       name: campaign.name,
@@ -191,7 +202,9 @@ export function CampaignManager({ initialCampaigns }: { initialCampaigns: any[] 
             </div>
             <div className="p-6 space-y-4">
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-700">Campaign Name</label>
+                <label className="mb-1.5 block text-sm font-medium text-gray-700">
+                  Campaign Name
+                </label>
                 <input
                   type="text"
                   value={formData.name}
@@ -201,7 +214,9 @@ export function CampaignManager({ initialCampaigns }: { initialCampaigns: any[] 
                 />
               </div>
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-700">Description</label>
+                <label className="mb-1.5 block text-sm font-medium text-gray-700">
+                  Description
+                </label>
                 <textarea
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -211,7 +226,9 @@ export function CampaignManager({ initialCampaigns }: { initialCampaigns: any[] 
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium text-gray-700">Start Date</label>
+                  <label className="mb-1.5 block text-sm font-medium text-gray-700">
+                    Start Date
+                  </label>
                   <input
                     type="datetime-local"
                     value={formData.startDate}
@@ -231,7 +248,9 @@ export function CampaignManager({ initialCampaigns }: { initialCampaigns: any[] 
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium text-gray-700">Discount Type</label>
+                  <label className="mb-1.5 block text-sm font-medium text-gray-700">
+                    Discount Type
+                  </label>
                   <select
                     value={formData.discountType}
                     onChange={(e) => setFormData({ ...formData, discountType: e.target.value })}
@@ -242,11 +261,15 @@ export function CampaignManager({ initialCampaigns }: { initialCampaigns: any[] 
                   </select>
                 </div>
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium text-gray-700">Discount Value</label>
+                  <label className="mb-1.5 block text-sm font-medium text-gray-700">
+                    Discount Value
+                  </label>
                   <input
                     type="number"
                     value={formData.discountValue}
-                    onChange={(e) => setFormData({ ...formData, discountValue: Number(e.target.value) })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, discountValue: Number(e.target.value) })
+                    }
                     className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-200"
                   />
                 </div>
@@ -260,7 +283,11 @@ export function CampaignManager({ initialCampaigns }: { initialCampaigns: any[] 
                   onClick={() => setFormData({ ...formData, isActive: !formData.isActive })}
                   className={`${formData.isActive ? "text-purple-600" : "text-gray-400"}`}
                 >
-                  {formData.isActive ? <ToggleRight className="h-8 w-8" /> : <ToggleLeft className="h-8 w-8" />}
+                  {formData.isActive ? (
+                    <ToggleRight className="h-8 w-8" />
+                  ) : (
+                    <ToggleLeft className="h-8 w-8" />
+                  )}
                 </button>
               </div>
             </div>

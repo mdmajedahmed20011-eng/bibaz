@@ -28,9 +28,20 @@ import { initiateCODPayment } from "./payment.actions";
  * Server-side price re-calculation — NEVER trust client prices
  * Accepts both typed CreateOrderInput and legacy checkout form format
  */
+import { checkRateLimit, getClientIP } from "@/lib/rate-limit";
+import { headers } from "next/headers";
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function createOrder(data: CreateOrderInput | any) {
   try {
+    // Rate limit check
+    const headersList = await headers();
+    const ip = getClientIP(headersList);
+    const rateLimit = await checkRateLimit(ip, "checkout");
+    if (!rateLimit.success) {
+      return { success: false, error: "Too many orders placed recently. Please try again later." };
+    }
+
     const session = await auth();
     const userId = session?.user?.id || null;
 

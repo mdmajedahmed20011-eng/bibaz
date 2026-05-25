@@ -10,12 +10,6 @@ import { ProductImages } from "@/components/product/product-images";
 import { ProductInfo } from "@/components/product/product-info";
 import { RelatedProducts } from "@/components/product/related-products";
 import { getProductBySlug } from "@/actions/product.actions";
-import { cache } from "react";
-
-// Deduplicate database queries between generateMetadata and main page component
-const getCachedProduct = cache(async (slug: string) => {
-  return await getProductBySlug(slug);
-});
 
 interface ProductPageProps {
   params: Promise<{ slug: string }>;
@@ -57,7 +51,7 @@ function getFeatures(categoryName: string): string[] {
 
 export async function generateMetadata({ params }: ProductPageProps): Promise<Metadata> {
   const { slug } = await params;
-  const result = await getCachedProduct(slug);
+  const result = await getProductBySlug(slug);
 
   if (!result.success || !result.product) {
     return { title: "Product Not Found" };
@@ -76,7 +70,7 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
 
 export default async function ProductPage({ params }: ProductPageProps) {
   const { slug } = await params;
-  const result = await getCachedProduct(slug);
+  const result = await getProductBySlug(slug);
 
   if (!result.success || !result.product) {
     notFound();

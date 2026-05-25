@@ -215,3 +215,33 @@ export async function deactivateCoupon(couponId: string) {
     return { success: false, error: "Failed to deactivate coupon" };
   }
 }
+
+/**
+ * Delete a coupon (Admin)
+ */
+export async function deleteCoupon(couponId: string) {
+  const { authorized, error, userId } = await requireAdmin();
+  if (!authorized) return { success: false, error };
+
+  try {
+    const coupon = await prisma.coupon.delete({
+      where: { id: couponId },
+    });
+
+    await prisma.auditLog.create({
+      data: {
+        adminId: userId!,
+        action: "DELETE_COUPON",
+        entity: "Coupon",
+        entityId: coupon.id,
+        oldValue: { code: coupon.code },
+      },
+    });
+
+    revalidatePath("/admin/coupons");
+    return { success: true };
+  } catch (error) {
+    console.error("[COUPON] deleteCoupon error:", error);
+    return { success: false, error: "Failed to delete coupon" };
+  }
+}

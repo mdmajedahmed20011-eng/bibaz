@@ -2,9 +2,10 @@
  * BIBAZ — Admin Coupons Page
  */
 
-import { getCoupons } from "@/actions/coupon.actions";
+import { getCoupons, deleteCoupon } from "@/actions/coupon.actions";
 import Link from "next/link";
-import { Plus } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
+import { revalidatePath } from "next/cache";
 
 export default async function AdminCouponsPage() {
   const result = await getCoupons();
@@ -30,19 +31,20 @@ export default async function AdminCouponsPage() {
         <table className="w-full">
           <thead>
             <tr className="border-b border-gray-100 text-left text-xs font-medium uppercase text-gray-500">
-              <th className="px-6 py-3">Code</th>
-              <th className="px-6 py-3">Type</th>
-              <th className="px-6 py-3">Value</th>
-              <th className="px-6 py-3">Min Order</th>
-              <th className="px-6 py-3">Used</th>
-              <th className="px-6 py-3">Expires</th>
-              <th className="px-6 py-3">Status</th>
+              <th className="px-6 py-4 font-medium text-gray-900">Code</th>
+              <th className="px-6 py-4 font-medium text-gray-900">Type</th>
+              <th className="px-6 py-4 font-medium text-gray-900">Value</th>
+              <th className="px-6 py-4 font-medium text-gray-900">Min Order</th>
+              <th className="px-6 py-4 font-medium text-gray-900">Uses</th>
+              <th className="px-6 py-4 font-medium text-gray-900">Expires</th>
+              <th className="px-6 py-4 font-medium text-gray-900">Status</th>
+              <th className="px-6 py-4 font-medium text-gray-900 text-right">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
             {coupons.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-6 py-12 text-center text-sm text-gray-500">
+                <td colSpan={8} className="px-6 py-12 text-center text-sm text-gray-500">
                   No coupons yet. Create your first coupon!
                 </td>
               </tr>
@@ -80,6 +82,23 @@ export default async function AdminCouponsPage() {
                     >
                       {coupon.isActive ? "Active" : "Inactive"}
                     </span>
+                  </td>
+                  <td className="px-6 py-3 text-right">
+                    <form
+                      action={async () => {
+                        "use server";
+                        await deleteCoupon(coupon.id);
+                        revalidatePath("/admin/coupons");
+                      }}
+                    >
+                      <button
+                        type="submit"
+                        className="p-2 text-red-600 hover:bg-red-50 rounded-md transition-colors"
+                        title="Delete Coupon"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </form>
                   </td>
                 </tr>
               ))

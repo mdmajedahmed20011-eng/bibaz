@@ -25,13 +25,14 @@ import { useCartStore } from "@/store/cart-store";
 import { formatPrice } from "@/lib/utils";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
-import { COUPON_CODES } from "@/lib/constants";
+import { validateCoupon } from "@/actions/coupon.actions";
 
 interface AppliedCoupon {
   code: string;
-  type: "percent" | "flat";
+  type: string;
   value: number;
   label: string;
+  discount: number;
 }
 
 export function CartDrawer() {
@@ -68,11 +69,7 @@ export function CartDrawer() {
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
 
   // Calculate discount amount
-  const discountAmount = appliedCoupon
-    ? appliedCoupon.type === "percent"
-      ? Math.round((subtotal * appliedCoupon.value) / 100)
-      : Math.min(appliedCoupon.value, subtotal)
-    : 0;
+  const discountAmount = appliedCoupon ? appliedCoupon.discount : 0;
 
   const total = subtotal - discountAmount;
 
@@ -88,16 +85,23 @@ export function CartDrawer() {
     }
 
     setIsApplyingCoupon(true);
-    await new Promise((resolve) => setTimeout(resolve, 600));
 
-    const found = COUPON_CODES[code as keyof typeof COUPON_CODES];
-    if (!found) {
-      setCouponError("Invalid coupon code.");
+    const res = await validateCoupon(code, subtotal);
+
+    if (!res.success || !res.coupon) {
+      setCouponError(res.error || "Invalid coupon code.");
       setIsApplyingCoupon(false);
       return;
     }
 
-    const couponData = { code, ...found };
+    const couponData = {
+      code,
+      type: res.coupon.type,
+      value: res.coupon.value,
+      label: res.coupon.freeShipping ? "Free Shipping" : "Discount Applied",
+      discount: res.coupon.discount,
+    };
+
     setAppliedCoupon(couponData);
     localStorage.setItem("bibaz_applied_coupon", JSON.stringify(couponData));
     setCouponSuccess(`"${code}" applied!`);

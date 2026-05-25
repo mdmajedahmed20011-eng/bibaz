@@ -56,3 +56,13 @@ app.prepare().then(() => {
     process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
     process.on("SIGINT", () => gracefulShutdown("SIGINT"));
 });
+
+// Crash-proof global safety handlers (SOP §৮.৫)
+process.on("uncaughtException", (err) => {
+    console.error("> [CRITICAL SAFETY] Uncaught Exception caught, keeping server alive:", err);
+});
+
+process.on("unhandledRejection", (reason, promise) => {
+    console.error("> [CRITICAL SAFETY] Unhandled Rejection caught, keeping server alive at:", promise, "reason:", reason);
+});
+

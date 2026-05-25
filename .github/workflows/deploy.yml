@@ -51,7 +51,7 @@ jobs:
           password: ${{ secrets.HOSTINGER_SSH_PASSWORD }}
           port: 65002
           source: ".next/,public/,server.js,package.json,package-lock.json,next.config.ts,prisma/,proxy.ts"
-          target: "/home/${{ secrets.HOSTINGER_SSH_USER }}/domains/majedahmed.space/public_html"
+          target: "/home/${{ secrets.HOSTINGER_SSH_USER }}/domains/majedahmed.space/nodejs"
           strip_components: 0
           overwrite: true
 
@@ -63,7 +63,7 @@ jobs:
           password: ${{ secrets.HOSTINGER_SSH_PASSWORD }}
           port: 65002
           script: |
-            cd /home/$USER/domains/majedahmed.space/public_html
+            cd /home/$USER/domains/majedahmed.space/nodejs
             npm ci --omit=dev --ignore-scripts
             npx prisma generate
             mkdir -p tmp

@@ -66,4 +66,6 @@ jobs:
             cd /home/$USER/domains/majedahmed.space/public_html
             npm ci --omit=dev --ignore-scripts
             npx prisma generate
-            echo "✅ Deploy complete — Hostinger will auto-restart node server.js"
+            mkdir -p tmp
+            touch tmp/restart.txt
+            echo "✅ Deploy complete — Hostinger Passenger process restart triggered"

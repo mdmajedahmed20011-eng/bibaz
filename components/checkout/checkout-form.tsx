@@ -414,8 +414,14 @@ export function CheckoutForm() {
                 onChange={(e) => setAddress({ ...address, city: e.target.value })}
                 className="w-full h-11 px-4 border border-border/60 bg-white text-sm transition-all focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent rounded-sm font-semibold text-foreground hover:border-accent/40 cursor-pointer"
               >
-                <option value="Dhaka">Dhaka (Inside Dhaka) — ৳80</option>
-                <option value="Outside Dhaka">Outside Dhaka — ৳150</option>
+                <option value="Dhaka">Dhaka Division (Inside Dhaka) — ৳80</option>
+                <option value="Chattogram">Chattogram Division — ৳150</option>
+                <option value="Sylhet">Sylhet Division — ৳150</option>
+                <option value="Rajshahi">Rajshahi Division — ৳150</option>
+                <option value="Khulna">Khulna Division — ৳150</option>
+                <option value="Barishal">Barishal Division — ৳150</option>
+                <option value="Rangpur">Rangpur Division — ৳150</option>
+                <option value="Mymensingh">Mymensingh Division — ৳150</option>
               </select>
               {errors.city && (
                 <p className="text-[10px] text-sale font-bold uppercase tracking-wider mt-1 flex items-center gap-1">

@@ -32,9 +32,27 @@ const createCouponSchema = z.object({
  */
 export async function validateCoupon(code: string, cartTotal: number) {
   try {
-    const coupon = await prisma.coupon.findUnique({
-      where: { code: code.toUpperCase() },
+    const upperCode = code.toUpperCase();
+    let coupon = await prisma.coupon.findUnique({
+      where: { code: upperCode },
     });
+
+    // Auto-seeding of default coupons to make sure they work out-of-the-box on the live site
+    if (!coupon && (upperCode === "BIBAZ10" || upperCode === "EID2026")) {
+      try {
+        coupon = await prisma.coupon.create({
+          data: {
+            code: upperCode,
+            type: upperCode === "BIBAZ10" ? "PERCENTAGE" : "FIXED",
+            value: upperCode === "BIBAZ10" ? 10 : 200,
+            isActive: true,
+            expiresAt: new Date("2028-12-31T23:59:59Z"),
+          },
+        });
+      } catch (e) {
+        console.error("Auto-seeding default coupon failed:", e);
+      }
+    }
 
     if (!coupon) {
       return { success: false, error: "Invalid coupon code" };

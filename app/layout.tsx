@@ -5,6 +5,10 @@ import { cn } from "@/lib/utils";
 import { OrganizationJsonLd, WebsiteJsonLd } from "@/components/seo/json-ld";
 import { Toaster } from "@/components/ui/sonner";
 import NextTopLoader from "nextjs-toploader";
+import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/db";
+import { CartSyncManager } from "@/components/cart/cart-sync-manager";
+import { unstable_cache } from "next/cache";
 
 // Body font — clean, modern, highly readable
 const inter = Inter({
@@ -45,18 +49,45 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const session = await auth();
+  const userId = session?.user?.id;
+
+  const getFavicon = unstable_cache(
+    async () => {
+      try {
+        const setting = await prisma.siteSetting.findUnique({
+          where: { key: "favicon_url" },
+        });
+        if (setting && setting.value) {
+          return String(setting.value).replace(/['"]/g, "");
+        }
+      } catch {
+        console.error("Failed to load favicon setting");
+      }
+      return "/favicon.ico";
+    },
+    ["favicon_setting"],
+    { revalidate: 3600, tags: ["site_settings"] }
+  );
+
+  const faviconUrl = await getFavicon();
+
   return (
     <html
       lang="en"
       className={cn("h-full", inter.variable, playfair.variable)}
       suppressHydrationWarning
     >
+      <head>
+        <link rel="icon" href={faviconUrl} />
+      </head>
       <body className="min-h-full flex flex-col font-sans antialiased bg-background text-foreground">
+        <CartSyncManager userId={userId} />
         {/* Skip to main content — Accessibility (WCAG AA) */}
         <a href="#main-content" className="skip-link">
           Skip to main content

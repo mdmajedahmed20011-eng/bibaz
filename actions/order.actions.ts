@@ -17,7 +17,6 @@ import {
   type CreateOrderInput,
   type UpdateOrderStatusInput,
 } from "@/lib/validators/order";
-import { initiateCODPayment } from "./payment.actions";
 
 // ═══════════════════════════════════════════
 // PUBLIC ACTIONS
@@ -157,99 +156,114 @@ export async function createOrder(data: CreateOrderInput | any) {
       const coupon = await prisma.coupon.findUnique({
         where: { code: couponCode.toUpperCase() },
       });
-      if (coupon && coupon.isActive) {
-        if (!coupon.expiresAt || new Date(coupon.expiresAt) > new Date()) {
-          if (!coupon.maxUses || coupon.usedCount < coupon.maxUses) {
-            if (!coupon.minOrder || subtotal >= Number(coupon.minOrder)) {
-              switch (coupon.type) {
-                case "PERCENTAGE":
-                  discount = (subtotal * Number(coupon.value)) / 100;
-                  break;
-                case "FIXED":
-                  discount = Number(coupon.value);
-                  break;
-                case "FREE_SHIPPING":
-                  discount = shippingCharge;
-                  break;
-              }
-              discount = Math.min(discount, subtotal);
-              couponId = coupon.id;
-            }
-          }
-        }
+
+      if (!coupon) {
+        return { success: false, error: "Invalid coupon code" };
       }
+      if (!coupon.isActive) {
+        return { success: false, error: "This coupon is no longer active" };
+      }
+      if (coupon.expiresAt && new Date(coupon.expiresAt) < new Date()) {
+        return { success: false, error: "This coupon has expired" };
+      }
+      if (coupon.maxUses && coupon.usedCount >= coupon.maxUses) {
+        return { success: false, error: "This coupon has reached its usage limit" };
+      }
+      if (coupon.minOrder && subtotal < Number(coupon.minOrder)) {
+        return { success: false, error: `Minimum order amount is ৳${coupon.minOrder}` };
+      }
+
+      switch (coupon.type) {
+        case "PERCENTAGE":
+          discount = (subtotal * Number(coupon.value)) / 100;
+          break;
+        case "FIXED":
+          discount = Number(coupon.value);
+          break;
+        case "FREE_SHIPPING":
+          discount = shippingCharge;
+          break;
+      }
+      discount = Math.min(discount, subtotal);
+      couponId = coupon.id;
     }
 
     const total = subtotal + shippingCharge - discount;
 
-    // Generate unique order number: ORD-YYYY-XXXXX
-    // Use count-based numbering to avoid collation issues with startsWith
+    // Atomic Checkout Transaction
     const year = new Date().getFullYear();
     const yearStart = new Date(`${year}-01-01T00:00:00Z`);
     const yearEnd = new Date(`${year + 1}-01-01T00:00:00Z`);
 
-    const orderCountThisYear = await prisma.order.count({
-      where: {
-        createdAt: {
-          gte: yearStart,
-          lt: yearEnd,
-        },
-      },
-    });
+    const order = await prisma.$transaction(async (tx) => {
+      // 1. Generate unique order number
+      const orderCountThisYear = await tx.order.count({
+        where: { createdAt: { gte: yearStart, lt: yearEnd } },
+      });
+      const orderNumber = `ORD-${year}-${(orderCountThisYear + 1).toString().padStart(5, "0")}`;
 
-    const nextNum = orderCountThisYear + 1;
-    const orderNumber = `ORD-${year}-${nextNum.toString().padStart(5, "0")}`;
-
-    // Create order with items
-    const order = await prisma.order.create({
-      data: {
-        orderNumber,
-        userId,
-        guestName: shippingAddress.name,
-        guestPhone: shippingAddress.phone,
-        guestEmail: guestEmail || null,
-        shippingAddress: shippingAddress,
-        subtotal,
-        shippingCharge,
-        discount,
-        total,
-        paymentMethod,
-        paymentStatus: "UNPAID",
-        status: "PENDING",
-        couponId,
-        items: {
-          create: orderItems,
-        },
-        timeline: {
-          create: {
-            status: "PENDING",
-            note: "Order placed",
-            createdBy: userId || "GUEST",
+      // 2. Create order with items
+      const newOrder = await tx.order.create({
+        data: {
+          orderNumber,
+          userId,
+          guestName: shippingAddress.name,
+          guestPhone: shippingAddress.phone,
+          guestEmail: guestEmail || null,
+          shippingAddress: shippingAddress,
+          subtotal,
+          shippingCharge,
+          discount,
+          total,
+          paymentMethod,
+          paymentStatus: "UNPAID",
+          status: "PENDING",
+          couponId,
+          items: { create: orderItems },
+          timeline: {
+            create: { status: "PENDING", note: "Order placed", createdBy: userId || "GUEST" },
           },
         },
-      },
+      });
+
+      // 3. Deduct stock safely (Prevents race conditions)
+      for (const item of items) {
+        const updateRes = await tx.productVariant.updateMany({
+          where: { id: item.variantId, stock: { gte: item.quantity } },
+          data: { stock: { decrement: item.quantity } },
+        });
+
+        if (updateRes.count === 0) {
+          throw new Error("One or more items in your cart went out of stock during checkout.");
+        }
+      }
+
+      // 4. Increment coupon usage
+      if (couponId) {
+        await tx.coupon.update({
+          where: { id: couponId },
+          data: { usedCount: { increment: 1 } },
+        });
+      }
+
+      // 5. Initiate COD payment safely inside transaction
+      if (paymentMethod === "COD") {
+        const transactionId = `COD-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+        await tx.payment.create({
+          data: {
+            orderId: newOrder.id,
+            transactionId,
+            method: "COD",
+            amount: newOrder.total,
+            status: "UNPAID",
+          },
+        });
+      }
+
+      return newOrder;
     });
 
-    // Deduct stock
-    for (const item of items) {
-      await prisma.productVariant.update({
-        where: { id: item.variantId },
-        data: { stock: { decrement: item.quantity } },
-      });
-    }
-
-    // Increment coupon usage
-    if (couponId) {
-      await prisma.coupon.update({
-        where: { id: couponId },
-        data: { usedCount: { increment: 1 } },
-      });
-    }
-
-    // Initiate payment (COD)
-    if (paymentMethod === "COD") {
-      await initiateCODPayment(order.id);
-    }
+    const orderNumber = order.orderNumber;
 
     // Clear user cart if logged in
     if (userId) {
@@ -529,7 +543,7 @@ export async function getAdminOrders(options?: {
     } = options || {};
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const where: any = {};
+    const where: any = { deletedAt: null };
 
     if (status) where.status = status;
     if (paymentStatus) where.paymentStatus = paymentStatus;
@@ -726,18 +740,22 @@ export async function getAdminDashboardStats() {
       totalCustomers,
       recentOrders,
     ] = await Promise.all([
-      prisma.order.count({ where: { createdAt: { gte: today } } }),
-      prisma.order.count({ where: { status: "PENDING" } }),
-      prisma.order.count({ where: { status: "PROCESSING" } }),
-      prisma.order.count({ where: { status: "DELIVERED" } }),
+      prisma.order.count({ where: { createdAt: { gte: today }, deletedAt: null } }),
+      prisma.order.count({ where: { status: "PENDING", deletedAt: null } }),
+      prisma.order.count({ where: { status: "PROCESSING", deletedAt: null } }),
+      prisma.order.count({ where: { status: "DELIVERED", deletedAt: null } }),
       prisma.order.aggregate({
-        where: { status: { in: ["CONFIRMED", "PROCESSING", "SHIPPED", "DELIVERED"] } },
+        where: {
+          status: { in: ["CONFIRMED", "PROCESSING", "SHIPPED", "DELIVERED"] },
+          deletedAt: null,
+        },
         _sum: { total: true },
       }),
       prisma.order.aggregate({
         where: {
           createdAt: { gte: today },
           status: { in: ["CONFIRMED", "PROCESSING", "SHIPPED", "DELIVERED"] },
+          deletedAt: null,
         },
         _sum: { total: true },
       }),
@@ -745,6 +763,7 @@ export async function getAdminDashboardStats() {
         where: {
           createdAt: { gte: weekAgo },
           status: { in: ["CONFIRMED", "PROCESSING", "SHIPPED", "DELIVERED"] },
+          deletedAt: null,
         },
         _sum: { total: true },
       }),
@@ -752,6 +771,7 @@ export async function getAdminDashboardStats() {
         where: {
           createdAt: { gte: monthAgo },
           status: { in: ["CONFIRMED", "PROCESSING", "SHIPPED", "DELIVERED"] },
+          deletedAt: null,
         },
         _sum: { total: true },
       }),
@@ -759,6 +779,7 @@ export async function getAdminDashboardStats() {
       prisma.productVariant.count({ where: { stock: { lt: 5 }, isActive: true } }),
       prisma.user.count({ where: { role: "CUSTOMER" } }),
       prisma.order.findMany({
+        where: { deletedAt: null },
         orderBy: { createdAt: "desc" },
         take: 10,
         select: {
@@ -962,5 +983,115 @@ export async function exportOrdersToCSV() {
   } catch (error) {
     console.error("[ORDER] exportOrdersToCSV error:", error);
     return { success: false, csv: "", error: "Failed to export orders" };
+  }
+}
+
+/**
+ * Delete a single order (Admin - Soft Delete)
+ */
+export async function deleteOrder(orderId: string) {
+  const session = await auth();
+  if (!session?.user) return { success: false, error: "Not authenticated" };
+
+  const role = (session.user as { role?: string }).role;
+  if (!["ADMIN", "SUPER_ADMIN"].includes(role || "")) {
+    return { success: false, error: "Insufficient permissions to delete orders" };
+  }
+
+  try {
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+      select: { id: true, status: true, items: true },
+    });
+
+    if (!order) return { success: false, error: "Order not found" };
+
+    await prisma.order.update({
+      where: { id: orderId },
+      data: { deletedAt: new Date() },
+    });
+
+    if (!["CANCELLED", "RETURNED", "REFUNDED"].includes(order.status)) {
+      for (const item of order.items) {
+        await prisma.productVariant.update({
+          where: { id: item.variantId },
+          data: { stock: { increment: item.quantity } },
+        });
+      }
+    }
+
+    await prisma.auditLog.create({
+      data: {
+        adminId: session.user.id as string,
+        action: "DELETE_ORDER",
+        entity: "Order",
+        entityId: orderId,
+      },
+    });
+
+    revalidatePath("/admin/orders");
+    return { success: true };
+  } catch (error) {
+    console.error("[ORDER] deleteOrder error:", error);
+    return { success: false, error: "Failed to delete order" };
+  }
+}
+
+/**
+ * Bulk delete orders (Admin - Soft Delete)
+ */
+export async function bulkDeleteOrders(orderIds: string[]) {
+  const session = await auth();
+  if (!session?.user) return { success: false, error: "Not authenticated" };
+
+  const role = (session.user as { role?: string }).role;
+  if (!["ADMIN", "SUPER_ADMIN"].includes(role || "")) {
+    return { success: false, error: "Insufficient permissions to delete orders" };
+  }
+
+  if (!orderIds.length) return { success: false, error: "No orders selected" };
+
+  try {
+    let deletedCount = 0;
+
+    for (const orderId of orderIds) {
+      const order = await prisma.order.findUnique({
+        where: { id: orderId },
+        select: { id: true, status: true, deletedAt: true, items: true },
+      });
+
+      if (!order || order.deletedAt) continue;
+
+      await prisma.order.update({
+        where: { id: orderId },
+        data: { deletedAt: new Date() },
+      });
+
+      if (!["CANCELLED", "RETURNED", "REFUNDED"].includes(order.status)) {
+        for (const item of order.items) {
+          await prisma.productVariant.update({
+            where: { id: item.variantId },
+            data: { stock: { increment: item.quantity } },
+          });
+        }
+      }
+      deletedCount++;
+    }
+
+    await prisma.auditLog.create({
+      data: {
+        adminId: session.user.id as string,
+        action: "BULK_DELETE_ORDERS",
+        entity: "Order",
+        entityId: "bulk",
+        newValue: { count: deletedCount },
+      },
+    });
+
+    revalidatePath("/admin/orders");
+    return { success: true, count: deletedCount };
+  } catch (error) {
+    console.error("[ORDER] bulkDeleteOrders error:", error);
+    return { success: false, error: "Failed to bulk delete orders" };
   }
 }

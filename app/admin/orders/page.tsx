@@ -8,6 +8,7 @@ import Link from "next/link";
 import Form from "next/form";
 import { Search } from "lucide-react";
 import { OrderExportButton } from "@/components/admin/order-export-button";
+import { OrdersTable } from "@/components/admin/orders-table";
 
 export default async function AdminOrdersPage({
   searchParams,
@@ -81,69 +82,7 @@ export default async function AdminOrdersPage({
       </div>
 
       {/* Orders Table */}
-      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-gray-100 text-left text-xs font-medium uppercase text-gray-500">
-                <th className="px-6 py-3">Order #</th>
-                <th className="px-6 py-3">Customer</th>
-                <th className="px-6 py-3">Phone</th>
-                <th className="px-6 py-3">Items</th>
-                <th className="px-6 py-3">Total</th>
-                <th className="px-6 py-3">Status</th>
-                <th className="px-6 py-3">Payment</th>
-                <th className="px-6 py-3">Date</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {orders.length === 0 ? (
-                <tr>
-                  <td colSpan={8} className="px-6 py-12 text-center text-sm text-gray-500">
-                    {search ? `No orders found for "${search}"` : "No orders yet"}
-                  </td>
-                </tr>
-              ) : (
-                orders.map((order) => (
-                  <tr key={order.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-3">
-                      <Link
-                        href={`/admin/orders/${order.id}`}
-                        className="text-sm font-medium text-blue-600 hover:underline"
-                      >
-                        {order.orderNumber}
-                      </Link>
-                    </td>
-                    <td className="px-6 py-3 text-sm text-gray-700">
-                      {order.guestName || order.user?.name || "—"}
-                    </td>
-                    <td className="px-6 py-3 text-sm text-gray-600">{order.guestPhone}</td>
-                    <td className="px-6 py-3 text-sm text-gray-600">
-                      {order.items.length} item(s)
-                    </td>
-                    <td className="px-6 py-3 text-sm font-medium text-gray-900">
-                      ৳{Number(order.total).toLocaleString()}
-                    </td>
-                    <td className="px-6 py-3">
-                      <OrderStatusBadge status={order.status} />
-                    </td>
-                    <td className="px-6 py-3">
-                      <PaymentBadge status={order.paymentStatus} />
-                    </td>
-                    <td className="px-6 py-3 text-sm text-gray-500">
-                      {new Date(order.createdAt).toLocaleDateString("en-BD", {
-                        day: "numeric",
-                        month: "short",
-                        year: "numeric",
-                      })}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <OrdersTable orders={orders} />
 
       {/* Pagination */}
       {pagination && pagination.totalPages > 1 && (
@@ -173,48 +112,5 @@ export default async function AdminOrdersPage({
         </div>
       )}
     </div>
-  );
-}
-
-function OrderStatusBadge({ status }: { status: string }) {
-  const colors: Record<string, string> = {
-    PENDING: "bg-yellow-100 text-yellow-700",
-    CONFIRMED: "bg-blue-100 text-blue-700",
-    PROCESSING: "bg-indigo-100 text-indigo-700",
-    SHIPPED: "bg-purple-100 text-purple-700",
-    DELIVERED: "bg-green-100 text-green-700",
-    CANCELLED: "bg-red-100 text-red-700",
-    RETURNED: "bg-orange-100 text-orange-700",
-    REFUNDED: "bg-gray-100 text-gray-700",
-  };
-
-  return (
-    <span
-      className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
-        colors[status] || "bg-gray-100 text-gray-700"
-      }`}
-    >
-      {status}
-    </span>
-  );
-}
-
-function PaymentBadge({ status }: { status: string }) {
-  const colors: Record<string, string> = {
-    UNPAID: "bg-red-100 text-red-700",
-    PAID: "bg-green-100 text-green-700",
-    PARTIALLY_REFUNDED: "bg-orange-100 text-orange-700",
-    REFUNDED: "bg-gray-100 text-gray-700",
-    FAILED: "bg-red-100 text-red-700",
-  };
-
-  return (
-    <span
-      className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
-        colors[status] || "bg-gray-100 text-gray-700"
-      }`}
-    >
-      {status}
-    </span>
   );
 }

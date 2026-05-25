@@ -31,6 +31,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "No file provided" }, { status: 400 });
     }
 
+    // Validation: 5MB Max Size
+    const MAX_SIZE = 5 * 1024 * 1024; // 5MB
+    if (file.size > MAX_SIZE) {
+      return NextResponse.json({ error: "File exceeds 5MB limit" }, { status: 400 });
+    }
+
+    // Validation: Allowed MIME types
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/jpg"];
+    if (!allowedTypes.includes(file.type)) {
+      return NextResponse.json(
+        { error: "Only JPEG, PNG, and WebP images are allowed" },
+        { status: 400 }
+      );
+    }
+
     const result = await uploadImage(file, folder);
 
     if (!result.success) {

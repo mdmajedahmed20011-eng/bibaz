@@ -21,8 +21,29 @@ import {
   TrendingDown,
 } from "lucide-react";
 import Link from "next/link";
+import { ReportExportButton } from "@/components/admin/report-export-button";
 
-export default async function AdminReportsPage() {
+export default async function AdminReportsPage(props: {
+  searchParams?: Promise<{ range?: string }>;
+}) {
+  const searchParams = await props.searchParams;
+  const range = searchParams?.range || "all";
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const dateFilter: any = {};
+  if (range === "7d") {
+    const d = new Date();
+    d.setDate(d.getDate() - 7);
+    dateFilter.createdAt = { gte: d };
+  } else if (range === "30d") {
+    const d = new Date();
+    d.setDate(d.getDate() - 30);
+    dateFilter.createdAt = { gte: d };
+  } else if (range === "this_year") {
+    const d = new Date(new Date().getFullYear(), 0, 1);
+    dateFilter.createdAt = { gte: d };
+  }
+
   const session = await auth();
   if (!session?.user) redirect("/login");
 
@@ -40,23 +61,29 @@ export default async function AdminReportsPage() {
     totalProducts,
     totalCustomers,
   ] = await Promise.all([
-    prisma.order.count(),
+    prisma.order.count({ where: { deletedAt: null, ...dateFilter } }),
     prisma.order.aggregate({
-      where: { status: { in: ["CONFIRMED", "PROCESSING", "SHIPPED", "DELIVERED"] } },
+      where: {
+        status: { in: ["CONFIRMED", "PROCESSING", "SHIPPED", "DELIVERED"] },
+        deletedAt: null,
+        ...dateFilter,
+      },
       _sum: { total: true },
     }),
     prisma.order.groupBy({
       by: ["status"],
+      where: { deletedAt: null, ...dateFilter },
       _count: true,
     }),
     prisma.orderItem.groupBy({
       by: ["variantId"],
+      where: { order: { deletedAt: null, ...dateFilter } },
       _sum: { quantity: true },
       orderBy: { _sum: { quantity: "desc" } },
       take: 8,
     }),
-    prisma.product.count({ where: { deletedAt: null } }),
-    prisma.user.count({ where: { role: "CUSTOMER" } }),
+    prisma.product.count({ where: { deletedAt: null, ...dateFilter } }),
+    prisma.user.count({ where: { role: "CUSTOMER", deletedAt: null, ...dateFilter } }),
   ]);
 
   const totalRevenue = Number(totalRevenueAgg._sum.total || 0);
@@ -178,10 +205,33 @@ export default async function AdminReportsPage() {
             Real-time financial performance and product popularity indicators.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex gap-1 bg-gray-100 p-1 rounded-lg border border-gray-200">
+            {[
+              { id: "all", label: "All Time" },
+              { id: "7d", label: "7 Days" },
+              { id: "30d", label: "30 Days" },
+              { id: "this_year", label: "This Year" },
+            ].map((r) => (
+              <Link
+                key={r.id}
+                href={`/admin/reports?range=${r.id}`}
+                className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-colors ${
+                  range === r.id
+                    ? "bg-white text-gray-900 shadow-sm"
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                {r.label}
+              </Link>
+            ))}
+          </div>
+          <ReportExportButton
+            data={{ totalRevenue, totalOrders, avgOrderValue, totalCustomers, ordersByStatus }}
+          />
           <Link
             href="/admin"
-            className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3.5 py-2 text-xs font-semibold text-gray-700 shadow-sm transition-all hover:bg-gray-50 hover:shadow active:scale-[0.98]"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3.5 py-2 text-xs font-semibold text-gray-700 shadow-sm transition-all hover:bg-gray-50 active:scale-95"
           >
             Dashboard
           </Link>

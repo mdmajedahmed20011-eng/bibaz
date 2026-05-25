@@ -9,6 +9,7 @@ import { prisma } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { Role } from "@prisma/client";
+import bcrypt from "bcryptjs";
 
 export async function getStaffMembers() {
   const session = await auth();
@@ -83,8 +84,49 @@ export async function searchUsersByEmail(emailQuery: string) {
       take: 5,
     });
     return { success: true, users };
-  } catch (error) {
-    console.error("[STAFF] searchUsersByEmail error:", error);
+  } catch {
     return { success: false, error: "Failed to search users" };
+  }
+}
+
+export async function createStaffMember(data: {
+  name: string;
+  email: string;
+  role: string;
+  password?: string;
+}) {
+  const session = await auth();
+  const currentUserRole = (session?.user as { role?: string })?.role;
+  if (!["ADMIN", "SUPER_ADMIN"].includes(currentUserRole || "")) {
+    return { success: false, error: "Unauthorized" };
+  }
+
+  const validRoles = ["STAFF", "MANAGER", "ADMIN"];
+  if (!validRoles.includes(data.role) && currentUserRole !== "SUPER_ADMIN") {
+    return { success: false, error: "Invalid role assignment" };
+  }
+
+  try {
+    const existing = await prisma.user.findUnique({ where: { email: data.email } });
+    if (existing) {
+      return { success: false, error: "User with this email already exists" };
+    }
+
+    const passwordHash = data.password ? await bcrypt.hash(data.password, 10) : undefined;
+
+    await prisma.user.create({
+      data: {
+        name: data.name,
+        email: data.email,
+        role: data.role as Role,
+        passwordHash,
+      },
+    });
+
+    revalidatePath("/admin/staff");
+    return { success: true };
+  } catch (error) {
+    console.error("[STAFF] createStaffMember error:", error);
+    return { success: false, error: "Failed to create staff member" };
   }
 }

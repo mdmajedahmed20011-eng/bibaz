@@ -274,6 +274,47 @@ export async function syncCart(localItems: { variantId: string; quantity: number
 }
 
 /**
+ * Replace entire cart (for background syncing)
+ */
+export async function updateFullCart(localItems: { variantId: string; quantity: number }[]) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return { success: false, error: "Not authenticated" };
+  }
+
+  try {
+    let cart = await prisma.cart.findUnique({
+      where: { userId: session.user.id },
+    });
+
+    if (!cart) {
+      cart = await prisma.cart.create({
+        data: { userId: session.user.id },
+      });
+    }
+
+    await prisma.cartItem.deleteMany({
+      where: { cartId: cart.id },
+    });
+
+    if (localItems.length > 0) {
+      await prisma.cartItem.createMany({
+        data: localItems.map((item) => ({
+          cartId: cart!.id,
+          variantId: item.variantId,
+          quantity: item.quantity,
+        })),
+      });
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error("[CART] updateFullCart error:", error);
+    return { success: false, error: "Failed to update full cart" };
+  }
+}
+
+/**
  * Clear cart (after order placed)
  */
 export async function clearCart() {

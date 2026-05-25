@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { assignRole, searchUsersByEmail } from "@/actions/staff.actions";
+import { assignRole, searchUsersByEmail, createStaffMember } from "@/actions/staff.actions";
 import { UserPlus, Shield, Search, User as UserIcon } from "lucide-react";
+import { toast } from "sonner";
 
 export interface StaffMember {
   id: string;
@@ -46,9 +47,30 @@ export function StaffManager({
     setUpdating(null);
 
     if (res.success) {
-      window.location.reload();
+      toast.success("Role assigned successfully");
+      setTimeout(() => window.location.reload(), 1000);
     } else {
-      alert(res.error || "Failed to update role");
+      toast.error(res.error || "Failed to update role");
+    }
+  };
+
+  const handleCreateStaff = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const name = formData.get("name") as string;
+    const email = formData.get("email") as string;
+    const role = formData.get("role") as string;
+    const password = formData.get("password") as string;
+
+    setUpdating("new");
+    const res = await createStaffMember({ name, email, role, password });
+    setUpdating(null);
+
+    if (res.success) {
+      toast.success("Staff member created successfully");
+      setTimeout(() => window.location.reload(), 1000);
+    } else {
+      toast.error(res.error || "Failed to create staff member");
     }
   };
 
@@ -108,6 +130,49 @@ export function StaffManager({
                   </li>
                 ))}
               </ul>
+            </div>
+          )}
+          {searchQuery.length >= 3 && searchResults.length === 0 && !isSearching && (
+            <div className="absolute z-10 mt-1 w-full rounded-xl border border-gray-100 bg-white shadow-lg p-4">
+              <p className="text-xs text-gray-500 mb-3">
+                No user found. Create a new staff account:
+              </p>
+              <form onSubmit={handleCreateStaff} className="space-y-3">
+                <input
+                  required
+                  type="text"
+                  name="name"
+                  placeholder="Full Name"
+                  className="w-full rounded border-gray-300 text-xs p-2"
+                />
+                <input
+                  required
+                  type="email"
+                  name="email"
+                  value={searchQuery}
+                  readOnly
+                  className="w-full rounded border-gray-300 text-xs p-2 bg-gray-50 text-gray-500"
+                />
+                <input
+                  required
+                  type="password"
+                  name="password"
+                  placeholder="Temporary Password"
+                  className="w-full rounded border-gray-300 text-xs p-2"
+                />
+                <select required name="role" className="w-full rounded border-gray-300 text-xs p-2">
+                  <option value="STAFF">Staff</option>
+                  <option value="MANAGER">Manager</option>
+                  {currentUserRole === "SUPER_ADMIN" && <option value="ADMIN">Admin</option>}
+                </select>
+                <button
+                  disabled={updating === "new"}
+                  type="submit"
+                  className="w-full rounded bg-indigo-600 px-3 py-2 text-xs font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
+                >
+                  {updating === "new" ? "Creating..." : "Create Staff Member"}
+                </button>
+              </form>
             </div>
           )}
         </div>

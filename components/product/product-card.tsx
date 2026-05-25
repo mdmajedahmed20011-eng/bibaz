@@ -1,11 +1,11 @@
 "use client";
 
 /**
- * BIBAZ — Product Card (Premium v2.0)
- * Borderless, editorial, clean hierarchy
- * Design Guide: No border, no shadow, 3:4 ratio, clean info
+ * BIBAZ — Product Card (Premium v3.0)
+ * Borderless, editorial, clean hierarchy, with smooth image skeletons to prevent blank space layout shifts on mobile.
  */
 
+import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Eye } from "lucide-react";
@@ -70,6 +70,8 @@ export function ProductCard({
   const hasSecondaryImage = secondaryImage !== image;
 
   const openQuickView = useQuickViewStore((state) => state.openQuickView);
+  const [primaryLoaded, setPrimaryLoaded] = useState(false);
+  const [secondaryLoaded, setSecondaryLoaded] = useState(false);
 
   const handleQuickViewClick = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -94,7 +96,10 @@ export function ProductCard({
       aria-label={`View ${name} - ${CURRENCY.SYMBOL}${price}`}
     >
       {/* Image Container — 3:4 ratio, editorial sharp edges */}
-      <div className="relative aspect-[3/4] overflow-hidden bg-[#f5f5f5] mb-3 md:mb-4">
+      <div className="relative aspect-[3/4] overflow-hidden bg-neutral-100 mb-3 md:mb-4">
+        {/* Shimmer Skeleton Placeholder when loading */}
+        {!primaryLoaded && <div className="absolute inset-0 skeleton-shimmer z-[2]" />}
+
         {/* Primary Image */}
         <Image
           src={image}
@@ -102,10 +107,13 @@ export function ProductCard({
           fill
           sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
           className={`object-cover transition-all duration-[800ms] cubic-bezier(0.25, 1, 0.5, 1) ${
+            primaryLoaded ? "opacity-100" : "opacity-0"
+          } ${
             hasSecondaryImage
               ? "group-hover:opacity-0 scale-100 group-hover:scale-105"
               : "group-hover:scale-105"
           }`}
+          onLoad={() => setPrimaryLoaded(true)}
         />
 
         {/* Secondary Image Swap on Hover */}
@@ -115,19 +123,22 @@ export function ProductCard({
             alt={`${name} detail view`}
             fill
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-            className="object-cover absolute inset-0 opacity-0 group-hover:opacity-100 transition-all duration-[800ms] cubic-bezier(0.25, 1, 0.5, 1) scale-103 group-hover:scale-100"
+            className={`object-cover absolute inset-0 transition-all duration-[800ms] cubic-bezier(0.25, 1, 0.5, 1) scale-103 group-hover:scale-100 ${
+              secondaryLoaded ? "opacity-0 group-hover:opacity-100" : "opacity-0"
+            }`}
+            onLoad={() => setSecondaryLoaded(true)}
           />
         )}
 
         {/* Badges — minimal, top-left */}
         <div className="absolute top-3 left-3 flex flex-col gap-1.5 z-10">
           {isNew && (
-            <span className="inline-flex items-center px-2.5 py-0.5 bg-foreground text-background text-[9px] font-bold uppercase tracking-[0.15em] rounded-sm">
+            <span className="inline-flex items-center px-2.5 py-0.5 bg-foreground text-background text-[9px] font-bold uppercase tracking-[0.15em] rounded-sm shadow-sm">
               New
             </span>
           )}
           {hasDiscount && (
-            <span className="inline-flex items-center px-2 py-0.5 bg-sale text-white text-[9px] font-bold tracking-wide rounded-sm">
+            <span className="inline-flex items-center px-2 py-0.5 bg-sale text-white text-[9px] font-bold tracking-wide rounded-sm shadow-sm">
               -{discountPercent}%
             </span>
           )}
@@ -136,7 +147,7 @@ export function ProductCard({
         {/* Sold Out Overlay */}
         {isSoldOut && (
           <div className="absolute inset-0 flex items-center justify-center bg-white/75 z-10">
-            <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-foreground/80 border border-foreground/30 px-3 py-1">
+            <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-foreground/80 border border-foreground/30 px-3 py-1 bg-white/50 backdrop-blur-[1px]">
               Sold Out
             </span>
           </div>

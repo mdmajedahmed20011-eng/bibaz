@@ -77,7 +77,6 @@ function createPrismaClient(): PrismaClient {
     return createDummyPrisma() as unknown as PrismaClient;
   }
 
-  // Use native Prisma Client engine (Rust/Wasm) for high-performance and absolute stability on Vercel/Hostinger
   return new PrismaClient({
     log: process.env.NODE_ENV === "development" ? ["query"] : [],
   });

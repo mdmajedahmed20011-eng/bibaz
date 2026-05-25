@@ -1,11 +1,11 @@
-import { Redis } from "@upstash/redis";
+import { unstable_cache } from "next/cache";
 
-// Initialize Upstash Redis
-// Falls back to a dummy object if environment variables are missing during build/dev
-export const redis = new Redis({
-  url: process.env.UPSTASH_REDIS_URL || "https://dummy-url.upstash.io",
-  token: process.env.UPSTASH_REDIS_TOKEN || "dummy-token",
-});
+// Mock Upstash Redis object to prevent breaking imports
+export const redis = {
+  get: async () => null,
+  setex: async () => "OK",
+  del: async () => 1,
+};
 
 export async function withCache<T>(
   key: string,
@@ -13,21 +13,16 @@ export async function withCache<T>(
   ttlSeconds = 300
 ): Promise<T> {
   try {
-    const cached = await redis.get<T>(key);
-    if (cached) return cached;
+    const cachedFn = unstable_cache(
+      async () => {
+        return await fetcher();
+      },
+      [key],
+      { revalidate: ttlSeconds, tags: [key] }
+    );
+    return await cachedFn();
   } catch (error) {
-    console.warn("[REDIS] Cache read error:", error);
+    console.warn("[CACHE] Fallback to direct fetch due to cache error:", error);
+    return await fetcher();
   }
-
-  const data = await fetcher();
-
-  try {
-    if (data) {
-      await redis.setex(key, ttlSeconds, data);
-    }
-  } catch (error) {
-    console.warn("[REDIS] Cache write error:", error);
-  }
-
-  return data;
 }

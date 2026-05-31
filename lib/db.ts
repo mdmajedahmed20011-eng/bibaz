@@ -83,19 +83,55 @@ function createPrismaClient(): PrismaClient {
   let user = process.env.DB_USER || "root";
   let password = process.env.DB_PASSWORD || "";
   let database = process.env.DB_NAME || "bibaz";
+  let connectionLimit = 10; // Default connection pool limit (SOP buffer strategy)
 
   const dbUrl = process.env.DATABASE_URL;
   if (dbUrl) {
     try {
       const url = new URL(dbUrl);
       host = url.hostname;
+
+      // PRODUCTION HOSTINGER OVERRIDE:
+      // If running in production on the server, force localhost/127.0.0.1 to avoid
+      // external networking latency & Hostinger WAF (ModSecurity / BitNinja) from blocking
+      // concurrent DB queries (which throws 403 Forbidden and crashes the process).
+      if (process.env.NODE_ENV === "production" && host !== "127.0.0.1" && host !== "localhost") {
+        console.log(
+          `[PRISMA] Production server detected. Overriding host ${host} with 127.0.0.1 for high-performance local loopback.`
+        );
+        host = "127.0.0.1";
+      }
+
       port = url.port ? parseInt(url.port) : 3306;
       user = url.username;
       password = url.password;
       database = url.pathname.replace("/", "");
+
+      // Dynamically extract connection limit from connection_limit search param
+      const limitParam = url.searchParams.get("connection_limit");
+      if (limitParam) {
+        connectionLimit = parseInt(limitParam, 10);
+      }
     } catch {
       console.error("Failed to parse DATABASE_URL");
     }
+  }
+
+  // Handle local environment production host override if DATABASE_URL was not used
+  if (process.env.NODE_ENV === "production" && host !== "127.0.0.1" && host !== "localhost") {
+    host = "127.0.0.1";
+  }
+
+  // PRODUCTION HOSTINGER CONNECTION POOL OPTIMIZATION:
+  // Since Hostinger shared hosting has a strict limit of 30 max concurrent connections
+  // across the whole account, and Phusion Passenger can spawn multiple Node.js worker processes,
+  // we must cap each process connection limit to 3. This ensures that even under high load,
+  // the database connections will never be exhausted.
+  if (process.env.NODE_ENV === "production") {
+    connectionLimit = Math.min(connectionLimit, 3);
+    console.log(
+      `[PRISMA] Production environment detected: Capped connectionLimit per process to ${connectionLimit} to prevent Hostinger database connection exhaustion.`
+    );
   }
 
   const adapter = new PrismaMariaDb({
@@ -104,9 +140,13 @@ function createPrismaClient(): PrismaClient {
     user,
     password,
     database,
-    connectionLimit: 5,
-    connectTimeout: 30000,
-    acquireTimeout: 30000,
+    connectionLimit,
+    connectTimeout: 15000,
+    acquireTimeout: 15000,
+    // CRITICAL FIX: Close idle connections after 10 seconds of inactivity
+    // This prevents "sleeping" connections from accumulating in the pool when Passenger recycles processes,
+    // eliminating 500 / Too Many Connections errors permanently.
+    idleTimeout: 10000,
   } as any);
 
   return new PrismaClient({

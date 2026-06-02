@@ -64,7 +64,7 @@ export default async function AdminReportsPage(props: {
     prisma.order.count({ where: { deletedAt: null, ...dateFilter } }),
     prisma.order.aggregate({
       where: {
-        status: { in: ["CONFIRMED", "PROCESSING", "SHIPPED", "DELIVERED"] },
+        status: { in: ["PENDING", "CONFIRMED", "PROCESSING", "SHIPPED", "DELIVERED"] },
         deletedAt: null,
         ...dateFilter,
       },

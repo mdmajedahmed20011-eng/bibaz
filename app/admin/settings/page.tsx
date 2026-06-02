@@ -13,7 +13,8 @@ import { prisma } from "@/lib/db";
 export default async function AdminSettingsPage() {
   const session = await auth();
   const result = await getAllSettings();
-  const settings = (result.settings || []) as unknown[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const settings = (result.settings || []) as any[];
 
   // Fetch current user 2FA status from DB
   const user = await prisma.user.findUnique({

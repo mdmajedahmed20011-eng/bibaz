@@ -27,6 +27,75 @@ interface ImageUploadProps {
   aspectRatio?: string;
 }
 
+// Client-side image compression utility using off-screen HTML5 Canvas
+function compressImage(file: File): Promise<File> {
+  return new Promise((resolve) => {
+    // If it's a GIF, skip compression to preserve animation frames
+    if (file.type === "image/gif") {
+      resolve(file);
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (event) => {
+      const img = new window.Image();
+      img.src = event.target?.result as string;
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        let width = img.width;
+        let height = img.height;
+
+        // Downscale dimensions to 1200px max (preserving original aspect ratio)
+        const maxDimension = 1200;
+        if (width > maxDimension || height > maxDimension) {
+          if (width > height) {
+            height = Math.round((height * maxDimension) / width);
+            width = maxDimension;
+          } else {
+            width = Math.round((width * maxDimension) / height);
+            height = maxDimension;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+          resolve(file);
+          return;
+        }
+
+        ctx.drawImage(img, 0, 0, width, height);
+
+        // Convert to highly-optimized JPEG at 80% quality (under 250KB average)
+        canvas.toBlob(
+          (blob) => {
+            if (!blob) {
+              resolve(file);
+              return;
+            }
+            const compressedFile = new File([blob], file.name.replace(/\.[^/.]+$/, "") + ".jpg", {
+              type: "image/jpeg",
+              lastModified: Date.now(),
+            });
+            resolve(compressedFile);
+          },
+          "image/jpeg",
+          0.8
+        );
+      };
+      img.onerror = () => {
+        resolve(file);
+      };
+    };
+    reader.onerror = () => {
+      resolve(file);
+    };
+  });
+}
+
 export function ImageUpload({
   images,
   onChange,
@@ -87,8 +156,9 @@ export function ImageUpload({
           setError("Only JPG, PNG, WebP, GIF allowed");
           return;
         }
-        if (file.size > 5 * 1024 * 1024) {
-          setError("Max file size: 5MB");
+        // Support larger local files (up to 15MB) because client-side compression handles them easily
+        if (file.size > 15 * 1024 * 1024) {
+          setError("Max file size: 15MB");
           return;
         }
       }
@@ -96,9 +166,12 @@ export function ImageUpload({
       setUploading(true);
 
       try {
-        const uploadPromises = filesToUpload
-          .filter((f): f is File => f !== undefined)
-          .map((file) => uploadFile(file));
+        // Compress all selected images client-side before triggering uploads
+        const compressedFiles = await Promise.all(
+          filesToUpload.filter((f): f is File => f !== undefined).map((file) => compressImage(file))
+        );
+
+        const uploadPromises = compressedFiles.map((file) => uploadFile(file));
         const urls = await Promise.all(uploadPromises);
 
         if (single) {

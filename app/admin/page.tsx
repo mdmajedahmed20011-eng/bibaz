@@ -19,6 +19,8 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminDashboardPage() {
   const result = await getAdminDashboardStats();
 
@@ -74,6 +76,7 @@ export default async function AdminDashboardPage() {
           trend={stats.todayOrders > 0 ? "up" : "neutral"}
           trendValue={stats.todayOrders > 0 ? `+${stats.todayOrders}` : "0"}
           color="blue"
+          href="/admin/orders?date=today"
         />
         <StatCard
           title="Today's Revenue"
@@ -82,6 +85,7 @@ export default async function AdminDashboardPage() {
           trend={stats.todayRevenue > 0 ? "up" : "neutral"}
           trendValue={stats.todayRevenue > 0 ? "Active" : "—"}
           color="emerald"
+          href="/admin/reports"
         />
         <StatCard
           title="Pending"

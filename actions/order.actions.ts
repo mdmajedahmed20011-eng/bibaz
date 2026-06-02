@@ -795,7 +795,7 @@ export async function getAdminDashboardStats() {
       prisma.order.count({ where: { status: "DELIVERED", deletedAt: null } }),
       prisma.order.aggregate({
         where: {
-          status: { in: ["CONFIRMED", "PROCESSING", "SHIPPED", "DELIVERED"] },
+          status: { in: ["PENDING", "CONFIRMED", "PROCESSING", "SHIPPED", "DELIVERED"] },
           deletedAt: null,
         },
         _sum: { total: true },
@@ -803,7 +803,7 @@ export async function getAdminDashboardStats() {
       prisma.order.aggregate({
         where: {
           createdAt: { gte: today },
-          status: { in: ["CONFIRMED", "PROCESSING", "SHIPPED", "DELIVERED"] },
+          status: { in: ["PENDING", "CONFIRMED", "PROCESSING", "SHIPPED", "DELIVERED"] },
           deletedAt: null,
         },
         _sum: { total: true },
@@ -811,7 +811,7 @@ export async function getAdminDashboardStats() {
       prisma.order.aggregate({
         where: {
           createdAt: { gte: weekAgo },
-          status: { in: ["CONFIRMED", "PROCESSING", "SHIPPED", "DELIVERED"] },
+          status: { in: ["PENDING", "CONFIRMED", "PROCESSING", "SHIPPED", "DELIVERED"] },
           deletedAt: null,
         },
         _sum: { total: true },
@@ -819,7 +819,7 @@ export async function getAdminDashboardStats() {
       prisma.order.aggregate({
         where: {
           createdAt: { gte: monthAgo },
-          status: { in: ["CONFIRMED", "PROCESSING", "SHIPPED", "DELIVERED"] },
+          status: { in: ["PENDING", "CONFIRMED", "PROCESSING", "SHIPPED", "DELIVERED"] },
           deletedAt: null,
         },
         _sum: { total: true },

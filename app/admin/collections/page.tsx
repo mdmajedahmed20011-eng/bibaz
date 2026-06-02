@@ -1,15 +1,20 @@
-/**
- * BIBAZ — Admin Collections Page
- */
-
 import { getAdminCollections } from "@/actions/collection.actions";
 import { CollectionsManager } from "@/components/admin/collections-manager";
 import { Sparkles } from "lucide-react";
+import { prisma } from "@/lib/db";
 
 export default async function AdminCollectionsPage() {
-  const result = await getAdminCollections();
+  const [collectionsResult, products] = await Promise.all([
+    getAdminCollections(),
+    prisma.product.findMany({
+      where: { deletedAt: null },
+      select: { id: true, name: true, slug: true },
+      orderBy: { name: "asc" },
+    }),
+  ]);
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const collections = (result.collections || []) as any[];
+  const collections = (collectionsResult.collections || []) as any[];
 
   return (
     <div className="space-y-6">
@@ -25,7 +30,7 @@ export default async function AdminCollectionsPage() {
         </div>
       </div>
 
-      <CollectionsManager initialCollections={collections} />
+      <CollectionsManager initialCollections={collections} allProducts={products} />
     </div>
   );
 }

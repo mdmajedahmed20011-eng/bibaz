@@ -10,6 +10,7 @@ import Link from "next/link";
 import { ArrowLeft, Clock } from "lucide-react";
 import { OrderStatusUpdateForm } from "@/components/admin/order-status-form";
 import { OrderNotesForm } from "@/components/admin/order-notes-form";
+import { prisma } from "@/lib/db";
 
 export default async function AdminOrderDetailPage({
   params,
@@ -24,6 +25,47 @@ export default async function AdminOrderDetailPage({
   }
 
   const order = result.order;
+
+  // Fetch customer profile CRM insights
+  const [customerStats, successfulDeliveries, returnedOrCancelled] = await Promise.all([
+    prisma.order.aggregate({
+      where: { guestPhone: order.guestPhone, deletedAt: null },
+      _count: { id: true },
+      _sum: { total: true },
+    }),
+    prisma.order.count({
+      where: { guestPhone: order.guestPhone, status: "DELIVERED", deletedAt: null },
+    }),
+    prisma.order.count({
+      where: {
+        guestPhone: order.guestPhone,
+        status: { in: ["CANCELLED", "RETURNED"] },
+        deletedAt: null,
+      },
+    }),
+  ]);
+
+  const totalSpent = Number(customerStats._sum.total || 0);
+  const totalOrdersCount = customerStats._count.id || 0;
+
+  // Success rate: delivered / (delivered + cancelled/returned)
+  const totalCompletedOrFailed = successfulDeliveries + returnedOrCancelled;
+  const orderSuccessRate =
+    totalCompletedOrFailed > 0
+      ? Math.round((successfulDeliveries / totalCompletedOrFailed) * 100)
+      : 100;
+
+  // CRM Tiering
+  let crmTier = "NEW CLIENT";
+  let tierBadgeColor = "bg-emerald-50 text-emerald-700 border-emerald-200";
+
+  if (totalSpent >= 15000 || totalOrdersCount >= 5) {
+    crmTier = "VIP CLUB";
+    tierBadgeColor = "bg-amber-100 text-amber-800 border-amber-300 font-bold shadow-sm";
+  } else if (totalSpent >= 2000) {
+    crmTier = "REGULAR";
+    tierBadgeColor = "bg-blue-50 text-blue-700 border-blue-200";
+  }
 
   // Safely parse shipping address to prevent any JSON parsing or null pointer crashes
   let address: any = {};
@@ -200,24 +242,67 @@ export default async function AdminOrderDetailPage({
             </div>
           )}
 
-          {/* Customer Info */}
-          <div className="rounded-xl border border-gray-200 bg-white p-6">
-            <h2 className="mb-4 text-lg font-semibold text-gray-900">Customer</h2>
+          {/* Customer Info with CRM Profile */}
+          <div className="rounded-xl border border-gray-200 bg-white p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+              <h2 className="text-base font-bold text-gray-900">Customer Profile</h2>
+              <span
+                className={`inline-flex rounded-md border px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider ${tierBadgeColor}`}
+              >
+                {crmTier}
+              </span>
+            </div>
             <div className="space-y-3 text-sm">
               <div>
-                <p className="text-gray-500">Name</p>
-                <p className="font-medium text-gray-900">{order.guestName || "—"}</p>
+                <p className="text-xs text-gray-400 font-medium">Customer Name</p>
+                <p className="font-semibold text-gray-900">{order.guestName || "—"}</p>
               </div>
               <div>
-                <p className="text-gray-500">Phone</p>
-                <p className="font-medium text-gray-900">{order.guestPhone}</p>
+                <p className="text-xs text-gray-400 font-medium">Mobile Contact</p>
+                <p className="font-semibold text-gray-900 font-mono">{order.guestPhone}</p>
               </div>
               {order.guestEmail && (
                 <div>
-                  <p className="text-gray-500">Email</p>
-                  <p className="font-medium text-gray-900">{order.guestEmail}</p>
+                  <p className="text-xs text-gray-400 font-medium">Email Address</p>
+                  <p className="font-semibold text-gray-900 font-mono">{order.guestEmail}</p>
                 </div>
               )}
+            </div>
+
+            {/* CRM Stats Panel */}
+            <div className="rounded-xl bg-[#fafafa] border border-gray-100 p-3.5 space-y-2.5">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">
+                Customer CRM Insights
+              </p>
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div className="bg-white border border-gray-100 rounded-lg p-2 text-center shadow-xs">
+                  <p className="text-[10px] text-gray-400">Lifetime Orders</p>
+                  <p className="text-base font-bold text-gray-900 mt-0.5">{totalOrdersCount}</p>
+                </div>
+                <div className="bg-white border border-gray-100 rounded-lg p-2 text-center shadow-xs">
+                  <p className="text-[10px] text-gray-400">LTV Spent</p>
+                  <p className="text-base font-bold text-emerald-600 mt-0.5 font-mono">
+                    ৳{totalSpent.toLocaleString()}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between text-[11px] pt-1.5 border-t border-gray-100/60">
+                <span className="text-gray-400">Delivery Success Rate:</span>
+                <span
+                  className={`font-bold ${orderSuccessRate >= 80 ? "text-green-600" : orderSuccessRate >= 50 ? "text-amber-600" : "text-red-500"}`}
+                >
+                  {orderSuccessRate}%
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-[11px]">
+                <span className="text-gray-400">Returned/Cancelled:</span>
+                <span
+                  className={`font-semibold ${returnedOrCancelled > 0 ? "text-red-500 font-bold" : "text-gray-500"}`}
+                >
+                  {returnedOrCancelled} orders
+                </span>
+              </div>
             </div>
           </div>
 

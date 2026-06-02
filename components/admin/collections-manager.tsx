@@ -26,9 +26,10 @@ interface Collection {
 
 interface CollectionsManagerProps {
   initialCollections: Collection[];
+  allProducts: { id: string; name: string; slug: string }[];
 }
 
-export function CollectionsManager({ initialCollections }: CollectionsManagerProps) {
+export function CollectionsManager({ initialCollections, allProducts }: CollectionsManagerProps) {
   const [collections, setCollections] = useState<Collection[]>(initialCollections);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showCreate, setShowCreate] = useState(false);
@@ -39,7 +40,7 @@ export function CollectionsManager({ initialCollections }: CollectionsManagerPro
       {!showCreate && (
         <button
           onClick={() => setShowCreate(true)}
-          className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-gray-200 bg-white py-4 text-sm font-medium text-gray-700 transition-all hover:border-purple-300 hover:bg-purple-50/50 hover:text-purple-700"
+          className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-gray-200 bg-white py-4 text-sm font-medium text-gray-700 transition-all hover:border-purple-300 hover:bg-purple-50/50 hover:text-purple-700 cursor-pointer"
         >
           <Plus className="h-4 w-4" />
           Create New Collection
@@ -49,6 +50,7 @@ export function CollectionsManager({ initialCollections }: CollectionsManagerPro
       {/* Create Form */}
       {showCreate && (
         <CollectionForm
+          allProducts={allProducts}
           onCancel={() => setShowCreate(false)}
           onSubmit={async (data) => {
             const result = await createCollection(data);
@@ -79,6 +81,7 @@ export function CollectionsManager({ initialCollections }: CollectionsManagerPro
             <CollectionCard
               key={collection.id}
               collection={collection}
+              allProducts={allProducts}
               isEditing={editingId === collection.id}
               onEdit={() => setEditingId(collection.id)}
               onClose={() => setEditingId(null)}
@@ -130,6 +133,7 @@ export function CollectionsManager({ initialCollections }: CollectionsManagerPro
 
 function CollectionCard({
   collection,
+  allProducts,
   isEditing,
   onEdit,
   onClose,
@@ -139,6 +143,7 @@ function CollectionCard({
   onToggleFeatured,
 }: {
   collection: Collection;
+  allProducts: { id: string; name: string; slug: string }[];
   isEditing: boolean;
   onEdit: () => void;
   onClose: () => void;
@@ -152,12 +157,13 @@ function CollectionCard({
       <div className="rounded-2xl border-2 border-purple-300 bg-white p-4 shadow-sm sm:col-span-2 lg:col-span-3">
         <div className="mb-4 flex items-center justify-between">
           <h3 className="text-sm font-semibold text-gray-900">Edit: {collection.name}</h3>
-          <button onClick={onClose} className="rounded p-1 hover:bg-gray-100">
+          <button onClick={onClose} className="rounded p-1 hover:bg-gray-100 cursor-pointer">
             <X className="h-4 w-4 text-gray-500" />
           </button>
         </div>
         <CollectionForm
           collection={collection}
+          allProducts={allProducts}
           onCancel={onClose}
           onSubmit={async (data) => {
             const result = await updateCollection(collection.id, data);
@@ -215,7 +221,7 @@ function CollectionCard({
           <div className="flex items-center gap-1">
             <button
               onClick={onToggleFeatured}
-              className={`rounded p-1.5 ${collection.isFeatured ? "text-yellow-600 hover:bg-yellow-50" : "text-gray-400 hover:bg-gray-100"}`}
+              className={`rounded p-1.5 cursor-pointer ${collection.isFeatured ? "text-yellow-600 hover:bg-yellow-50" : "text-gray-400 hover:bg-gray-100"}`}
               title={collection.isFeatured ? "Unfeature" : "Feature"}
             >
               <Star
@@ -225,7 +231,7 @@ function CollectionCard({
             </button>
             <button
               onClick={onToggleActive}
-              className={`rounded p-1.5 ${collection.isActive ? "text-green-600 hover:bg-green-50" : "text-gray-400 hover:bg-gray-100"}`}
+              className={`rounded p-1.5 cursor-pointer ${collection.isActive ? "text-green-600 hover:bg-green-50" : "text-gray-400 hover:bg-gray-100"}`}
               title={collection.isActive ? "Hide" : "Show"}
             >
               {collection.isActive ? (
@@ -236,14 +242,14 @@ function CollectionCard({
             </button>
             <button
               onClick={onEdit}
-              className="rounded p-1.5 text-blue-600 hover:bg-blue-50"
+              className="rounded p-1.5 text-blue-600 hover:bg-blue-50 cursor-pointer"
               title="Edit"
             >
               <Edit2 className="h-3.5 w-3.5" />
             </button>
             <button
               onClick={onDelete}
-              className="rounded p-1.5 text-red-500 hover:bg-red-50"
+              className="rounded p-1.5 text-red-500 hover:bg-red-50 cursor-pointer"
               title="Delete"
             >
               <Trash2 className="h-3.5 w-3.5" />
@@ -261,16 +267,19 @@ function CollectionCard({
 
 function CollectionForm({
   collection,
+  allProducts,
   onSubmit,
   onCancel,
 }: {
   collection?: Collection;
+  allProducts: { id: string; name: string; slug: string }[];
   onSubmit: (data: {
     name: string;
     description?: string;
     image?: string;
     bannerImage?: string;
     isFeatured?: boolean;
+    productIds?: string[];
   }) => Promise<void>;
   onCancel: () => void;
 }) {
@@ -279,6 +288,10 @@ function CollectionForm({
   const [image, setImage] = useState(collection?.image || "");
   const [bannerImage, setBannerImage] = useState(collection?.bannerImage || "");
   const [isFeatured, setIsFeatured] = useState(collection?.isFeatured || false);
+  const [selectedProductIds, setSelectedProductIds] = useState<string[]>(
+    Array.isArray(collection?.productIds) ? (collection?.productIds as string[]) : []
+  );
+  const [searchTerm, setSearchTerm] = useState("");
   const [saving, setSaving] = useState(false);
 
   async function handleSave() {
@@ -293,6 +306,7 @@ function CollectionForm({
       image: image || undefined,
       bannerImage: bannerImage || undefined,
       isFeatured,
+      productIds: selectedProductIds,
     });
     setSaving(false);
   }
@@ -340,27 +354,78 @@ function CollectionForm({
           aspectRatio="aspect-[3/1]"
         />
 
-        <label className="flex items-center gap-2">
+        <label className="flex items-center gap-2 cursor-pointer">
           <input
             type="checkbox"
             checked={isFeatured}
             onChange={(e) => setIsFeatured(e.target.checked)}
-            className="h-4 w-4 rounded border-gray-300"
+            className="h-4 w-4 rounded border-gray-300 text-purple-600 focus:ring-purple-400"
           />
-          <span className="text-sm text-gray-700">Mark as featured</span>
+          <span className="text-sm text-gray-700 select-none">Mark as featured</span>
         </label>
+
+        {/* Product Selection Picker */}
+        <div className="space-y-2 border-t border-gray-100 pt-3">
+          <label className="block text-xs font-semibold text-gray-700">
+            Assign Products to Collection ({selectedProductIds.length} Selected)
+          </label>
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full rounded-lg border border-gray-200 px-3 py-1.5 text-xs focus:border-purple-400 focus:outline-none"
+            placeholder="🔍 Search products by name..."
+          />
+          <div className="max-h-48 overflow-y-auto border border-gray-200 rounded-lg p-2.5 space-y-1.5 bg-gray-50/50">
+            {allProducts
+              .filter((p) => p.name.toLowerCase().includes(searchTerm.toLowerCase()))
+              .map((product) => {
+                const isChecked = selectedProductIds.includes(product.id);
+                return (
+                  <label
+                    key={product.id}
+                    className="flex items-center gap-2.5 px-2 py-1 rounded-md hover:bg-purple-50/45 cursor-pointer text-xs transition-colors"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={isChecked}
+                      onChange={() => {
+                        if (isChecked) {
+                          setSelectedProductIds(
+                            selectedProductIds.filter((id) => id !== product.id)
+                          );
+                        } else {
+                          setSelectedProductIds([...selectedProductIds, product.id]);
+                        }
+                      }}
+                      className="h-3.5 w-3.5 rounded text-purple-600 focus:ring-purple-400 border-gray-300"
+                    />
+                    <span
+                      className={`font-medium ${isChecked ? "text-purple-950 font-bold" : "text-gray-700"}`}
+                    >
+                      {product.name}
+                    </span>
+                  </label>
+                );
+              })}
+            {allProducts.filter((p) => p.name.toLowerCase().includes(searchTerm.toLowerCase()))
+              .length === 0 && (
+              <p className="text-center text-xs text-gray-400 py-4">No matching products found</p>
+            )}
+          </div>
+        </div>
 
         <div className="flex justify-end gap-2 border-t border-gray-100 pt-3">
           <button
             onClick={onCancel}
-            className="rounded-lg border border-gray-200 px-4 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50"
+            className="rounded-lg border border-gray-200 px-4 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 cursor-pointer"
           >
             Cancel
           </button>
           <button
             onClick={handleSave}
             disabled={saving}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-gray-900 px-4 py-2 text-xs font-medium text-white hover:bg-gray-800 disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-gray-900 px-4 py-2 text-xs font-medium text-white hover:bg-gray-800 disabled:opacity-50 cursor-pointer"
           >
             <Save className="h-3.5 w-3.5" />
             {saving ? "Saving..." : "Save"}

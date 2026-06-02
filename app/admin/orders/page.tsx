@@ -18,6 +18,7 @@ export default async function AdminOrdersPage({
     search?: string;
     status?: string;
     paymentStatus?: string;
+    date?: string;
   }>;
 }) {
   const params = await searchParams;
@@ -25,6 +26,20 @@ export default async function AdminOrdersPage({
   const search = params.search || "";
   const status = params.status || undefined;
   const paymentStatus = params.paymentStatus || undefined;
+  const date = params.date || undefined;
+
+  let dateFrom: string | undefined = undefined;
+  let dateTo: string | undefined = undefined;
+
+  if (date === "today") {
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    dateFrom = todayStart.toISOString();
+
+    const todayEnd = new Date();
+    todayEnd.setHours(23, 59, 59, 999);
+    dateTo = todayEnd.toISOString();
+  }
 
   const result = await getAdminOrders({
     page,
@@ -32,6 +47,8 @@ export default async function AdminOrdersPage({
     search: search || undefined,
     status,
     paymentStatus,
+    dateFrom,
+    dateTo,
   });
 
   const orders = result.orders || [];

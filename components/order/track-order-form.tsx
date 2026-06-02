@@ -9,13 +9,14 @@
 import { useState } from "react";
 import { Loader2, Search } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
+import { trackOrder } from "@/actions/order.actions";
 
 interface OrderResult {
   orderNumber: string;
   status: string;
   date: string;
   estimatedDelivery: string;
-  timeline: { status: string; date: string; active: boolean }[];
+  timeline: { status: string; date: string; active: boolean; isError?: boolean }[];
 }
 
 export function TrackOrderForm() {
@@ -37,23 +38,140 @@ export function TrackOrderForm() {
 
     setIsLoading(true);
 
-    // TODO: Call server action to fetch order (Phase 3)
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      // Placeholder result
-      setResult({
-        orderNumber: orderNumber.toUpperCase(),
-        status: "SHIPPED",
-        date: "May 22, 2026",
-        estimatedDelivery: "May 24-25, 2026",
-        timeline: [
-          { status: "Order Placed", date: "May 22, 10:30 AM", active: true },
-          { status: "Confirmed", date: "May 22, 11:00 AM", active: true },
-          { status: "Processing", date: "May 22, 2:00 PM", active: true },
-          { status: "Shipped", date: "May 23, 9:00 AM", active: true },
-          { status: "Delivered", date: "Estimated: May 24-25", active: false },
-        ],
+      const res = await trackOrder(orderNumber.trim(), phone.trim());
+      if (!res.success || !res.order) {
+        setError(res.error || "Order not found. Check your order number and phone.");
+        return;
+      }
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const order: any = res.order;
+
+      // Format order creation date
+      const placedDate = new Date(order.createdAt).toLocaleDateString("en-BD", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
       });
+
+      // Parse estimated delivery date from order notes
+      let estimatedDelivery = "Under calculation";
+      if (order.notes && order.notes.startsWith("Estimated Delivery: ")) {
+        const match = order.notes.match(/^Estimated Delivery: ([^\n]+)/);
+        if (match) {
+          estimatedDelivery = match[1];
+        }
+      }
+
+      // Build real dynamic timeline from order.timeline table records
+      // Standard workflow statuses: PENDING, CONFIRMED, PROCESSING, SHIPPED, DELIVERED
+      const dbTimeline = order.timeline || [];
+
+      // Helper function to find if status is active and return its formatted date
+      const getStatusDetail = (statusName: string) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const record = dbTimeline.find((t: any) => t.status === statusName);
+        if (record) {
+          const dateStr = new Date(record.createdAt).toLocaleString("en-BD", {
+            day: "numeric",
+            month: "short",
+            hour: "numeric",
+            minute: "2-digit",
+            hour12: true,
+          });
+          return { active: true, date: dateStr };
+        }
+        return { active: false, date: "" };
+      };
+
+      // Check if order was cancelled or returned
+      const isCancelled = order.status === "CANCELLED";
+      const isReturned = order.status === "RETURNED";
+      const isRefunded = order.status === "REFUNDED";
+
+      const timelineSteps = [];
+
+      // 1. Order Placed (Always active if order exists)
+      const placedDetail = getStatusDetail("PENDING");
+      timelineSteps.push({
+        status: "Order Placed",
+        date: placedDetail.active ? placedDetail.date : placedDate,
+        active: true,
+      });
+
+      // 2. Confirmed
+      const confirmedDetail = getStatusDetail("CONFIRMED");
+      timelineSteps.push({
+        status: "Confirmed",
+        date:
+          confirmedDetail.date || (confirmedDetail.active ? "Confirmed" : "Awaiting confirmation"),
+        active: confirmedDetail.active,
+      });
+
+      // 3. Processing
+      const processingDetail = getStatusDetail("PROCESSING");
+      timelineSteps.push({
+        status: "Processing",
+        date:
+          processingDetail.date || (processingDetail.active ? "Processing" : "Pending processing"),
+        active: processingDetail.active,
+      });
+
+      // 4. Shipped
+      const shippedDetail = getStatusDetail("SHIPPED");
+      timelineSteps.push({
+        status: "Shipped",
+        date: shippedDetail.date || (shippedDetail.active ? "Shipped" : "Pending shipment"),
+        active: shippedDetail.active,
+      });
+
+      // 5. Delivered or Cancellation exception
+      if (isCancelled) {
+        const cancelledDetail = getStatusDetail("CANCELLED");
+        timelineSteps.push({
+          status: "Cancelled",
+          date: cancelledDetail.date || "Order cancelled",
+          active: true,
+          isError: true,
+        });
+      } else if (isReturned) {
+        const returnedDetail = getStatusDetail("RETURNED");
+        timelineSteps.push({
+          status: "Returned",
+          date: returnedDetail.date || "Order returned",
+          active: true,
+          isError: true,
+        });
+      } else if (isRefunded) {
+        const refundedDetail = getStatusDetail("REFUNDED");
+        timelineSteps.push({
+          status: "Refunded",
+          date: refundedDetail.date || "Order refunded",
+          active: true,
+          isError: true,
+        });
+      } else {
+        const deliveredDetail = getStatusDetail("DELIVERED");
+        timelineSteps.push({
+          status: "Delivered",
+          date: deliveredDetail.active ? deliveredDetail.date : `Estimated: ${estimatedDelivery}`,
+          active: deliveredDetail.active,
+        });
+      }
+
+      setResult({
+        orderNumber: order.orderNumber,
+        status: order.status,
+        date: placedDate,
+        estimatedDelivery,
+        timeline: timelineSteps,
+      });
+    } catch (err) {
+      console.error("[TRACK] Error:", err);
+      setError(
+        "An error occurred while tracking your order. Please check your connection and try again."
+      );
     } finally {
       setIsLoading(false);
     }
@@ -139,13 +257,21 @@ export function TrackOrderForm() {
                 <div className="flex flex-col items-center">
                   <div
                     className={`h-2.5 w-2.5 rounded-full ${
-                      step.active ? "bg-foreground" : "bg-muted-foreground/20"
+                      step.isError
+                        ? "bg-red-500"
+                        : step.active
+                          ? "bg-foreground"
+                          : "bg-muted-foreground/20"
                     }`}
                   />
                   {index < result.timeline.length - 1 && (
                     <div
                       className={`w-0.5 h-7 ${
-                        step.active ? "bg-foreground" : "bg-muted-foreground/20"
+                        step.isError
+                          ? "bg-red-500/20"
+                          : step.active
+                            ? "bg-foreground"
+                            : "bg-muted-foreground/20"
                       }`}
                     />
                   )}
@@ -153,7 +279,11 @@ export function TrackOrderForm() {
                 <div className="pb-5">
                   <p
                     className={`text-sm -mt-0.5 ${
-                      step.active ? "font-medium" : "text-muted-foreground"
+                      step.isError
+                        ? "font-medium text-red-600"
+                        : step.active
+                          ? "font-medium"
+                          : "text-muted-foreground"
                     }`}
                   >
                     {step.status}

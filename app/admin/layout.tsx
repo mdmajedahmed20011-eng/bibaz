@@ -1,13 +1,11 @@
-/**
- * BIBAZ — Admin Panel Layout (Advanced)
- * Premium admin experience with responsive sidebar, mobile drawer, breadcrumbs
- */
-
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { AdminSidebar } from "@/components/admin/admin-sidebar";
 import { AdminHeader } from "@/components/admin/admin-header";
 import { AdminMobileNav } from "@/components/admin/admin-mobile-nav";
+import { prisma } from "@/lib/db";
+import { cookies } from "next/headers";
+import { Admin2FAVerify } from "@/components/admin/admin-2fa-verify";
 
 export const metadata = {
   title: "Admin Panel — BIBAZ",
@@ -26,6 +24,22 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   if (!adminRoles.includes(role || "")) {
     redirect("/");
+  }
+
+  // Double check 2FA status from DB
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { isTwoFactorEnabled: true },
+  });
+
+  if (user?.isTwoFactorEnabled) {
+    const cookieStore = await cookies();
+    const verifiedCookie = cookieStore.get("admin_2fa_verified")?.value;
+
+    // Challenge 2FA if not verified for this session
+    if (verifiedCookie !== session.user.id) {
+      return <Admin2FAVerify />;
+    }
   }
 
   return (

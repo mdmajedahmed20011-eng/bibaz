@@ -7,10 +7,19 @@ import { getAllSettings } from "@/actions/settings.actions";
 import { SettingsManager } from "@/components/admin/settings-manager";
 import { Settings as SettingsIcon } from "lucide-react";
 
+import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/db";
+
 export default async function AdminSettingsPage() {
+  const session = await auth();
   const result = await getAllSettings();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const settings = (result.settings || []) as any[];
+  const settings = (result.settings || []) as unknown[];
+
+  // Fetch current user 2FA status from DB
+  const user = await prisma.user.findUnique({
+    where: { id: session?.user?.id },
+    select: { isTwoFactorEnabled: true },
+  });
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
@@ -26,7 +35,10 @@ export default async function AdminSettingsPage() {
         </div>
       </div>
 
-      <SettingsManager initialSettings={settings} />
+      <SettingsManager
+        initialSettings={settings}
+        isTwoFactorEnabled={user?.isTwoFactorEnabled || false}
+      />
     </div>
   );
 }

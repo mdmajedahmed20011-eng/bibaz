@@ -80,6 +80,8 @@ model User {
   email         String    @unique
   phone         String?   @unique
   passwordHash  String?   @map("password_hash")
+  twoFactorSecret String?   @map("two_factor_secret")
+  isTwoFactorEnabled Boolean @default(false) @map("is_two_factor_enabled")
   role          Role      @default(CUSTOMER)
   image         String?
   emailVerified DateTime? @map("email_verified")

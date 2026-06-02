@@ -8,7 +8,18 @@
 import { useState } from "react";
 import { bulkUpdateSettings } from "@/actions/settings.actions";
 import { ImageUpload } from "./image-upload";
-import { Save, Store, Truck, Share2, Image as ImageIcon, Search, CheckCircle2, Percent, Mail } from "lucide-react";
+import {
+  Save,
+  Store,
+  Truck,
+  Share2,
+  Image as ImageIcon,
+  Search,
+  CheckCircle2,
+  Percent,
+  Mail,
+  ShieldCheck,
+} from "lucide-react";
 import { BUSINESS, DELIVERY_CHARGE } from "@/lib/constants";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -22,6 +33,7 @@ interface Setting {
 
 interface SettingsManagerProps {
   initialSettings: Setting[];
+  isTwoFactorEnabled: boolean;
 }
 
 const TABS = [
@@ -32,6 +44,7 @@ const TABS = [
   { id: "email", label: "Email Config", icon: Mail },
   { id: "social", label: "Social Media", icon: Share2 },
   { id: "seo", label: "SEO", icon: Search },
+  { id: "security", label: "Security & 2FA", icon: ShieldCheck },
 ];
 
 // Default settings with fallbacks
@@ -57,7 +70,12 @@ const DEFAULTS: Record<string, { value: unknown; group: string; label: string; t
   // Branding
   store_logo: { value: "", group: "branding", label: "Store Logo", type: "image" },
   store_favicon: { value: "", group: "branding", label: "Favicon", type: "image" },
-  primary_color: { value: "#000000", group: "branding", label: "Primary Brand Color (Hex)", type: "text" },
+  primary_color: {
+    value: "#000000",
+    group: "branding",
+    label: "Primary Brand Color (Hex)",
+    type: "text",
+  },
 
   // Shipping
   shipping_dhaka: {
@@ -78,12 +96,22 @@ const DEFAULTS: Record<string, { value: unknown; group: string; label: string; t
     label: "Free Shipping Above (৳, 0 = disabled)",
     type: "number",
   },
-  enable_international_shipping: { value: false, group: "shipping", label: "Enable International Shipping", type: "boolean" },
+  enable_international_shipping: {
+    value: false,
+    group: "shipping",
+    label: "Enable International Shipping",
+    type: "boolean",
+  },
 
   // Taxes
   enable_taxes: { value: false, group: "taxes", label: "Enable Tax Calculation", type: "boolean" },
   tax_rate: { value: 0, group: "taxes", label: "Default Tax Rate (%)", type: "number" },
-  prices_include_tax: { value: true, group: "taxes", label: "Product Prices Include Tax", type: "boolean" },
+  prices_include_tax: {
+    value: true,
+    group: "taxes",
+    label: "Product Prices Include Tax",
+    type: "boolean",
+  },
 
   // Email Config
   smtp_host: { value: "", group: "email", label: "SMTP Host", type: "text" },
@@ -129,7 +157,7 @@ const DEFAULTS: Record<string, { value: unknown; group: string; label: string; t
   },
 };
 
-export function SettingsManager({ initialSettings }: SettingsManagerProps) {
+export function SettingsManager({ initialSettings, isTwoFactorEnabled }: SettingsManagerProps) {
   const [activeTab, setActiveTab] = useState("general");
   const [values, setValues] = useState<Record<string, unknown>>(() => {
     // Lazy init from DB or defaults
@@ -142,6 +170,87 @@ export function SettingsManager({ initialSettings }: SettingsManagerProps) {
   });
   const [saving, setSaving] = useState(false);
   const [savedMsg, setSavedMsg] = useState(false);
+
+  // 2FA management states
+  const [twoFactorEnabled, setTwoFactorEnabled] = useState(isTwoFactorEnabled);
+  const [setupMode, setSetupMode] = useState(false);
+  const [secretKey, setSecretKey] = useState("");
+  const [qrCode, setQrCode] = useState("");
+  const [verificationCode, setVerificationCode] = useState("");
+  const [tfaLoading, setTfaLoading] = useState(false);
+  const [tfaError, setTfaError] = useState<string | null>(null);
+
+  const handleStartSetup = async () => {
+    setTfaLoading(true);
+    setTfaError(null);
+    try {
+      const { generate2FASecretAction } = await import("@/actions/auth.actions");
+      const res = await generate2FASecretAction();
+      if (res.success && res.secret && res.otpAuthURI) {
+        setSecretKey(res.secret);
+        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(res.otpAuthURI)}`;
+        setQrCode(qrUrl);
+        setSetupMode(true);
+      } else {
+        setTfaError(res.error || "Failed to start 2FA setup");
+      }
+    } catch {
+      setTfaError("Failed to initialize 2FA setup");
+    } finally {
+      setTfaLoading(false);
+    }
+  };
+
+  const handleConfirmEnable = async () => {
+    if (verificationCode.length !== 6) {
+      setTfaError("Please enter all 6 digits");
+      return;
+    }
+    setTfaLoading(true);
+    setTfaError(null);
+    try {
+      const { enable2FAAction } = await import("@/actions/auth.actions");
+      const res = await enable2FAAction(verificationCode);
+      if (res.success) {
+        setTwoFactorEnabled(true);
+        setSetupMode(false);
+        setSecretKey("");
+        setQrCode("");
+        setVerificationCode("");
+        alert("Two-factor authentication enabled successfully!");
+      } else {
+        setTfaError(res.error || "Verification failed");
+      }
+    } catch {
+      setTfaError("Failed to enable 2FA");
+    } finally {
+      setTfaLoading(false);
+    }
+  };
+
+  const handleDisable2FA = async () => {
+    if (verificationCode.length !== 6) {
+      setTfaError("Please enter 6-digit verification code to disable 2FA");
+      return;
+    }
+    setTfaLoading(true);
+    setTfaError(null);
+    try {
+      const { disable2FAAction } = await import("@/actions/auth.actions");
+      const res = await disable2FAAction(verificationCode);
+      if (res.success) {
+        setTwoFactorEnabled(false);
+        setVerificationCode("");
+        alert("Two-factor authentication disabled successfully!");
+      } else {
+        setTfaError(res.error || "Verification failed");
+      }
+    } catch {
+      setTfaError("Failed to disable 2FA");
+    } finally {
+      setTfaLoading(false);
+    }
+  };
 
   const setValue = (key: string, value: unknown) => {
     setValues((prev) => ({ ...prev, [key]: value }));
@@ -211,54 +320,196 @@ export function SettingsManager({ initialSettings }: SettingsManagerProps) {
             transition={{ duration: 0.2 }}
             className="space-y-6"
           >
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {tabSettings.map(([key, def]) => (
-                <div key={key} className={def.type === "textarea" ? "md:col-span-2 lg:col-span-3" : ""}>
-                  <SettingField
-                    settingKey={key}
-                    def={def}
-                    value={values[key]}
-                    onChange={(val) => setValue(key, val)}
-                  />
+            {activeTab === "security" ? (
+              <div className="max-w-xl mx-auto space-y-6 py-4">
+                <div>
+                  <h2 className="text-base font-bold text-gray-900">
+                    Two-Factor Authentication (2FA)
+                  </h2>
+                  <p className="text-xs text-gray-500 mt-1 leading-relaxed">
+                    Protect your administrative account with two-step dynamic validation. Scan the
+                    code using Google Authenticator, Microsoft Authenticator, or generic TOTP
+                    clients to secure mutations.
+                  </p>
                 </div>
-              ))}
-            </div>
+
+                {tfaError && (
+                  <div className="p-4 bg-red-50 border border-red-200 text-xs text-red-600 font-semibold rounded-xl">
+                    {tfaError}
+                  </div>
+                )}
+
+                {twoFactorEnabled ? (
+                  <div className="rounded-2xl border border-emerald-100 bg-emerald-50/30 p-6 space-y-4">
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-600">
+                        <ShieldCheck className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-emerald-800">
+                          2-Factor Authentication is Active
+                        </p>
+                        <p className="text-xs text-emerald-600 mt-0.5 font-medium">
+                          Your credentials are protected with dynamic code challenge.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="border-t border-emerald-100/50 pt-4 space-y-3">
+                      <p className="text-xs font-semibold text-gray-700">
+                        Disable Two-Factor Authentication
+                      </p>
+                      <div className="flex gap-3 max-w-sm">
+                        <input
+                          type="text"
+                          maxLength={6}
+                          placeholder="6-digit code"
+                          value={verificationCode}
+                          onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, ""))}
+                          className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm text-center font-semibold focus:outline-none focus:border-red-500"
+                        />
+                        <button
+                          onClick={handleDisable2FA}
+                          disabled={tfaLoading || verificationCode.length !== 6}
+                          className="bg-red-600 hover:bg-red-700 text-white font-semibold text-xs uppercase tracking-widest px-6 py-2.5 rounded-xl disabled:opacity-50 transition-colors shrink-0 cursor-pointer"
+                        >
+                          {tfaLoading ? "Disabling..." : "Disable 2FA"}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ) : setupMode ? (
+                  <div className="rounded-2xl border border-accent/20 bg-accent-light/5 p-6 space-y-6">
+                    <div className="space-y-2">
+                      <p className="text-sm font-bold text-gray-900">Step 1: Scan this QR Code</p>
+                      <p className="text-xs text-gray-500 leading-relaxed">
+                        Scan the QR code below. If scanner is not supported, manually key in the
+                        base32 secret.
+                      </p>
+                    </div>
+
+                    {qrCode && (
+                      <div className="flex justify-center bg-white p-4 border border-gray-100 rounded-xl w-fit mx-auto shadow-sm">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={qrCode} alt="2FA QR Code" className="h-44 w-44" />
+                      </div>
+                    )}
+
+                    <div className="space-y-1.5 text-center">
+                      <p className="text-[10px] uppercase font-bold tracking-wider text-gray-500">
+                        Manual Entry Secret
+                      </p>
+                      <p className="text-sm font-mono font-bold text-[#c9a96e] select-all bg-white py-2 px-4 border border-gray-100 rounded-lg inline-block">
+                        {secretKey}
+                      </p>
+                    </div>
+
+                    <div className="border-t border-accent/10 pt-4 space-y-3">
+                      <div className="space-y-1.5">
+                        <p className="text-sm font-bold text-gray-900">Step 2: Verify Setup</p>
+                        <p className="text-xs text-gray-500">
+                          Enter the active 6-digit TOTP code from your authenticator app to enable.
+                        </p>
+                      </div>
+
+                      <div className="flex gap-3 max-w-sm">
+                        <input
+                          type="text"
+                          maxLength={6}
+                          placeholder="6-digit code"
+                          value={verificationCode}
+                          onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, ""))}
+                          className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm text-center font-semibold focus:outline-none focus:border-[#c9a96e]"
+                        />
+                        <button
+                          onClick={handleConfirmEnable}
+                          disabled={tfaLoading || verificationCode.length !== 6}
+                          className="bg-gray-900 hover:bg-gray-800 text-white font-semibold text-xs uppercase tracking-widest px-6 py-2.5 rounded-xl disabled:opacity-50 transition-colors shrink-0 cursor-pointer"
+                        >
+                          {tfaLoading ? "Enabling..." : "Verify & Enable"}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="rounded-2xl border border-gray-100 bg-gray-50/50 p-6 flex flex-col items-center text-center space-y-4">
+                    <div className="h-12 w-12 bg-gray-100 rounded-full flex items-center justify-center text-gray-500">
+                      <ShieldCheck className="h-6 w-6" />
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-sm font-bold text-gray-900">
+                        2-Factor Authentication is Disabled
+                      </p>
+                      <p className="text-xs text-gray-500 leading-relaxed max-w-sm">
+                        Enable dynamic secondary authorization to secure mutations, product imports,
+                        order status changes, and settings.
+                      </p>
+                    </div>
+                    <button
+                      onClick={handleStartSetup}
+                      disabled={tfaLoading}
+                      className="bg-gray-900 hover:bg-gray-800 text-white font-bold text-xs uppercase tracking-widest px-6 py-3 rounded-xl disabled:opacity-50 transition-colors cursor-pointer"
+                    >
+                      {tfaLoading ? "Initializing..." : "Set Up 2FA Key"}
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                {tabSettings.map(([key, def]) => (
+                  <div
+                    key={key}
+                    className={def.type === "textarea" ? "md:col-span-2 lg:col-span-3" : ""}
+                  >
+                    <SettingField
+                      settingKey={key}
+                      def={def}
+                      value={values[key]}
+                      onChange={(val) => setValue(key, val)}
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
           </motion.div>
         </AnimatePresence>
       </div>
 
       {/* Floating Save Bar */}
-      <div className="sticky bottom-6 z-50 flex items-center justify-end gap-4 rounded-2xl border border-white/50 bg-white/80 p-4 shadow-2xl backdrop-blur-xl">
-        <AnimatePresence>
-          {savedMsg && (
-            <motion.span
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0 }}
-              className="flex items-center gap-2 text-sm font-semibold text-emerald-600"
-            >
-              <CheckCircle2 className="h-5 w-5" />
-              Settings saved!
-            </motion.span>
-          )}
-        </AnimatePresence>
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className="group relative inline-flex items-center gap-2 overflow-hidden rounded-xl bg-gray-900 px-6 py-3 text-sm font-semibold text-white shadow-md transition-all hover:bg-gray-800 disabled:opacity-50"
-        >
-          {saving ? (
-            <motion.div
-              animate={{ rotate: 360 }}
-              transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
-              className="h-4 w-4 rounded-full border-2 border-white/20 border-t-white"
-            />
-          ) : (
-            <Save className="h-4 w-4 transition-transform group-hover:scale-110" />
-          )}
-          {saving ? "Saving Changes..." : "Save Changes"}
-        </button>
-      </div>
+      {activeTab !== "security" && (
+        <div className="sticky bottom-6 z-50 flex items-center justify-end gap-4 rounded-2xl border border-white/50 bg-white/80 p-4 shadow-2xl backdrop-blur-xl">
+          <AnimatePresence>
+            {savedMsg && (
+              <motion.span
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0 }}
+                className="flex items-center gap-2 text-sm font-semibold text-emerald-600"
+              >
+                <CheckCircle2 className="h-5 w-5" />
+                Settings saved!
+              </motion.span>
+            )}
+          </AnimatePresence>
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="group relative inline-flex items-center gap-2 overflow-hidden rounded-xl bg-gray-900 px-6 py-3 text-sm font-semibold text-white shadow-md transition-all hover:bg-gray-800 disabled:opacity-50 cursor-pointer"
+          >
+            {saving ? (
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+                className="h-4 w-4 rounded-full border-2 border-white/20 border-t-white"
+              />
+            ) : (
+              <Save className="h-4 w-4 transition-transform group-hover:scale-110" />
+            )}
+            {saving ? "Saving Changes..." : "Save Changes"}
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -280,7 +531,10 @@ function SettingField({
 }) {
   return (
     <div className="group">
-      <label htmlFor={settingKey} className="mb-2 block text-sm font-semibold text-gray-700 transition-colors group-hover:text-gray-900">
+      <label
+        htmlFor={settingKey}
+        className="mb-2 block text-sm font-semibold text-gray-700 transition-colors group-hover:text-gray-900"
+      >
         {def.label}
       </label>
 
@@ -342,4 +596,3 @@ function SettingField({
     </div>
   );
 }
-

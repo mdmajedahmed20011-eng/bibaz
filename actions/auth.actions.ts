@@ -219,3 +219,182 @@ export async function resetPasswordAction(token: string, newPassword: string) {
     return { success: false, error: "Something went wrong. Please try again." };
   }
 }
+
+// ═══════════════════════════════════════════
+// ADMIN 2FA ACTIONS
+// ═══════════════════════════════════════════
+
+import { generateSecret, getOTPAuthURI, verifyTOTP } from "@/lib/totp";
+import { cookies } from "next/headers";
+import { auth } from "@/lib/auth";
+
+/**
+ * Generate 2FA Secret Key and QR Code provisioning URI (Admin+)
+ */
+export async function generate2FASecretAction() {
+  const session = await auth();
+  if (!session?.user?.id) return { success: false, error: "Not authenticated" };
+
+  const role = (session.user as { role?: string }).role;
+  const adminRoles = ["STAFF", "MANAGER", "ADMIN", "SUPER_ADMIN"];
+  if (!adminRoles.includes(role || "")) {
+    return { success: false, error: "Insufficient permissions" };
+  }
+
+  try {
+    const secret = generateSecret();
+    const otpAuthURI = getOTPAuthURI(session.user.email || "admin@bibaz.com", secret);
+
+    // Save secret to database temporarily (not enabled yet)
+    await prisma.user.update({
+      where: { id: session.user.id },
+      data: { twoFactorSecret: secret },
+    });
+
+    return { success: true, secret, otpAuthURI };
+  } catch (error) {
+    console.error("[2FA] generate2FASecretAction error:", error);
+    return { success: false, error: "Failed to generate 2FA secret" };
+  }
+}
+
+/**
+ * Enable 2FA after verifying the first token (Admin+)
+ */
+export async function enable2FAAction(token: string) {
+  const session = await auth();
+  if (!session?.user?.id) return { success: false, error: "Not authenticated" };
+
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { twoFactorSecret: true },
+    });
+
+    if (!user || !user.twoFactorSecret) {
+      return { success: false, error: "2FA secret not generated yet. Setup 2FA first." };
+    }
+
+    const isValid = verifyTOTP(user.twoFactorSecret, token);
+    if (!isValid) {
+      return { success: false, error: "Invalid verification code. Please try again." };
+    }
+
+    // Enable 2FA in DB
+    await prisma.user.update({
+      where: { id: session.user.id },
+      data: { isTwoFactorEnabled: true },
+    });
+
+    // Write audit log
+    await prisma.auditLog.create({
+      data: {
+        adminId: session.user.id,
+        action: "ENABLE_2FA",
+        entity: "User",
+        entityId: session.user.id,
+      },
+    });
+
+    // Mark as verified for the current session
+    const cookieStore = await cookies();
+    cookieStore.set("admin_2fa_verified", session.user.id, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "strict",
+      maxAge: 12 * 60 * 60, // 12 hours
+    });
+
+    return { success: true };
+  } catch (error) {
+    console.error("[2FA] enable2FAAction error:", error);
+    return { success: false, error: "Failed to enable 2FA" };
+  }
+}
+
+/**
+ * Disable 2FA (Admin+)
+ */
+export async function disable2FAAction(token: string) {
+  const session = await auth();
+  if (!session?.user?.id) return { success: false, error: "Not authenticated" };
+
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { twoFactorSecret: true },
+    });
+
+    if (!user || !user.twoFactorSecret) {
+      return { success: false, error: "2FA not configured" };
+    }
+
+    const isValid = verifyTOTP(user.twoFactorSecret, token);
+    if (!isValid) {
+      return { success: false, error: "Invalid verification code. Please try again." };
+    }
+
+    // Disable 2FA in DB
+    await prisma.user.update({
+      where: { id: session.user.id },
+      data: { isTwoFactorEnabled: false, twoFactorSecret: null },
+    });
+
+    // Write audit log
+    await prisma.auditLog.create({
+      data: {
+        adminId: session.user.id,
+        action: "DISABLE_2FA",
+        entity: "User",
+        entityId: session.user.id,
+      },
+    });
+
+    // Clear verification cookie
+    const cookieStore = await cookies();
+    cookieStore.delete("admin_2fa_verified");
+
+    return { success: true };
+  } catch (error) {
+    console.error("[2FA] disable2FAAction error:", error);
+    return { success: false, error: "Failed to disable 2FA" };
+  }
+}
+
+/**
+ * Verify 2FA Token at Login (Admin+)
+ */
+export async function verifyAdmin2FATokenAction(token: string) {
+  const session = await auth();
+  if (!session?.user?.id) return { success: false, error: "Not authenticated" };
+
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { twoFactorSecret: true },
+    });
+
+    if (!user || !user.twoFactorSecret) {
+      return { success: false, error: "2FA not configured" };
+    }
+
+    const isValid = verifyTOTP(user.twoFactorSecret, token);
+    if (!isValid) {
+      return { success: false, error: "Invalid verification code. Please try again." };
+    }
+
+    // Set HTTP-only cookie indicating verification
+    const cookieStore = await cookies();
+    cookieStore.set("admin_2fa_verified", session.user.id, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "strict",
+      maxAge: 12 * 60 * 60, // 12 hours
+    });
+
+    return { success: true };
+  } catch (error) {
+    console.error("[2FA] verifyAdmin2FATokenAction error:", error);
+    return { success: false, error: "Verification failed" };
+  }
+}

@@ -161,9 +161,29 @@ export async function createOrder(data: CreateOrderInput | any) {
         };
       });
 
-      // Calculate shipping
+      // Calculate shipping from DB settings
+      const settingsList = await prisma.siteSetting.findMany({
+        where: {
+          key: { in: ["shipping_dhaka", "shipping_outside", "free_shipping_threshold"] },
+        },
+      });
+
+      const shippingDhaka = Number(
+        settingsList.find((s) => s.key === "shipping_dhaka")?.value ?? 80
+      );
+      const shippingOutside = Number(
+        settingsList.find((s) => s.key === "shipping_outside")?.value ?? 150
+      );
+      const freeShippingThreshold = Number(
+        settingsList.find((s) => s.key === "free_shipping_threshold")?.value ?? 0
+      );
+
       const isDhaka = shippingAddress.city.toLowerCase().includes("dhaka");
-      const shippingCharge = isDhaka ? 80 : 150;
+      let shippingCharge = isDhaka ? shippingDhaka : shippingOutside;
+
+      if (freeShippingThreshold > 0 && subtotal >= freeShippingThreshold) {
+        shippingCharge = 0;
+      }
 
       // Apply coupon if provided
       let discount = 0;
@@ -1128,5 +1148,86 @@ export async function bulkDeleteOrders(orderIds: string[]) {
       success: false,
       error: error instanceof Error ? error.message : "Failed to bulk delete orders",
     };
+  }
+}
+
+/**
+ * Get dynamic revenue and order count trends for admin charts
+ */
+export async function getDashboardAnalytics(range: string = "7d") {
+  try {
+    await requirePermission("view_reports");
+    const now = new Date();
+    const startDate = new Date();
+    let grouping: "day" | "month" = "day";
+
+    if (range === "7d") {
+      startDate.setDate(now.getDate() - 7);
+      grouping = "day";
+    } else if (range === "30d") {
+      startDate.setDate(now.getDate() - 30);
+      grouping = "day";
+    } else if (range === "12m") {
+      startDate.setFullYear(now.getFullYear() - 1);
+      grouping = "month";
+    } else {
+      startDate.setDate(now.getDate() - 7);
+    }
+
+    const orders = await prisma.order.findMany({
+      where: {
+        createdAt: { gte: startDate },
+        status: { in: ["PENDING", "CONFIRMED", "PROCESSING", "SHIPPED", "DELIVERED"] },
+        deletedAt: null,
+      },
+      select: {
+        createdAt: true,
+        total: true,
+      },
+      orderBy: {
+        createdAt: "asc",
+      },
+    });
+
+    const groupedData: Record<string, { label: string; revenue: number; count: number }> = {};
+
+    if (grouping === "day") {
+      const temp = new Date(startDate);
+      while (temp <= now) {
+        const key = temp.toISOString().slice(0, 10);
+        const label = temp.toLocaleDateString("en-BD", { day: "numeric", month: "short" });
+        groupedData[key] = { label, revenue: 0, count: 0 };
+        temp.setDate(temp.getDate() + 1);
+      }
+    } else {
+      const temp = new Date(startDate);
+      for (let i = 0; i < 12; i++) {
+        const key = `${temp.getFullYear()}-${(temp.getMonth() + 1).toString().padStart(2, "0")}`;
+        const label = temp.toLocaleDateString("en-BD", { month: "short", year: "2-digit" });
+        groupedData[key] = { label, revenue: 0, count: 0 };
+        temp.setMonth(temp.getMonth() + 1);
+      }
+    }
+
+    orders.forEach((o) => {
+      let key = "";
+      if (grouping === "day") {
+        key = o.createdAt.toISOString().slice(0, 10);
+      } else {
+        key = `${o.createdAt.getFullYear()}-${(o.createdAt.getMonth() + 1).toString().padStart(2, "0")}`;
+      }
+
+      const item = groupedData[key];
+      if (item) {
+        item.revenue += Number(o.total);
+        item.count += 1;
+      }
+    });
+
+    const dataPoints = Object.values(groupedData);
+    return { success: true, dataPoints };
+  } catch (error) {
+    console.error("[ANALYTICS] getDashboardAnalytics error:", error);
+    return { success: false, error: "Failed to fetch analytics chart data" };
   }
 }

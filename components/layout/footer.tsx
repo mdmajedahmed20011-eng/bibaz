@@ -26,7 +26,8 @@ const helpLinks = [
   { href: "/about", label: "Our Story" },
 ];
 
-export function Footer() {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function Footer({ settings = {} }: { settings?: Record<string, any> }) {
   return (
     <footer className="bg-[#fafafa] border-t border-border/50">
       {/* 1. Global Integrated Newsletter Section — Dark, Editorial */}
@@ -77,7 +78,10 @@ export function Footer() {
           <div className="col-span-2 md:col-span-1 lg:col-span-2 space-y-4">
             <Link href="/" className="inline-block">
               <Image
-                src="/images/logo/348254398_927747708509948_4192295653740697805_n.jpg"
+                src={
+                  settings.store_logo ||
+                  "/images/logo/348254398_927747708509948_4192295653740697805_n.jpg"
+                }
                 alt="BIBAZ"
                 width={40}
                 height={40}
@@ -91,7 +95,7 @@ export function Footer() {
             {/* Social Icons */}
             <div className="flex items-center gap-4 pt-2">
               <a
-                href={BUSINESS.FACEBOOK}
+                href={settings.social_facebook || BUSINESS.FACEBOOK}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-foreground/40 hover:text-foreground transition-colors"
@@ -102,7 +106,7 @@ export function Footer() {
                 </svg>
               </a>
               <a
-                href={BUSINESS.INSTAGRAM}
+                href={settings.social_instagram || BUSINESS.INSTAGRAM}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-foreground/40 hover:text-foreground transition-colors"
@@ -161,21 +165,23 @@ export function Footer() {
             <ul className="space-y-2.5 text-sm text-muted-foreground font-medium">
               <li>
                 <a
-                  href={`tel:${BUSINESS.PHONE}`}
+                  href={`tel:${settings.store_phone || BUSINESS.PHONE}`}
                   className="hover:text-foreground transition-colors"
                 >
-                  {BUSINESS.PHONE}
+                  {settings.store_phone || BUSINESS.PHONE}
                 </a>
               </li>
               <li>
                 <a
-                  href={`mailto:${BUSINESS.EMAIL}`}
+                  href={`mailto:${settings.store_email || BUSINESS.EMAIL}`}
                   className="hover:text-foreground transition-colors"
                 >
-                  {BUSINESS.EMAIL}
+                  {settings.store_email || BUSINESS.EMAIL}
                 </a>
               </li>
-              <li className="leading-relaxed pt-1 text-[13px]">{BUSINESS.ADDRESS}</li>
+              <li className="leading-relaxed pt-1 text-[13px]">
+                {settings.store_address || BUSINESS.ADDRESS}
+              </li>
             </ul>
           </div>
         </div>
@@ -186,8 +192,8 @@ export function Footer() {
         <div className="container mx-auto px-6 md:px-8 py-5 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-muted-foreground font-medium">
           <p>© {new Date().getFullYear()} BIBAZ. All rights reserved.</p>
           <p>
-            Cash on Delivery &nbsp;|&nbsp; Dhaka: ৳80 &nbsp;|&nbsp; Outside: ৳150 &nbsp;|&nbsp;
-            Secured SSL Checkout
+            Cash on Delivery &nbsp;|&nbsp; Dhaka: ৳{settings.shipping_dhaka || 80} &nbsp;|&nbsp;
+            Outside: ৳{settings.shipping_outside || 150} &nbsp;|&nbsp; Secured SSL Checkout
           </p>
         </div>
       </div>

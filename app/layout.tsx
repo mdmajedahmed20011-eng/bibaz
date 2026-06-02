@@ -61,7 +61,7 @@ export default async function RootLayout({
     async () => {
       try {
         const setting = await prisma.siteSetting.findUnique({
-          where: { key: "favicon_url" },
+          where: { key: "store_favicon" },
         });
         if (setting && setting.value) {
           return String(setting.value).replace(/['"]/g, "");

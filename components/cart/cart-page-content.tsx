@@ -12,14 +12,22 @@ import Image from "next/image";
 import { Minus, Plus, ShoppingBag, Trash2 } from "lucide-react";
 import { useCartStore } from "@/store/cart-store";
 import { formatPrice } from "@/lib/utils";
-import { DELIVERY_CHARGE } from "@/lib/constants";
 import { Separator } from "@/components/ui/separator";
 
-export function CartPageContent() {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function CartPageContent({ settings = {} }: { settings?: Record<string, any> }) {
   const { items, removeItem, updateQuantity, clearCart, getSubtotal } = useCartStore();
 
   const subtotal = getSubtotal();
-  const estimatedShipping = subtotal > 0 ? DELIVERY_CHARGE.DHAKA_INSIDE : 0;
+  const shippingDhaka = Number(settings.shipping_dhaka ?? 80);
+  const freeShippingThreshold = Number(settings.free_shipping_threshold ?? 0);
+
+  const estimatedShipping =
+    subtotal > 0
+      ? freeShippingThreshold > 0 && subtotal >= freeShippingThreshold
+        ? 0
+        : shippingDhaka
+      : 0;
   const total = subtotal + estimatedShipping;
 
   if (items.length === 0) {
@@ -31,7 +39,8 @@ export function CartPageContent() {
         <div>
           <h2 className="text-xl font-heading font-medium text-foreground">Your bag is empty</h2>
           <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
-            Looks like you haven&apos;t added any items to your shopping bag yet. Explore our luxury collections to begin.
+            Looks like you haven&apos;t added any items to your shopping bag yet. Explore our luxury
+            collections to begin.
           </p>
         </div>
         <Link
@@ -76,7 +85,7 @@ export function CartPageContent() {
                     />
                   )}
                 </div>
-                
+
                 <div className="min-w-0 flex flex-col justify-center">
                   <Link
                     href={`/products/${item.productSlug}`}
@@ -84,7 +93,7 @@ export function CartPageContent() {
                   >
                     {item.productName}
                   </Link>
-                  
+
                   <div className="flex flex-wrap gap-2 mt-2">
                     <span className="text-[9px] uppercase tracking-wider bg-[#f8f5f0] text-muted-foreground px-2.5 py-1 font-semibold border border-border/20">
                       Size {item.size}
@@ -95,7 +104,7 @@ export function CartPageContent() {
                       </span>
                     )}
                   </div>
-                  
+
                   {/* Mobile-only item price display */}
                   <p className="text-sm font-semibold text-foreground mt-2.5 md:hidden">
                     {formatPrice(item.price)}
@@ -177,7 +186,9 @@ export function CartPageContent() {
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground uppercase tracking-wider">Shipping</span>
-              <span className="font-semibold text-foreground">{formatPrice(estimatedShipping)}</span>
+              <span className="font-semibold text-foreground">
+                {formatPrice(estimatedShipping)}
+              </span>
             </div>
           </div>
 
@@ -202,7 +213,8 @@ export function CartPageContent() {
           </div>
 
           <p className="text-[10px] text-muted-foreground uppercase tracking-wider leading-relaxed">
-            Shipping price is calculated for Dhaka. Out-of-Dhaka charges applied during checkout delivery address selection.
+            Shipping price is calculated for Dhaka. Out-of-Dhaka charges applied during checkout
+            delivery address selection.
           </p>
 
           <div className="space-y-2 pt-2">

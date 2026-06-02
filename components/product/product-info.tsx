@@ -34,7 +34,11 @@ interface ProductInfoProps {
   };
 }
 
-export function ProductInfo({ product }: ProductInfoProps) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function ProductInfo({
+  product,
+  settings = {},
+}: ProductInfoProps & { settings?: Record<string, any> }) {
   const router = useRouter();
   const addItem = useCartStore((state) => state.addItem);
   const openCart = useCartStore((state) => state.openCart);
@@ -332,9 +336,14 @@ export function ProductInfo({ product }: ProductInfoProps) {
           onToggle={() => toggleSection("shipping")}
         >
           <div className="space-y-2 text-sm text-muted-foreground">
-            <p>• Dhaka: ৳80 (2-3 business days)</p>
-            <p>• Outside Dhaka: ৳150 (3-5 business days)</p>
-            <p>• Free delivery on orders above ৳10,000</p>
+            <p>• Dhaka: ৳{settings.shipping_dhaka ?? 80} (2-3 business days)</p>
+            <p>• Outside Dhaka: ৳{settings.shipping_outside ?? 150} (3-5 business days)</p>
+            {Number(settings.free_shipping_threshold ?? 0) > 0 && (
+              <p>
+                • Free delivery on orders above ৳
+                {Number(settings.free_shipping_threshold).toLocaleString()}
+              </p>
+            )}
             <p>• 7-day easy return policy</p>
           </div>
         </AccordionItem>

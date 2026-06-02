@@ -66,6 +66,12 @@ const DEFAULTS: Record<string, { value: unknown; group: string; label: string; t
     type: "text",
   },
   currency_symbol: { value: "৳", group: "general", label: "Currency Symbol", type: "text" },
+  maintenance_mode: {
+    value: false,
+    group: "general",
+    label: "Enable Maintenance Mode",
+    type: "boolean",
+  },
 
   // Branding
   store_logo: { value: "", group: "branding", label: "Store Logo", type: "image" },

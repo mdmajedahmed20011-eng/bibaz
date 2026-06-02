@@ -7,13 +7,21 @@
 import type { Metadata } from "next";
 import { Phone, Mail, MapPin, Clock } from "lucide-react";
 import { BUSINESS } from "@/lib/constants";
+import { getStorefrontSettings } from "@/actions/settings.actions";
 
 export const metadata: Metadata = {
   title: "Contact Us — BIBAZ",
   description: "Have a question? Contact the BIBAZ customer experience team. We are here to help.",
 };
 
-export default function ContactPage() {
+export default async function ContactPage() {
+  const { settings } = await getStorefrontSettings();
+  const phone = settings?.store_phone || BUSINESS.PHONE;
+  const email = settings?.store_email || BUSINESS.EMAIL;
+  const address = settings?.store_address || BUSINESS.ADDRESS;
+  const facebook = settings?.social_facebook || BUSINESS.FACEBOOK;
+  const instagram = settings?.social_instagram || BUSINESS.INSTAGRAM;
+
   return (
     <div className="bg-background min-h-screen">
       {/* 1. Header Section — Clean Editorial */}
@@ -148,10 +156,10 @@ export default function ContactPage() {
                           Phone Support
                         </p>
                         <a
-                          href={`tel:${BUSINESS.PHONE}`}
+                          href={`tel:${phone}`}
                           className="text-xs text-muted-foreground hover:text-foreground transition-colors font-medium mt-1 inline-block"
                         >
-                          {BUSINESS.PHONE}
+                          {phone}
                         </a>
                       </div>
                     </div>
@@ -164,10 +172,10 @@ export default function ContactPage() {
                           Email Support
                         </p>
                         <a
-                          href={`mailto:${BUSINESS.EMAIL}`}
+                          href={`mailto:${email}`}
                           className="text-xs text-muted-foreground hover:text-foreground transition-colors font-medium mt-1 inline-block"
                         >
-                          {BUSINESS.EMAIL}
+                          {email}
                         </a>
                       </div>
                     </div>
@@ -180,7 +188,7 @@ export default function ContactPage() {
                           Flagship Atelier
                         </p>
                         <p className="text-xs text-muted-foreground leading-relaxed font-medium mt-1">
-                          {BUSINESS.ADDRESS}
+                          {address}
                         </p>
                       </div>
                     </div>
@@ -207,7 +215,7 @@ export default function ContactPage() {
                     </p>
                     <div className="flex gap-4">
                       <a
-                        href={BUSINESS.FACEBOOK}
+                        href={facebook}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors font-medium cursor-pointer"
@@ -222,7 +230,7 @@ export default function ContactPage() {
                         Facebook
                       </a>
                       <a
-                        href={BUSINESS.INSTAGRAM}
+                        href={instagram}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors font-medium cursor-pointer"

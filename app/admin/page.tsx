@@ -3,14 +3,16 @@
  * Premium dashboard with stats, quick actions, recent activity, revenue overview
  */
 
-import { getAdminDashboardStats } from "@/actions/order.actions";
+import { getAdminDashboardStats, getDashboardAnalytics } from "@/actions/order.actions";
+import { DashboardCharts } from "@/components/admin/dashboard-charts";
+import { QuickStockUpdate } from "@/components/admin/quick-stock-update";
+import { prisma } from "@/lib/db";
 import {
   ShoppingCart,
   DollarSign,
   Package,
   AlertTriangle,
   Clock,
-  TrendingUp,
   ArrowUpRight,
   ArrowDownRight,
   Plus,
@@ -23,6 +25,7 @@ export const dynamic = "force-dynamic";
 
 export default async function AdminDashboardPage() {
   const result = await getAdminDashboardStats();
+  const analyticsResult = await getDashboardAnalytics("7d");
 
   if (!result.success || !result.stats) {
     return (
@@ -37,6 +40,19 @@ export default async function AdminDashboardPage() {
   }
 
   const { stats } = result;
+
+  const lowStockVariants = await prisma.productVariant.findMany({
+    where: { stock: { lt: 5 }, isActive: true },
+    include: { product: { select: { name: true } } },
+    orderBy: { stock: "asc" },
+    take: 5,
+  });
+
+  const chartData = (analyticsResult.success ? analyticsResult.dataPoints || [] : []) as {
+    label: string;
+    revenue: number;
+    count: number;
+  }[];
 
   return (
     <div className="space-y-6 pb-20 lg:pb-6">
@@ -110,86 +126,37 @@ export default async function AdminDashboardPage() {
       {/* Revenue + Quick Stats Row */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         {/* Revenue Overview Card */}
-        <div className="rounded-2xl border border-gray-200/80 bg-white p-5 shadow-sm lg:col-span-2">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h2 className="text-sm font-semibold text-gray-900">Revenue Overview</h2>
-              <p className="text-xs text-gray-500 mt-0.5">Total confirmed revenue</p>
-            </div>
-            <div className="flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1">
-              <TrendingUp className="h-3.5 w-3.5 text-emerald-600" />
-              <span className="text-xs font-semibold text-emerald-700">Active</span>
-            </div>
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-            <div>
-              <p className="text-xs text-gray-500 mb-1">Today</p>
-              <p className="text-xl font-bold text-gray-900">
-                ৳{stats.todayRevenue.toLocaleString()}
-              </p>
-            </div>
-            <div>
-              <p className="text-xs text-gray-500 mb-1">This Week</p>
-              <p className="text-xl font-bold text-gray-900">
-                ৳{stats.weeklyRevenue.toLocaleString()}
-              </p>
-            </div>
-            <div>
-              <p className="text-xs text-gray-500 mb-1">This Month</p>
-              <p className="text-xl font-bold text-gray-900">
-                ৳{stats.monthlyRevenue.toLocaleString()}
-              </p>
-            </div>
-            <div>
-              <p className="text-xs text-gray-500 mb-1">All Time</p>
-              <p className="text-xl font-bold text-emerald-600">
-                ৳{stats.totalRevenue.toLocaleString()}
-              </p>
-            </div>
-          </div>
-          {/* Mini chart placeholder */}
-          <div className="mt-2 flex h-20 items-end gap-1 rounded-lg bg-gray-50 p-3">
-            {[40, 65, 45, 80, 55, 90, 70, 85, 60, 95, 75, 88].map((h, i) => (
-              <div
-                key={i}
-                className="flex-1 rounded-sm bg-gradient-to-t from-blue-500 to-blue-400 opacity-80 transition-all hover:opacity-100"
-                style={{ height: `${h}%` }}
-              />
-            ))}
-          </div>
-          <div className="mt-2 flex justify-between text-[10px] text-gray-400">
-            <span>Jan</span>
-            <span>Mar</span>
-            <span>May</span>
-            <span>Jul</span>
-            <span>Sep</span>
-            <span>Nov</span>
-          </div>
+        <div className="lg:col-span-2">
+          <DashboardCharts initialData={chartData} />
         </div>
 
-        {/* Quick Stats (Order Summary) */}
-        <div className="space-y-3">
-          <QuickStatCard
-            label="Pending Orders"
-            value={stats.pendingOrders.toString()}
-            icon={<Clock className="h-4 w-4" />}
-            href="/admin/orders?status=PENDING"
-            color="amber"
-          />
-          <QuickStatCard
-            label="Processing Orders"
-            value={stats.processingOrders.toString()}
-            icon={<Package className="h-4 w-4" />}
-            href="/admin/orders?status=PROCESSING"
-            color="indigo"
-          />
-          <QuickStatCard
-            label="Delivered Orders"
-            value={stats.deliveredOrders.toString()}
-            icon={<ShoppingCart className="h-4 w-4" />}
-            href="/admin/orders?status=DELIVERED"
-            color="teal"
-          />
+        {/* Quick Stats (Order Summary) & Low Stock Widgets */}
+        <div className="space-y-4 lg:col-span-1">
+          <div className="space-y-3">
+            <QuickStatCard
+              label="Pending Orders"
+              value={stats.pendingOrders.toString()}
+              icon={<Clock className="h-4 w-4" />}
+              href="/admin/orders?status=PENDING"
+              color="amber"
+            />
+            <QuickStatCard
+              label="Processing Orders"
+              value={stats.processingOrders.toString()}
+              icon={<Package className="h-4 w-4" />}
+              href="/admin/orders?status=PROCESSING"
+              color="indigo"
+            />
+            <QuickStatCard
+              label="Delivered Orders"
+              value={stats.deliveredOrders.toString()}
+              icon={<ShoppingCart className="h-4 w-4" />}
+              href="/admin/orders?status=DELIVERED"
+              color="teal"
+            />
+          </div>
+
+          <QuickStockUpdate initialItems={lowStockVariants} />
         </div>
       </div>
 

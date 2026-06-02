@@ -16,13 +16,29 @@ export interface Campaign {
   productIds?: unknown;
 }
 
-export function CampaignManager({ initialCampaigns }: { initialCampaigns: Campaign[] }) {
+export function CampaignManager({
+  initialCampaigns,
+  products = [],
+}: {
+  initialCampaigns: Campaign[];
+  products?: { id: string; name: string }[];
+}) {
   const [campaigns, setCampaigns] = useState<Campaign[]>(initialCampaigns);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCampaign, setEditingCampaign] = useState<Campaign | null>(null);
+  const [productSearch, setProductSearch] = useState("");
 
   // Form State
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    name: string;
+    description: string;
+    startDate: string;
+    endDate: string;
+    discountType: string;
+    discountValue: number;
+    isActive: boolean;
+    productIds: string[];
+  }>({
     name: "",
     description: "",
     startDate: "",
@@ -30,12 +46,14 @@ export function CampaignManager({ initialCampaigns }: { initialCampaigns: Campai
     discountType: "percentage",
     discountValue: 0,
     isActive: true,
+    productIds: [],
   });
 
   const [saving, setSaving] = useState(false);
 
   const handleOpenNew = () => {
     setEditingCampaign(null);
+    setProductSearch("");
     setFormData({
       name: "",
       description: "",
@@ -44,12 +62,14 @@ export function CampaignManager({ initialCampaigns }: { initialCampaigns: Campai
       discountType: "percentage",
       discountValue: 0,
       isActive: true,
+      productIds: [],
     });
     setIsModalOpen(true);
   };
 
   const handleOpenEdit = (campaign: Campaign) => {
     setEditingCampaign(campaign);
+    setProductSearch("");
     setFormData({
       name: campaign.name,
       description: campaign.description || "",
@@ -58,6 +78,7 @@ export function CampaignManager({ initialCampaigns }: { initialCampaigns: Campai
       discountType: campaign.discountType,
       discountValue: campaign.discountValue,
       isActive: campaign.isActive,
+      productIds: (campaign.productIds as string[]) || [],
     });
     setIsModalOpen(true);
   };
@@ -178,6 +199,11 @@ export function CampaignManager({ initialCampaigns }: { initialCampaigns: Campai
                       {campaign.discountType === "percentage" ? "%" : ""} Off
                     </span>
                   </div>
+                  <div className="text-[11px] text-gray-400 font-semibold mt-1">
+                    {Array.isArray(campaign.productIds) && campaign.productIds.length > 0
+                      ? `${campaign.productIds.length} targeted products`
+                      : "Applies to all products"}
+                  </div>
                 </div>
               </div>
             );
@@ -274,6 +300,57 @@ export function CampaignManager({ initialCampaigns }: { initialCampaigns: Campai
                   />
                 </div>
               </div>
+
+              {/* Product Multi-Selector */}
+              <div className="space-y-1.5">
+                <label className="block text-sm font-semibold text-gray-700">
+                  Select Campaign Products (Empty = All Products)
+                </label>
+                <input
+                  type="text"
+                  placeholder="Search products..."
+                  value={productSearch}
+                  onChange={(e) => setProductSearch(e.target.value)}
+                  className="w-full rounded-xl border border-gray-300 px-3 py-2 text-xs focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-200"
+                />
+                <div className="max-h-36 overflow-y-auto border border-gray-200 rounded-xl p-2.5 bg-gray-50/50 space-y-1">
+                  {products
+                    .filter((p) => p.name.toLowerCase().includes(productSearch.toLowerCase()))
+                    .map((p) => {
+                      const isChecked = formData.productIds.includes(p.id);
+                      return (
+                        <label
+                          key={p.id}
+                          className="flex items-center gap-2 text-xs text-gray-700 cursor-pointer hover:bg-gray-100 p-1.5 rounded transition-colors"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={() => {
+                              const newIds = isChecked
+                                ? formData.productIds.filter((id) => id !== p.id)
+                                : [...formData.productIds, p.id];
+                              setFormData({ ...formData, productIds: newIds });
+                            }}
+                            className="rounded border-gray-300 text-purple-600 focus:ring-purple-500 h-3.5 w-3.5 cursor-pointer"
+                          />
+                          <span className="truncate select-none">{p.name}</span>
+                        </label>
+                      );
+                    })}
+                  {products.filter((p) =>
+                    p.name.toLowerCase().includes(productSearch.toLowerCase())
+                  ).length === 0 && (
+                    <p className="text-[10px] text-gray-400 text-center py-2">
+                      No matching products found
+                    </p>
+                  )}
+                </div>
+                <p className="text-[10px] font-semibold text-purple-700">
+                  {formData.productIds.length} targeted products selected
+                </p>
+              </div>
+
               <div className="flex items-center justify-between rounded-xl bg-gray-50 p-4">
                 <div>
                   <p className="text-sm font-medium text-gray-900">Campaign Status</p>

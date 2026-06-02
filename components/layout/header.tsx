@@ -112,15 +112,22 @@ const megaMenuData: Record<
   },
 };
 
-export function Header() {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function Header({ settings = {} }: { settings?: Record<string, any> }) {
   const [showAnnouncement, setShowAnnouncement] = useState(true);
+
+  const freeShippingThreshold = Number(settings.free_shipping_threshold || 0);
+  const announcementText =
+    freeShippingThreshold > 0
+      ? `Free delivery on orders above ৳${freeShippingThreshold.toLocaleString()} | Cash on Delivery available`
+      : "Free delivery on orders above ৳10,000 | Cash on Delivery available";
 
   return (
     <header className="sticky top-0 z-50 w-full bg-white/95 backdrop-blur-md supports-[backdrop-filter]:bg-white/80 transition-shadow duration-300">
       {/* Announcement Bar — subtle */}
       {showAnnouncement && (
         <div className="bg-foreground text-background text-center text-[11px] tracking-wide py-2 px-4 relative">
-          <p>Free delivery on orders above ৳10,000 &nbsp;|&nbsp; Cash on Delivery available</p>
+          <p>{announcementText}</p>
           <button
             onClick={() => setShowAnnouncement(false)}
             className="absolute right-4 top-1/2 -translate-y-1/2 text-background/80 hover:text-background transition-colors"
@@ -140,7 +147,10 @@ export function Header() {
               <MobileNav links={navLinks} />
               <Link href="/" className="flex items-center">
                 <Image
-                  src="/images/logo/348254398_927747708509948_4192295653740697805_n.jpg"
+                  src={
+                    settings.store_logo ||
+                    "/images/logo/348254398_927747708509948_4192295653740697805_n.jpg"
+                  }
                   alt="BIBAZ"
                   width={36}
                   height={36}

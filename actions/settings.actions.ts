@@ -10,7 +10,7 @@ import { prisma } from "@/lib/db";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const db = prisma as any;
 import { auth } from "@/lib/auth";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 
 // ═══════════════════════════════════════════
 // PUBLIC — Get settings (for storefront)
@@ -46,6 +46,29 @@ export async function getSettingsByGroup(group: string) {
   } catch (error) {
     console.error("[SETTINGS] getSettingsByGroup error:", error);
     return { success: false, settings: {}, raw: [] };
+  }
+}
+
+/**
+ * Get all settings needed for the storefront (general, branding, shipping, social)
+ */
+export async function getStorefrontSettings() {
+  try {
+    const settings = await db.siteSetting.findMany({
+      where: {
+        group: { in: ["general", "branding", "shipping", "social"] },
+      },
+    });
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const map: Record<string, any> = {};
+    for (const s of settings) {
+      map[s.key] = s.value;
+    }
+    return { success: true, settings: map };
+  } catch (error) {
+    console.error("[SETTINGS] getStorefrontSettings error:", error);
+    return { success: false, settings: {} };
   }
 }
 
@@ -118,6 +141,7 @@ export async function updateSetting(
 
     revalidatePath("/admin/settings");
     revalidatePath("/", "layout");
+    revalidateTag("site_settings", "default");
     return { success: true };
   } catch (error) {
     console.error("[SETTINGS] updateSetting error:", error);
@@ -166,6 +190,7 @@ export async function bulkUpdateSettings(
 
     revalidatePath("/admin/settings");
     revalidatePath("/", "layout");
+    revalidateTag("site_settings", "default");
     return { success: true };
   } catch (error) {
     console.error("[SETTINGS] bulkUpdateSettings error:", error);

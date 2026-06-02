@@ -10,6 +10,7 @@ import { ProductImages } from "@/components/product/product-images";
 import { ProductInfo } from "@/components/product/product-info";
 import { RelatedProducts } from "@/components/product/related-products";
 import { getProductBySlug } from "@/actions/product.actions";
+import { getStorefrontSettings } from "@/actions/settings.actions";
 
 interface ProductPageProps {
   params: Promise<{ slug: string }>;
@@ -70,13 +71,21 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
 
 export default async function ProductPage({ params }: ProductPageProps) {
   const { slug } = await params;
-  const result = await getProductBySlug(slug);
+  const [productRes, settingsRes] = await Promise.all([
+    getProductBySlug(slug),
+    getStorefrontSettings(),
+  ]);
 
-  if (!result.success || !result.product) {
+  if (!productRes.success || !productRes.product) {
     notFound();
   }
 
-  const product = result.product;
+  const product = productRes.product;
+  const settings = settingsRes.settings || {};
+
+  const shippingDhaka = Number(settings.shipping_dhaka ?? 80);
+  const shippingOutside = Number(settings.shipping_outside ?? 150);
+  const freeShippingThreshold = Number(settings.free_shipping_threshold ?? 0);
 
   // Extract images from variants (first variant's images, or fallback)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -116,7 +125,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
     images,
     variants: mappedVariants,
     features: getFeatures(product.category?.name || "Uncategorized"),
-    deliveryInfo: "Dhaka: ৳80 (2-3 days) | Outside Dhaka: ৳150 (3-5 days)",
+    deliveryInfo: `Dhaka: ৳${shippingDhaka} (2-3 days) | Outside Dhaka: ৳${shippingOutside} (3-5 days)${freeShippingThreshold > 0 ? ` | Free shipping on orders above ৳${freeShippingThreshold.toLocaleString()}` : ""}`,
   };
 
   return (
@@ -142,7 +151,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
         {/* Right: Product Info — 45% (5 cols), sticky */}
         <div className="lg:col-span-5">
           <div className="lg:sticky lg:top-28">
-            <ProductInfo product={displayProduct} />
+            <ProductInfo product={displayProduct} settings={settings} />
           </div>
         </div>
       </div>

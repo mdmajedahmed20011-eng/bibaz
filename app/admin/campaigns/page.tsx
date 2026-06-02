@@ -1,6 +1,7 @@
 import { getCampaigns } from "@/actions/campaign.actions";
 import { CampaignManager } from "@/components/admin/campaign-manager";
 import { Timer } from "lucide-react";
+import { prisma } from "@/lib/db";
 
 export const metadata = {
   title: "Flash Sales & Campaigns | BIBAZ Admin",
@@ -9,9 +10,15 @@ export const metadata = {
 
 export default async function CampaignsPage() {
   const result = await getCampaigns();
-  
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const campaigns = (result.campaigns || []) as any[];
+
+  const products = await prisma.product.findMany({
+    where: { deletedAt: null },
+    select: { id: true, name: true },
+    orderBy: { name: "asc" },
+  });
 
   return (
     <div className="space-y-6">
@@ -22,14 +29,12 @@ export default async function CampaignsPage() {
           </div>
           <div>
             <h1 className="text-xl font-bold text-gray-900 sm:text-2xl">Flash Sales & Campaigns</h1>
-            <p className="mt-0.5 text-sm text-gray-500">
-              Create and manage limited-time offers
-            </p>
+            <p className="mt-0.5 text-sm text-gray-500">Create and manage limited-time offers</p>
           </div>
         </div>
       </div>
 
-      <CampaignManager initialCampaigns={campaigns} />
+      <CampaignManager initialCampaigns={campaigns} products={products} />
     </div>
   );
 }

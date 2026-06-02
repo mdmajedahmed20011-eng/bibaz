@@ -160,6 +160,33 @@ export const prisma = globalForPrisma.prisma ?? createPrismaClient();
 // Always store prisma in globalThis in all environments to prevent connection leaks in Next.js Server Actions
 globalForPrisma.prisma = prisma;
 
+// Dynamic database schema auto-patcher for production Hostinger MariaDB
+if (process.env.NEXT_PHASE !== "phase-production-build" && process.env.NODE_ENV === "production") {
+  (async () => {
+    try {
+      // 1. Verify if 2FA column exists
+      await prisma.$queryRawUnsafe("SELECT is_two_factor_enabled FROM users LIMIT 1");
+      console.log("[DB PATCH] Column is_two_factor_enabled already exists in users table.");
+    } catch (err: any) {
+      console.log(
+        "[DB PATCH] Column is_two_factor_enabled is missing. Attempting to add 2FA columns...",
+        err.message
+      );
+      try {
+        // 2. Perform raw migration to inject missing columns safely
+        await prisma.$executeRawUnsafe(
+          "ALTER TABLE users ADD COLUMN `two_factor_secret` VARCHAR(191) NULL, ADD COLUMN `is_two_factor_enabled` TINYINT(1) NOT NULL DEFAULT 0;"
+        );
+        console.log(
+          "[DB PATCH] Successfully added two_factor_secret and is_two_factor_enabled columns to users table."
+        );
+      } catch (patchErr: any) {
+        console.error("[DB PATCH] Failed to execute database patch query:", patchErr.message);
+      }
+    }
+  })();
+}
+
 /**
  * Recursively converts Prisma Decimal values to standard JavaScript numbers.
  * This is crucial for Next.js Server Actions which crash with 500 error when returning non-serializable Decimal types.

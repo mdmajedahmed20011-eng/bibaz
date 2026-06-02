@@ -72,6 +72,7 @@ export function CheckoutForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [orderPlaced, setOrderPlaced] = useState(false);
   const [placedOrderNumber, setPlacedOrderNumber] = useState("ORD-2026-00001");
+  const [confirmedTotal, setConfirmedTotal] = useState<number>(0);
 
   // Coupon State
   const [couponInput, setCouponInput] = useState("");
@@ -98,7 +99,23 @@ export function CheckoutForm() {
   const subtotal = getSubtotal();
   // shipping charge directly updates based on city dropdown selection
   const shippingCharge = calculateDeliveryCharge(address.city);
-  const discountAmount = appliedCoupon ? appliedCoupon.discount : 0;
+
+  // Calculate discount dynamically based on the current subtotal to prevent sync issues when quantities change
+  let discountAmount = 0;
+  if (appliedCoupon) {
+    if (appliedCoupon.type === "PERCENTAGE") {
+      discountAmount = Math.round((subtotal * appliedCoupon.value) / 100);
+    } else if (appliedCoupon.type === "FIXED") {
+      discountAmount = appliedCoupon.value;
+    } else if (appliedCoupon.type === "FREE_SHIPPING") {
+      discountAmount = shippingCharge;
+    }
+    discountAmount = Math.min(
+      discountAmount,
+      subtotal + (appliedCoupon.type === "FREE_SHIPPING" ? shippingCharge : 0)
+    );
+  }
+
   const total = Math.max(0, subtotal + shippingCharge - discountAmount);
 
   // Apply Coupon Handler
@@ -201,6 +218,7 @@ export function CheckoutForm() {
 
     if (res.success && res.orderNumber) {
       setPlacedOrderNumber(res.orderNumber);
+      setConfirmedTotal(total); // Capture the exact finalized total BEFORE cart is cleared!
       setOrderPlaced(true);
       clearCart();
       localStorage.removeItem("bibaz_applied_coupon");
@@ -272,7 +290,7 @@ export function CheckoutForm() {
             <span className="text-muted-foreground uppercase tracking-wider font-semibold">
               Total Amount:
             </span>
-            <span className="font-bold text-foreground text-sm">{formatPrice(total)}</span>
+            <span className="font-bold text-foreground text-sm">{formatPrice(confirmedTotal)}</span>
           </div>
         </div>
 

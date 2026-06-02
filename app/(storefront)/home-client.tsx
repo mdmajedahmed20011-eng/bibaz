@@ -211,24 +211,57 @@ export function HomeUI({
     };
   });
 
-  // Use up to 3 db products for Lookbook
-  const lookbookLooks = dbProducts.slice(0, 3).map((p, i) => {
-    const variantPrice = p.variants?.[0]?.price ? Number(p.variants[0].price) : Number(p.basePrice);
-    const variantImages = p.variants?.[0]?.images;
-    const tags = ["EVERYDAY LUXE", "HERITAGE PRINT", "FESTIVE EID"];
-    return {
-      id: p.id,
-      image:
-        Array.isArray(variantImages) && variantImages.length > 0
-          ? variantImages[0]
-          : "/images/products/placeholder.jpg",
-      title: p.category?.name || "Exclusive",
-      subtitle: p.name,
-      slug: p.slug,
-      price: variantPrice,
-      tag: tags[i % 3],
-    };
-  });
+  // Use db products if available (at least 3), otherwise use premium fallback items
+  const lookbookLooks =
+    dbProducts.length >= 3
+      ? dbProducts.slice(0, 3).map((p, i) => {
+          const variantPrice = p.variants?.[0]?.price
+            ? Number(p.variants[0].price)
+            : Number(p.basePrice);
+          const variantImages = p.variants?.[0]?.images;
+          const tags = ["EVERYDAY LUXE", "HERITAGE PRINT", "FESTIVE EID"];
+          return {
+            id: p.id,
+            image:
+              Array.isArray(variantImages) && variantImages.length > 0
+                ? variantImages[0]
+                : "/images/products/placeholder.jpg",
+            title: p.category?.name || "Exclusive",
+            subtitle: p.name,
+            slug: p.slug,
+            price: variantPrice,
+            tag: tags[i % 3],
+          };
+        })
+      : [
+          {
+            id: "look1",
+            image: "/images/products/borka/borka 2.jpg",
+            title: "Borka & Abaya",
+            subtitle: "Premium Winter Jacket",
+            slug: "premium-winter-jacket",
+            price: 5000,
+            tag: "EVERYDAY LUXE",
+          },
+          {
+            id: "look2",
+            image: "/images/products/boutique/bouthik 2.webp",
+            title: "Boutique",
+            subtitle: "Black & White Zebra",
+            slug: "black-white-zebra",
+            price: 4500,
+            tag: "HERITAGE PRINT",
+          },
+          {
+            id: "look3",
+            image: "/images/products/borka/borka 4.jpg",
+            title: "Borka & Abaya",
+            subtitle: "Black & White Zebra Print Open Abaya",
+            slug: "black-white-zebra-print-open-abaya",
+            price: 2500,
+            tag: "FESTIVE EID",
+          },
+        ];
 
   // All collections showcase using db categories
   const allCollections = dbCategories.slice(0, 6).map((c, i) => {
@@ -526,15 +559,16 @@ export function HomeUI({
 
       {/* ═══════ 5. LOOKBOOK / EDITORIAL PICKS ═══════ */}
       {lookbookLooks.length > 0 && (
-        <section className="py-16 md:py-24 bg-[#f8f5f0] border-t border-border/40 overflow-hidden relative">
+        <section className="py-16 md:py-24 bg-surface-warm border-t border-accent/15 overflow-hidden relative">
           <div
             ref={lookbookReveal.ref}
             className="container mx-auto px-4 md:px-12 lg:px-16 max-w-7xl"
           >
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-16 items-center">
-              {/* Left side: Title + selectable items */}
+            {/* ─── DESKTOP DUAL COLUMN VIEW ─── */}
+            <div className="hidden lg:grid grid-cols-12 gap-8 lg:gap-16 items-center">
+              {/* Left Column: Heading + Interactive Buttons with Gold Strips */}
               <div
-                className={`lg:col-span-5 space-y-6 z-10 transition-all duration-700 ${
+                className={`col-span-5 space-y-7 z-10 transition-all duration-700 ${
                   lookbookReveal.isVisible
                     ? "opacity-100 translate-x-0"
                     : "opacity-0 -translate-x-10"
@@ -548,28 +582,42 @@ export function HomeUI({
                     Hand-Picked <br /> Showcase
                   </h2>
                 </div>
-                <div className="flex flex-col gap-3 pt-2">
+
+                {/* Advanced vertical tab container with gold highlight effect */}
+                <div className="flex flex-col gap-3.5 pt-2">
                   {lookbookLooks.map((look, idx) => (
                     <button
                       key={look.id}
                       onClick={() => setActiveLookIndex(idx)}
-                      className={`flex items-center justify-between p-4 border text-left rounded-sm transition-all duration-300 cursor-pointer ${
+                      className={`group relative flex items-center justify-between p-5 border text-left rounded-sm transition-all duration-500 cursor-pointer overflow-hidden ${
                         activeLookIndex === idx
-                          ? "bg-white border-accent shadow-md pl-6 scale-[1.02]"
-                          : "border-border/60 bg-transparent text-muted-foreground hover:bg-white/40 hover:text-foreground active:bg-white/60"
+                          ? "bg-white border-accent shadow-md pl-8 scale-[1.01]"
+                          : "border-border/60 bg-transparent text-muted-foreground hover:bg-white/40 hover:text-foreground pl-6"
                       }`}
                     >
-                      <div>
+                      {/* Active sliding gold strip indicator */}
+                      <div
+                        className={`absolute left-0 top-0 bottom-0 w-[4px] bg-accent transition-all duration-500 ${
+                          activeLookIndex === idx
+                            ? "opacity-100 scale-y-100"
+                            : "opacity-0 scale-y-0"
+                        }`}
+                      />
+
+                      <div className="space-y-0.5">
                         <p className="text-[9px] uppercase tracking-wider text-accent font-bold">
                           {look.tag}
                         </p>
-                        <h4 className="text-sm font-bold text-foreground mt-0.5 line-clamp-1">
+                        <h4 className="text-sm font-bold text-foreground transition-colors duration-300 font-sans line-clamp-1">
                           {look.subtitle}
                         </h4>
                       </div>
+
                       <span
-                        className={`h-2.5 w-2.5 rounded-full transition-all duration-300 ${
-                          activeLookIndex === idx ? "bg-accent scale-110" : "bg-neutral-300"
+                        className={`h-2 w-2 rounded-full transition-all duration-500 ${
+                          activeLookIndex === idx
+                            ? "bg-accent scale-125"
+                            : "bg-neutral-300 group-hover:bg-neutral-400"
                         }`}
                       />
                     </button>
@@ -577,9 +625,9 @@ export function HomeUI({
                 </div>
               </div>
 
-              {/* Right side: Active look image */}
+              {/* Right Column: Premium Interactive Showcase with zoom effect */}
               <div
-                className={`lg:col-span-7 relative transition-all duration-700 delay-200 ${
+                className={`col-span-7 relative transition-all duration-700 delay-200 ${
                   lookbookReveal.isVisible
                     ? "opacity-100 translate-x-0"
                     : "opacity-0 translate-x-10"
@@ -590,34 +638,141 @@ export function HomeUI({
                   return (
                     <div
                       key={look.id}
-                      className="grid grid-cols-1 md:grid-cols-12 gap-5 items-center animate-[slideInRight_0.4s_cubic-bezier(0.16,1,0.3,1)_forwards]"
+                      className="grid grid-cols-12 gap-6 items-center animate-[slideInRight_0.6s_cubic-bezier(0.16,1,0.3,1)_forwards]"
                     >
-                      <div className="md:col-span-7 relative aspect-[3/4] overflow-hidden rounded-sm bg-neutral-100 shadow-lg">
+                      <div className="col-span-7 relative aspect-[3/4] overflow-hidden rounded-sm bg-neutral-100 shadow-xl border border-accent/5 group">
                         <ImageWithSkeleton
                           src={look.image}
                           alt={look.title}
-                          className="object-cover transition-transform duration-[4000ms] hover:scale-103"
-                          sizes="(max-width: 1024px) 100vw, 40vw"
+                          className="object-cover transition-transform duration-[6000ms] ease-out scale-100 group-hover:scale-103"
+                          sizes="40vw"
                         />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                       </div>
-                      <div className="md:col-span-5 space-y-4">
-                        <span className="inline-flex px-2.5 py-1 bg-accent/15 border border-accent/25 rounded-sm text-[9px] text-accent font-bold uppercase tracking-wider">
-                          Atelier Pick
-                        </span>
-                        <h3 className="text-lg md:text-xl font-bold tracking-tight text-foreground font-heading">
-                          {look.subtitle}
-                        </h3>
-                        <p className="text-base font-semibold text-foreground">
-                          {formatPrice(look.price)}
-                        </p>
-                        <div className="border-t border-border/40 pt-4 space-y-3">
+
+                      <div className="col-span-5 space-y-5 pr-2">
+                        <div className="space-y-3">
+                          <span className="inline-flex px-2.5 py-1 bg-accent-light border border-accent/20 rounded-sm text-[9px] text-accent font-bold uppercase tracking-wider font-sans">
+                            Atelier Pick
+                          </span>
+                          <h3 className="text-xl md:text-2xl font-bold tracking-tight text-foreground font-heading leading-snug">
+                            {look.subtitle}
+                          </h3>
+                          <p className="text-lg font-bold text-foreground">
+                            {formatPrice(look.price)}
+                          </p>
+                        </div>
+
+                        <div className="border-t border-accent/15 pt-5">
                           <Link
                             href={`/products/${look.slug}`}
-                            className="inline-flex items-center justify-center gap-2 w-full h-11 bg-foreground hover:bg-neutral-800 text-background text-xs font-bold uppercase tracking-[0.15em] transition-all rounded-sm active:scale-[0.97]"
+                            className="inline-flex items-center justify-center gap-2 w-full h-12 bg-foreground hover:bg-neutral-800 text-background text-xs font-bold uppercase tracking-[0.15em] transition-all rounded-sm active:scale-[0.97] shadow-sm hover:shadow-md group/btn cursor-pointer"
                           >
                             <ShoppingBag className="h-4 w-4" /> Shop Now
+                            <ArrowUpRight className="h-4 w-4 transition-transform group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5" />
                           </Link>
                         </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* ─── MOBILE NATIVE INTERACTIVE VIEW (Optimized aspect & glassmorphism) ─── */}
+            <div className="block lg:hidden space-y-6">
+              {/* Heading */}
+              <div className="text-center space-y-1">
+                <p className="text-[10px] uppercase tracking-[0.25em] text-accent font-bold">
+                  BIBAZ EDITORIALS
+                </p>
+                <h2 className="text-2xl font-bold tracking-tight text-foreground font-heading">
+                  Hand-Picked Showcase
+                </h2>
+              </div>
+
+              {/* Horizontal Pill Tabs */}
+              <div className="flex gap-2 pb-3 overflow-x-auto scrollbar-hide snap-x px-1 justify-start md:justify-center">
+                {lookbookLooks.map((look, idx) => (
+                  <button
+                    key={look.id}
+                    onClick={() => setActiveLookIndex(idx)}
+                    className={`snap-center shrink-0 px-4 py-2.5 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all duration-300 border cursor-pointer ${
+                      activeLookIndex === idx
+                        ? "bg-foreground text-background border-foreground shadow-sm scale-[1.02]"
+                        : "bg-white/80 text-muted-foreground border-border hover:bg-white"
+                    }`}
+                  >
+                    {look.tag?.split(" ")[0] || "LOOK"}
+                  </button>
+                ))}
+              </div>
+
+              {/* Self-contained aspect-[3/4] swipeable mockup card */}
+              <div className="relative max-w-sm mx-auto">
+                {lookbookLooks.map((look, idx) => {
+                  if (idx !== activeLookIndex) return null;
+                  return (
+                    <div
+                      key={look.id}
+                      className="relative aspect-[3/4] rounded-sm overflow-hidden bg-neutral-100 shadow-xl border border-accent/5 animate-scale-in group"
+                    >
+                      <ImageWithSkeleton
+                        src={look.image}
+                        alt={look.subtitle}
+                        className="object-cover"
+                        sizes="(max-width: 640px) 100vw, 400px"
+                      />
+
+                      {/* Subdued top-right index counter */}
+                      <div className="absolute top-4 right-4 z-20 px-3 py-1 bg-black/60 backdrop-blur-md rounded-sm text-[9px] text-white/90 font-bold tracking-widest font-sans">
+                        0{idx + 1} / 0{lookbookLooks.length}
+                      </div>
+
+                      {/* Overlaid quick arrows */}
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          setActiveLookIndex(
+                            (prev) => (prev - 1 + lookbookLooks.length) % lookbookLooks.length
+                          );
+                        }}
+                        className="absolute left-3 top-1/2 -translate-y-1/2 z-20 flex items-center justify-center size-9 rounded-full bg-white/95 text-foreground border border-border/10 shadow-md cursor-pointer transition-transform active:scale-90 animate-fade-in"
+                        aria-label="Previous look"
+                      >
+                        <ChevronLeft className="h-4.5 w-4.5 stroke-[2]" />
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          setActiveLookIndex((prev) => (prev + 1) % lookbookLooks.length);
+                        }}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 z-20 flex items-center justify-center size-9 rounded-full bg-white/95 text-foreground border border-border/10 shadow-md cursor-pointer transition-transform active:scale-90 animate-fade-in"
+                        aria-label="Next look"
+                      >
+                        <ChevronRight className="h-4.5 w-4.5 stroke-[2]" />
+                      </button>
+
+                      {/* Advanced Floating Bottom Glassmorphic Card */}
+                      <div className="absolute bottom-4 inset-x-4 z-20 bg-white/90 dark:bg-black/90 backdrop-blur-lg border border-white/20 dark:border-white/10 p-4 rounded-sm shadow-2xl flex items-center justify-between gap-3">
+                        <div className="space-y-0.5 min-w-0 flex-1">
+                          <span className="inline-block text-[8px] text-accent font-bold uppercase tracking-widest font-sans">
+                            {look.tag}
+                          </span>
+                          <h4 className="text-xs font-bold text-foreground truncate font-heading leading-tight">
+                            {look.subtitle}
+                          </h4>
+                          <p className="text-xs font-bold text-foreground/80">
+                            {formatPrice(look.price)}
+                          </p>
+                        </div>
+                        <Link
+                          href={`/products/${look.slug}`}
+                          className="shrink-0 flex items-center justify-center h-10 px-4 bg-foreground hover:bg-neutral-800 text-background text-[10px] font-bold uppercase tracking-wider transition-all rounded-sm active:scale-95 group/btn"
+                        >
+                          Shop Now{" "}
+                          <ArrowUpRight className="ml-1 h-3.5 w-3.5 transition-transform group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5" />
+                        </Link>
                       </div>
                     </div>
                   );

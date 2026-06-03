@@ -43,20 +43,34 @@ export function ProductInfo({
   const openCart = useCartStore((state) => state.openCart);
 
   const availableSizes = useMemo(
-    () => [...new Set(product.variants.map((v) => v.size))],
+    () => [...new Set(product.variants.map((v) => v.size).filter(Boolean))],
+    [product.variants]
+  );
+
+  const availableColors = useMemo(
+    () => [...new Set(product.variants.map((v) => v.color).filter(Boolean))],
     [product.variants]
   );
 
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
+  const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [openSection, setOpenSection] = useState<string | null>("description");
 
   // Find selected variant
   const selectedVariant = useMemo(() => {
-    if (!selectedSize) return null;
-    return product.variants.find((v) => v.size === selectedSize) ?? null;
-  }, [product.variants, selectedSize]);
+    let match = product.variants;
+    if (availableSizes.length > 0) {
+      if (!selectedSize) return null;
+      match = match.filter((v) => v.size === selectedSize);
+    }
+    if (availableColors.length > 0) {
+      if (!selectedColor) return null;
+      match = match.filter((v) => v.color === selectedColor);
+    }
+    return match[0] ?? null;
+  }, [product.variants, selectedSize, selectedColor, availableSizes, availableColors]);
 
   const currentPrice = selectedVariant?.price ?? product.basePrice;
   const isInStock = selectedVariant ? selectedVariant.stock > 0 : true;
@@ -68,8 +82,16 @@ export function ProductInfo({
     : 0;
 
   const handleAddToCart = () => {
-    if (!selectedVariant) {
+    if (availableSizes.length > 0 && !selectedSize) {
       toast.error("Please select a size");
+      return;
+    }
+    if (availableColors.length > 0 && !selectedColor) {
+      toast.error("Please select a color");
+      return;
+    }
+    if (!selectedVariant) {
+      toast.error("Selected variant is unavailable");
       return;
     }
 
@@ -96,8 +118,16 @@ export function ProductInfo({
   };
 
   const handleBuyNow = () => {
-    if (!selectedVariant) {
+    if (availableSizes.length > 0 && !selectedSize) {
       toast.error("Please select a size");
+      return;
+    }
+    if (availableColors.length > 0 && !selectedColor) {
+      toast.error("Please select a color");
+      return;
+    }
+    if (!selectedVariant) {
+      toast.error("Selected variant is unavailable");
       return;
     }
 
@@ -175,50 +205,95 @@ export function ProductInfo({
       {/* Divider */}
       <div className="border-t border-border/40" />
 
-      {/* Size Selector */}
-      <div>
-        <div className="flex items-center justify-between mb-3.5">
-          <div className="flex items-baseline gap-2">
-            <p className="text-xs font-bold uppercase tracking-wider text-foreground">
-              Select Size
-            </p>
-            {selectedSize && (
-              <span className="text-xs text-muted-foreground font-medium">({selectedSize})</span>
-            )}
+      {/* Color Selector */}
+      {availableColors.length > 0 && (
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-3.5">
+            <div className="flex items-baseline gap-2">
+              <p className="text-xs font-bold uppercase tracking-wider text-foreground">
+                Select Color
+              </p>
+              {selectedColor && (
+                <span className="text-xs text-muted-foreground font-medium">({selectedColor})</span>
+              )}
+            </div>
           </div>
-          <SizeGuideModal />
-        </div>
 
-        <div className="flex flex-wrap gap-2.5">
-          {availableSizes.map((size) => {
-            const variant = product.variants.find((v) => v.size === size);
-            const inStock = variant ? variant.stock > 0 : false;
-            return (
-              <button
-                key={size}
-                onClick={() => setSelectedSize(size)}
-                disabled={!inStock}
-                className={`h-11 min-w-[48px] px-4 text-xs font-semibold uppercase tracking-wider border rounded-sm transition-all duration-200 cursor-pointer ${
-                  selectedSize === size
-                    ? "bg-foreground text-background border-foreground shadow-sm"
-                    : inStock
-                      ? "border-border text-foreground hover:border-foreground hover:bg-neutral-50"
-                      : "border-border/30 text-muted-foreground/30 line-through cursor-not-allowed bg-neutral-50/20"
-                }`}
-                aria-pressed={selectedSize === size}
-              >
-                {size}
-              </button>
-            );
-          })}
+          <div className="flex flex-wrap gap-2.5">
+            {availableColors.map((color) => {
+              const variant = product.variants.find(
+                (v) => v.color === color && (!selectedSize || v.size === selectedSize)
+              );
+              const inStock = variant ? variant.stock > 0 : false;
+              // Some basic colors mapping for circle if possible, else text
+              return (
+                <button
+                  key={color as string}
+                  onClick={() => setSelectedColor(color as string)}
+                  disabled={!inStock && availableSizes.length === 0}
+                  className={`h-11 min-w-[48px] px-4 text-xs font-semibold uppercase tracking-wider border rounded-sm transition-all duration-200 cursor-pointer ${
+                    selectedColor === color
+                      ? "bg-foreground text-background border-foreground shadow-sm"
+                      : inStock || availableSizes.length > 0
+                        ? "border-border text-foreground hover:border-foreground hover:bg-neutral-50"
+                        : "border-border/30 text-muted-foreground/30 line-through cursor-not-allowed bg-neutral-50/20"
+                  }`}
+                  aria-pressed={selectedColor === color}
+                >
+                  {color as string}
+                </button>
+              );
+            })}
+          </div>
         </div>
+      )}
 
-        {selectedVariant && selectedVariant.stock <= 3 && selectedVariant.stock > 0 && (
-          <p className="text-xs font-medium text-sale mt-2.5 animate-pulse">
-            Only {selectedVariant.stock} left in stock — shop soon!
-          </p>
-        )}
-      </div>
+      {/* Size Selector */}
+      {availableSizes.length > 0 && (
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-3.5">
+            <div className="flex items-baseline gap-2">
+              <p className="text-xs font-bold uppercase tracking-wider text-foreground">
+                Select Size
+              </p>
+              {selectedSize && (
+                <span className="text-xs text-muted-foreground font-medium">({selectedSize})</span>
+              )}
+            </div>
+            <SizeGuideModal />
+          </div>
+
+          <div className="flex flex-wrap gap-2.5">
+            {availableSizes.map((size) => {
+              const variant = product.variants.find((v) => v.size === size);
+              const inStock = variant ? variant.stock > 0 : false;
+              return (
+                <button
+                  key={size}
+                  onClick={() => setSelectedSize(size)}
+                  disabled={!inStock}
+                  className={`h-11 min-w-[48px] px-4 text-xs font-semibold uppercase tracking-wider border rounded-sm transition-all duration-200 cursor-pointer ${
+                    selectedSize === size
+                      ? "bg-foreground text-background border-foreground shadow-sm"
+                      : inStock
+                        ? "border-border text-foreground hover:border-foreground hover:bg-neutral-50"
+                        : "border-border/30 text-muted-foreground/30 line-through cursor-not-allowed bg-neutral-50/20"
+                  }`}
+                  aria-pressed={selectedSize === size}
+                >
+                  {size}
+                </button>
+              );
+            })}
+          </div>
+
+          {selectedVariant && selectedVariant.stock <= 3 && selectedVariant.stock > 0 && (
+            <p className="text-xs font-medium text-sale mt-2.5 animate-pulse">
+              Only {selectedVariant.stock} left in stock — shop soon!
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Quantity & Actions Grid */}
       <div className="space-y-4">

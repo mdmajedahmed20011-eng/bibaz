@@ -13,8 +13,6 @@ import { BackToTop } from "@/components/ui/back-to-top";
 import { WhatsAppButton } from "@/components/ui/whatsapp-button";
 import { getStorefrontSettings } from "@/actions/settings.actions";
 import { auth } from "@/lib/auth";
-import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
-
 export default async function StorefrontLayout({ children }: { children: React.ReactNode }) {
   const { settings } = await getStorefrontSettings();
   const isMaintenanceMode = settings?.maintenance_mode;
@@ -39,7 +37,6 @@ export default async function StorefrontLayout({ children }: { children: React.R
       <ScrollProgress />
       <BackToTop />
       <WhatsAppButton phoneNumber="8801700000000" />
-      <MobileBottomNav />
     </>
   );
 }

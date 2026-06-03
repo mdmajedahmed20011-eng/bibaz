@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, Search, ShoppingBag, User } from "lucide-react";
-import { useCartStore } from "@/store/cart";
-import { useQuickViewStore } from "@/store/quick-view";
+import { useCartStore } from "@/store/cart-store";
+import { useQuickViewStore } from "@/store/quick-view-store";
 
 export function MobileBottomNav() {
   const pathname = usePathname();
@@ -24,7 +24,7 @@ export function MobileBottomNav() {
     <>
       {/* Spacer to prevent content from being hidden behind the fixed nav */}
       <div className="h-16 md:hidden" />
-      
+
       <nav className="fixed bottom-0 left-0 right-0 z-40 flex h-16 items-center justify-around border-t border-gray-200 bg-white/90 px-2 pb-safe backdrop-blur-lg md:hidden">
         {navItems.map((item) => {
           const isActive = pathname === item.href;

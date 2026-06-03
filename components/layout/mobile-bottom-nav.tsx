@@ -4,12 +4,11 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, Search, ShoppingBag, User } from "lucide-react";
 import { useCartStore } from "@/store/cart-store";
-import { useQuickViewStore } from "@/store/quick-view-store";
 
 export function MobileBottomNav() {
   const pathname = usePathname();
   const cartItems = useCartStore((state) => state.items);
-  const openCart = useQuickViewStore((state) => state.openCart);
+  const openCart = useCartStore((state) => state.openCart);
 
   // Calculate total items in cart
   const cartCount = cartItems.reduce((total, item) => total + item.quantity, 0);

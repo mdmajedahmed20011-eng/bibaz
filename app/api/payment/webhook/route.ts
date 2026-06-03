@@ -27,10 +27,6 @@ export async function POST(request: Request) {
           where: { orderNumber: orderId },
           data: {
             paymentStatus: "PAID",
-            paymentDetails: JSON.stringify({
-              gateway: "bKash",
-              trxID: result.trxID,
-            }),
           },
         });
         return NextResponse.json({ message: "Payment Successful", trxID: result.trxID });
@@ -54,10 +50,6 @@ export async function POST(request: Request) {
           where: { orderNumber: orderId },
           data: {
             paymentStatus: "PAID",
-            paymentDetails: JSON.stringify({
-              gateway: "Nagad",
-              trxID: result.trxId,
-            }),
           },
         });
         return NextResponse.json({ message: "Payment Successful", trxID: result.trxId });

@@ -335,8 +335,8 @@ export function ProductInfo({
           onToggle={() => toggleSection("shipping")}
         >
           <div className="space-y-2 text-sm text-muted-foreground">
-            <p>• Dhaka: ৳{settings.shipping_dhaka ?? 80} (2-3 business days)</p>
-            <p>• Outside Dhaka: ৳{settings.shipping_outside ?? 150} (3-5 business days)</p>
+            <p>• Dhaka: ৳{String(settings.shipping_dhaka ?? 80)} (2-3 business days)</p>
+            <p>• Outside Dhaka: ৳{String(settings.shipping_outside ?? 150)} (3-5 business days)</p>
             {Number(settings.free_shipping_threshold ?? 0) > 0 && (
               <p>
                 • Free delivery on orders above ৳

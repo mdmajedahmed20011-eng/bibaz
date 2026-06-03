@@ -161,7 +161,7 @@ export function Header({ settings = {} }: { settings?: Record<string, unknown> }
               <Link href="/" className="flex items-center">
                 <Image
                   src={
-                    settings.store_logo ||
+                    (settings.store_logo as string) ||
                     "/images/logo/348254398_927747708509948_4192295653740697805_n.jpg"
                   }
                   alt="BIBAZ"

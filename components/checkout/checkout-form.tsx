@@ -225,6 +225,12 @@ export function CheckoutForm({ settings = {} }: { settings?: Record<string, any>
     const res = await createOrder(orderData);
 
     if (res.success && res.orderNumber) {
+      if (res.paymentURL) {
+        // Redirect to payment gateway
+        window.location.href = res.paymentURL;
+        return;
+      }
+
       setPlacedOrderNumber(res.orderNumber);
       setConfirmedTotal(total); // Capture the exact finalized total BEFORE cart is cleared!
       setOrderPlaced(true);
@@ -549,24 +555,69 @@ export function CheckoutForm({ settings = {} }: { settings?: Record<string, any>
               </p>
             </div>
 
-            {/* bKash / Nagad Wallet */}
-            <div className="flex flex-col p-5 border border-border/30 bg-neutral-50/50 opacity-60 cursor-not-allowed rounded-lg relative overflow-hidden select-none">
+            {/* bKash Wallet */}
+            <div
+              onClick={() => setPaymentMethod("BKASH")}
+              className={`flex flex-col p-5 border transition-all cursor-pointer rounded-lg relative overflow-hidden select-none ${
+                paymentMethod === "BKASH"
+                  ? "border-accent bg-[#fcf9f2] ring-1 ring-accent"
+                  : "border-border/60 hover:bg-[#fcfcfc] hover:border-accent/40"
+              }`}
+            >
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
                   <div className="size-8 rounded-full bg-pink-50 text-pink-600 flex items-center justify-center">
                     <CreditCard className="h-4.5 w-4.5" strokeWidth={1.5} />
                   </div>
-                  <span className="text-xs font-bold uppercase tracking-wider text-neutral-400">
-                    bKash / Nagad / Card
+                  <span className="text-xs font-bold uppercase tracking-wider text-foreground">
+                    bKash
                   </span>
                 </div>
-                <span className="text-[8px] bg-foreground/5 text-foreground/50 px-2 py-0.5 font-bold uppercase tracking-widest rounded-sm border border-border/20">
-                  Soon
-                </span>
+                <div
+                  className={`size-4 rounded-full border flex items-center justify-center ${
+                    paymentMethod === "BKASH"
+                      ? "border-accent bg-accent"
+                      : "border-neutral-300 bg-white"
+                  }`}
+                >
+                  {paymentMethod === "BKASH" && <div className="size-1.5 rounded-full bg-white" />}
+                </div>
               </div>
               <p className="text-[10px] text-muted-foreground uppercase tracking-widest leading-relaxed">
-                Secure online payment gateway with bKash, Nagad, and local cards will be launched
-                shortly.
+                Pay securely via bKash online payment gateway.
+              </p>
+            </div>
+
+            {/* Nagad Wallet */}
+            <div
+              onClick={() => setPaymentMethod("NAGAD")}
+              className={`flex flex-col p-5 border transition-all cursor-pointer rounded-lg relative overflow-hidden select-none ${
+                paymentMethod === "NAGAD"
+                  ? "border-accent bg-[#fcf9f2] ring-1 ring-accent"
+                  : "border-border/60 hover:bg-[#fcfcfc] hover:border-accent/40"
+              }`}
+            >
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <div className="size-8 rounded-full bg-orange-50 text-orange-600 flex items-center justify-center">
+                    <CreditCard className="h-4.5 w-4.5" strokeWidth={1.5} />
+                  </div>
+                  <span className="text-xs font-bold uppercase tracking-wider text-foreground">
+                    Nagad
+                  </span>
+                </div>
+                <div
+                  className={`size-4 rounded-full border flex items-center justify-center ${
+                    paymentMethod === "NAGAD"
+                      ? "border-accent bg-accent"
+                      : "border-neutral-300 bg-white"
+                  }`}
+                >
+                  {paymentMethod === "NAGAD" && <div className="size-1.5 rounded-full bg-white" />}
+                </div>
+              </div>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-widest leading-relaxed">
+                Pay securely via Nagad online payment gateway.
               </p>
             </div>
           </div>

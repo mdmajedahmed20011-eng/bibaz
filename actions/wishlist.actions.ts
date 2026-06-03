@@ -5,7 +5,7 @@
  * SOP §৬E — Customer Features
  */
 
-import { prisma } from "@/lib/db";
+import { prisma, serializeDecimals } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 
@@ -36,7 +36,7 @@ export async function getWishlist() {
       orderBy: { createdAt: "desc" },
     });
 
-    return { success: true, items: wishlist };
+    return { success: true, items: serializeDecimals(wishlist) };
   } catch (error) {
     console.error("[WISHLIST] getWishlist error:", error);
     return { success: false, items: [], error: "Failed to fetch wishlist" };

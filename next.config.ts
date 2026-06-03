@@ -8,11 +8,6 @@ const nextConfig: NextConfig = {
         source: "/(.*)",
         headers: [
           {
-            key: "Content-Security-Policy",
-            value:
-              "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://res.cloudinary.com; font-src 'self' data:; connect-src 'self' https://aware-urchin-134751.upstash.io;",
-          },
-          {
             key: "Strict-Transport-Security",
             value: "max-age=31536000; includeSubDomains",
           },
@@ -41,8 +36,9 @@ const nextConfig: NextConfig = {
     ];
   },
 
-  // Image optimization (Cloudinary)
+  // Image optimization (Cloudinary + AVIF)
   images: {
+    formats: ["image/avif", "image/webp"],
     remotePatterns: [
       {
         protocol: "https",

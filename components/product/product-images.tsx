@@ -94,14 +94,14 @@ export function ProductImages({ images, productName }: ProductImagesProps) {
           </div>
         </div>
 
-        {/* 3. Horizontal Thumbnails (Mobile-only scroll strip) */}
+        {/* 3. Horizontal Thumbnails (Mobile-only scroll strip with Touch Snap) */}
         {images.length > 1 && (
-          <div className="flex md:hidden gap-2.5 overflow-x-auto pb-1 mt-1 scrollbar-thin">
+          <div className="flex md:hidden gap-2.5 overflow-x-auto pb-1 mt-1 scrollbar-thin snap-x snap-mandatory">
             {images.map((image, index) => (
               <button
                 key={`thumb-horiz-${index}`}
                 onClick={() => setSelectedIndex(index)}
-                className={`relative shrink-0 w-[54px] aspect-[3/4] overflow-hidden bg-neutral-100 transition-all duration-300 rounded-sm cursor-pointer ${
+                className={`relative shrink-0 w-[64px] aspect-[3/4] overflow-hidden bg-neutral-100 transition-all duration-300 rounded-sm cursor-pointer snap-center ${
                   selectedIndex === index
                     ? "ring-1.5 ring-accent ring-offset-1 opacity-100"
                     : "opacity-60 hover:opacity-100"

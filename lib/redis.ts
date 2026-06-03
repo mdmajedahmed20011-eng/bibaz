@@ -10,6 +10,7 @@ let redisClient: {
     options?: { px?: number; nx?: boolean; ex?: number }
   ) => Promise<string | null>;
   del: (key: string) => Promise<number>;
+  incr: (key: string) => Promise<number>;
 };
 
 if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
@@ -51,6 +52,16 @@ if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) 
       const deleted = memoryStore.delete(key) ? 1 : 0;
       return deleted;
     },
+    incr: async (key: string) => {
+      const now = Date.now();
+      const entry = memoryStore.get(key);
+      let val = 1;
+      if (entry && now <= entry.expiresAt) {
+        val = parseInt(entry.value) + 1;
+      }
+      memoryStore.set(key, { value: val.toString(), expiresAt: now + 31536000000 }); // 1 year
+      return val;
+    }
   };
 }
 

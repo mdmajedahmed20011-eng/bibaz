@@ -154,19 +154,19 @@ export function AdminSidebar({ role }: AdminSidebarProps) {
 
   return (
     <aside
-      className={`relative flex h-screen flex-col border-r border-gray-200/80 bg-white transition-all duration-300 ease-in-out ${
+      className={`relative flex h-screen flex-col border-r border-gray-800 bg-gray-950 transition-all duration-300 ease-in-out ${
         collapsed ? "w-[72px]" : "w-[260px]"
       }`}
     >
       {/* Logo Area */}
-      <div className="flex h-16 items-center border-b border-gray-100 px-4">
+      <div className="flex h-16 items-center border-b border-gray-800 px-4">
         <Link href="/admin" className="flex items-center gap-2.5">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gray-900 text-white">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-600 text-white shadow-sm shadow-blue-900/50">
             <Store className="h-4.5 w-4.5" />
           </div>
           {!collapsed && (
             <div className="flex flex-col">
-              <span className="text-sm font-bold tracking-tight text-gray-900">BIBAZ</span>
+              <span className="text-sm font-bold tracking-tight text-white">BIBAZ</span>
               <span className="text-[10px] font-medium text-gray-400">Admin Panel</span>
             </div>
           )}
@@ -174,7 +174,7 @@ export function AdminSidebar({ role }: AdminSidebarProps) {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto px-3 py-4">
+      <nav className="flex-1 overflow-y-auto px-3 py-4 custom-scrollbar">
         {navSections.map((section) => {
           const visibleItems = section.items.filter((item) => item.roles.includes(role));
           if (visibleItems.length === 0) return null;
@@ -182,11 +182,11 @@ export function AdminSidebar({ role }: AdminSidebarProps) {
           return (
             <div key={section.title} className="mb-5">
               {!collapsed && (
-                <p className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-wider text-gray-400">
+                <p className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-wider text-gray-500">
                   {section.title}
                 </p>
               )}
-              <div className="space-y-0.5">
+              <div className="space-y-1">
                 {visibleItems.map((item) => {
                   const isActive =
                     pathname === item.href ||
@@ -199,18 +199,18 @@ export function AdminSidebar({ role }: AdminSidebarProps) {
                       prefetch={true}
                       className={`group relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] font-medium transition-all duration-200 ${
                         isActive
-                          ? "bg-blue-50 text-blue-700 shadow-sm shadow-blue-100"
-                          : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                          ? "bg-blue-600/10 text-blue-400"
+                          : "text-gray-400 hover:bg-gray-900 hover:text-gray-200"
                       }`}
                       title={collapsed ? item.label : undefined}
                     >
                       {/* Active indicator */}
                       {isActive && (
-                        <span className="absolute left-0 top-1/2 h-6 w-[3px] -translate-y-1/2 rounded-r-full bg-blue-600" />
+                        <span className="absolute left-0 top-1/2 h-6 w-[3px] -translate-y-1/2 rounded-r-full bg-blue-500" />
                       )}
                       <item.icon
                         className={`h-[18px] w-[18px] shrink-0 transition-colors ${
-                          isActive ? "text-blue-600" : "text-gray-400 group-hover:text-gray-600"
+                          isActive ? "text-blue-500" : "text-gray-500 group-hover:text-gray-300"
                         }`}
                       />
                       {!collapsed && <span>{item.label}</span>}
@@ -226,22 +226,22 @@ export function AdminSidebar({ role }: AdminSidebarProps) {
       {/* Collapse Toggle */}
       <button
         onClick={() => setCollapsed(!collapsed)}
-        className="absolute -right-3 top-20 z-10 flex h-6 w-6 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-400 shadow-sm transition-all hover:bg-gray-50 hover:text-gray-600 hover:shadow"
+        className="absolute -right-3 top-20 z-10 flex h-6 w-6 items-center justify-center rounded-full border border-gray-700 bg-gray-900 text-gray-400 shadow-sm transition-all hover:bg-gray-800 hover:text-gray-200"
         aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
       >
         {collapsed ? <ChevronRight className="h-3 w-3" /> : <ChevronLeft className="h-3 w-3" />}
       </button>
 
       {/* Footer */}
-      <div className="border-t border-gray-100 p-3">
+      <div className="border-t border-gray-800 p-3">
         {!collapsed ? (
-          <div className="rounded-lg bg-gradient-to-r from-blue-50 to-indigo-50 p-3">
-            <p className="text-[11px] font-semibold text-blue-900">BIBAZ Admin</p>
-            <p className="text-[10px] text-blue-600">v1.1 • Premium Suite Live</p>
+          <div className="rounded-lg bg-gray-900 p-3 border border-gray-800">
+            <p className="text-[11px] font-semibold text-gray-300">BIBAZ Admin</p>
+            <p className="text-[10px] text-gray-500">v1.1 • Premium Suite Live</p>
           </div>
         ) : (
           <div className="flex justify-center">
-            <div className="h-2 w-2 rounded-full bg-green-400" title="System Online" />
+            <div className="h-2 w-2 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.6)]" title="System Online" />
           </div>
         )}
       </div>

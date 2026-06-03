@@ -34,11 +34,10 @@ interface ProductInfoProps {
   };
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function ProductInfo({
   product,
   settings = {},
-}: ProductInfoProps & { settings?: Record<string, any> }) {
+}: ProductInfoProps & { settings?: Record<string, unknown> }) {
   const router = useRouter();
   const addItem = useCartStore((state) => state.addItem);
   const openCart = useCartStore((state) => state.openCart);

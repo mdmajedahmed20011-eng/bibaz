@@ -9,6 +9,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { CartSyncManager } from "@/components/cart/cart-sync-manager";
 import { unstable_cache } from "next/cache";
+import { ServiceWorkerRegistry } from "@/components/pwa/service-worker-registry";
 
 // Body font — clean, modern, highly readable
 const inter = Inter({
@@ -46,6 +47,13 @@ export const metadata: Metadata = {
   robots: {
     index: true,
     follow: true,
+  },
+  manifest: "/manifest.json",
+  themeColor: "#111827",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "BIBAZ",
   },
 };
 
@@ -103,6 +111,7 @@ export default async function RootLayout({
         <WebsiteJsonLd />
         {children}
         <Toaster position="top-right" richColors closeButton />
+        <ServiceWorkerRegistry />
       </body>
     </html>
   );

@@ -8,8 +8,12 @@ import { Footer } from "@/components/layout/footer";
 import { CartDrawer } from "@/components/cart/cart-drawer";
 import { ScrollReveal } from "@/components/ui/scroll-reveal";
 import { QuickViewModal } from "@/components/product/quick-view-modal";
+import { ScrollProgress } from "@/components/ui/scroll-progress";
+import { BackToTop } from "@/components/ui/back-to-top";
+import { WhatsAppButton } from "@/components/ui/whatsapp-button";
 import { getStorefrontSettings } from "@/actions/settings.actions";
 import { auth } from "@/lib/auth";
+import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
 
 export default async function StorefrontLayout({ children }: { children: React.ReactNode }) {
   const { settings } = await getStorefrontSettings();
@@ -32,6 +36,10 @@ export default async function StorefrontLayout({ children }: { children: React.R
       <CartDrawer />
       <QuickViewModal />
       <ScrollReveal />
+      <ScrollProgress />
+      <BackToTop />
+      <WhatsAppButton phoneNumber="8801700000000" />
+      <MobileBottomNav />
     </>
   );
 }

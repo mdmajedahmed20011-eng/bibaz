@@ -228,15 +228,13 @@ export async function createOrder(data: CreateOrderInput | any) {
 
       // Atomic Checkout Transaction
       const year = new Date().getFullYear();
-      const yearStart = new Date(`${year}-01-01T00:00:00Z`);
-      const yearEnd = new Date(`${year + 1}-01-01T00:00:00Z`);
 
       const order = await prisma.$transaction(async (tx) => {
-        // 1. Generate unique order number
-        const orderCountThisYear = await tx.order.count({
-          where: { createdAt: { gte: yearStart, lt: yearEnd } },
-        });
-        const orderNumber = `ORD-${year}-${(orderCountThisYear + 1).toString().padStart(5, "0")}`;
+        // 1. Generate unique order number atomically using Redis
+        const { redis } = await import("@/lib/redis");
+        const orderCounterKey = `order_count:${year}`;
+        const orderCountThisYear = await redis.incr(orderCounterKey);
+        const orderNumber = `ORD-${year}-${orderCountThisYear.toString().padStart(5, "0")}`;
 
         // 2. Create order with items
         const newOrder = await tx.order.create({
@@ -395,7 +393,23 @@ export async function createOrder(data: CreateOrderInput | any) {
 
       revalidatePath("/admin/orders");
 
-      return { success: true, orderNumber: order.orderNumber, orderId: order.id };
+      let paymentURL: string | undefined;
+
+      if (paymentMethod === "BKASH") {
+        const { createPayment } = await import("@/lib/payment/bkash");
+        const paymentRes = await createPayment(order.orderNumber, total);
+        if (paymentRes.success && paymentRes.bkashURL) {
+          paymentURL = paymentRes.bkashURL;
+        }
+      } else if (paymentMethod === "NAGAD") {
+        const { createNagadPayment } = await import("@/lib/payment/nagad");
+        const paymentRes = await createNagadPayment(order.orderNumber, total);
+        if (paymentRes.success && paymentRes.nagadURL) {
+          paymentURL = paymentRes.nagadURL;
+        }
+      }
+
+      return { success: true, orderNumber: order.orderNumber, orderId: order.id, paymentURL };
     } finally {
       await releaseInventoryLocks(variantIds);
     }
@@ -438,7 +452,7 @@ export async function trackOrder(orderNumber: string, phone: string) {
       return { success: false, error: "Order not found. Check your order number and phone." };
     }
 
-    return { success: true, order };
+    return { success: true, order: serializeDecimals(order) };
   } catch (error) {
     console.error("[ORDER] trackOrder error:", error);
     return { success: false, error: "Failed to track order" };
@@ -480,7 +494,7 @@ export async function getMyOrders(page = 1, pageSize = 10) {
 
     return {
       success: true,
-      orders,
+      orders: serializeDecimals(orders),
       pagination: { page, pageSize, total, totalPages: Math.ceil(total / pageSize) },
     };
   } catch (error) {

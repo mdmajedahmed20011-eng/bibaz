@@ -8,7 +8,7 @@
  * Logged-in cart: Database (synced)
  */
 
-import { prisma } from "@/lib/db";
+import { prisma, serializeDecimals } from "@/lib/db";
 import { Prisma } from "@prisma/client";
 import { auth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
@@ -49,7 +49,7 @@ export async function getCart() {
       },
     });
 
-    return { success: true, cart };
+    return { success: true, cart: serializeDecimals(cart) };
   } catch (error) {
     console.error("[CART] getCart error:", error);
     return { success: false, cart: null, error: "Failed to fetch cart" };
@@ -232,17 +232,24 @@ export async function syncCart(localItems: { variantId: string; quantity: number
       });
     }
 
+    // Batch fetch variants
+    const variantIds = localItems.map((item) => item.variantId);
+    const variants = await prisma.productVariant.findMany({
+      where: { id: { in: variantIds }, isActive: true },
+      select: { id: true, stock: true },
+    });
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const updatePromises: any[] = [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const createData: any[] = [];
+
     // Merge local items with DB cart
     for (const localItem of localItems) {
       const existingItem = cart.items.find((item) => item.variantId === localItem.variantId);
+      const variant = variants.find((v) => v.id === localItem.variantId);
 
-      // Validate variant
-      const variant = await prisma.productVariant.findUnique({
-        where: { id: localItem.variantId },
-        select: { stock: true, isActive: true },
-      });
-
-      if (!variant || !variant.isActive) continue;
+      if (!variant) continue;
 
       const quantity = Math.min(
         existingItem ? existingItem.quantity + localItem.quantity : localItem.quantity,
@@ -250,19 +257,28 @@ export async function syncCart(localItems: { variantId: string; quantity: number
       );
 
       if (existingItem) {
-        await prisma.cartItem.update({
-          where: { id: existingItem.id },
-          data: { quantity },
-        });
+        updatePromises.push(
+          prisma.cartItem.update({
+            where: { id: existingItem.id },
+            data: { quantity },
+          })
+        );
       } else {
-        await prisma.cartItem.create({
-          data: {
-            cartId: cart.id,
-            variantId: localItem.variantId,
-            quantity,
-          },
+        createData.push({
+          cartId: cart.id,
+          variantId: localItem.variantId,
+          quantity,
         });
       }
+    }
+
+    const transactions = [...updatePromises];
+    if (createData.length > 0) {
+      transactions.push(prisma.cartItem.createMany({ data: createData }));
+    }
+
+    if (transactions.length > 0) {
+      await prisma.$transaction(transactions);
     }
 
     revalidatePath("/cart");

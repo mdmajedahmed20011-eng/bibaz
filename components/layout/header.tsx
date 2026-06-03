@@ -9,7 +9,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { User, X } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { MobileNav } from "./mobile-nav";
 import { CartButton } from "./cart-button";
 import { SearchBar } from "./search-bar";
@@ -112,9 +112,22 @@ const megaMenuData: Record<
   },
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function Header({ settings = {} }: { settings?: Record<string, any> }) {
-  const [showAnnouncement, setShowAnnouncement] = useState(true);
+export function Header({ settings = {} }: { settings?: Record<string, unknown> }) {
+  const [showAnnouncement, setShowAnnouncement] = useState(false);
+
+  useEffect(() => {
+    const isDismissed = localStorage.getItem("bibaz_announcement_dismissed");
+    if (!isDismissed) {
+      // Use timeout to prevent synchronous setState in effect (lint error)
+      const timer = setTimeout(() => setShowAnnouncement(true), 0);
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
+  const dismissAnnouncement = () => {
+    setShowAnnouncement(false);
+    localStorage.setItem("bibaz_announcement_dismissed", "true");
+  };
 
   const freeShippingThreshold = Number(settings.free_shipping_threshold || 0);
   const announcementText =
@@ -129,7 +142,7 @@ export function Header({ settings = {} }: { settings?: Record<string, any> }) {
         <div className="bg-foreground text-background text-center text-[11px] tracking-wide py-2 px-4 relative">
           <p>{announcementText}</p>
           <button
-            onClick={() => setShowAnnouncement(false)}
+            onClick={dismissAnnouncement}
             className="absolute right-4 top-1/2 -translate-y-1/2 text-background/80 hover:text-background transition-colors"
             aria-label="Close announcement"
           >

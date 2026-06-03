@@ -17,6 +17,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useCartStore } from "@/store/cart-store";
 import { formatPrice, calculateDeliveryCharge } from "@/lib/utils";
+import confetti from "canvas-confetti";
 import { Separator } from "@/components/ui/separator";
 
 import {
@@ -236,6 +237,15 @@ export function CheckoutForm({ settings = {} }: { settings?: Record<string, any>
       setOrderPlaced(true);
       clearCart();
       localStorage.removeItem("bibaz_applied_coupon");
+
+      // Fire confetti!
+      confetti({
+        particleCount: 150,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ["#c9a96e", "#e8d5a3", "#111111"],
+        disableForReducedMotion: true,
+      });
     } else {
       alert(res.error || "Something went wrong. Please try again.");
     }

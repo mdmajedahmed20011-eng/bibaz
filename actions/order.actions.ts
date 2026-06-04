@@ -237,12 +237,11 @@ export async function createOrder(data: CreateOrderInput | any) {
         // Auto-heal redis counter if it's somehow lower than the DB
         let orderCountThisYear = await redis.incr(orderCounterKey);
         const maxOrder = await tx.order.findFirst({
-          where: { orderNumber: { startsWith: `ORD-${year}-` } },
-          orderBy: { orderNumber: "desc" },
+          orderBy: { createdAt: "desc" },
           select: { orderNumber: true },
         });
 
-        if (maxOrder && maxOrder.orderNumber) {
+        if (maxOrder && maxOrder.orderNumber && maxOrder.orderNumber.startsWith(`ORD-${year}-`)) {
           const parts = maxOrder.orderNumber.split("-");
           if (parts.length === 3 && parts[2]) {
             const dbMax = parseInt(parts[2], 10);

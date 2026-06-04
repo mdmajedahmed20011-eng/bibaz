@@ -30,20 +30,48 @@ export async function getVisitorStats() {
 
   try {
     const [
-      todayViews, yesterdayViews, sevenDayViews, thirtyDayViews,
-      todayUnique, yesterdayUnique, sevenDayUnique, thirtyDayUnique,
-      prevSevenUnique, prevThirtyUnique,
+      todayViews,
+      yesterdayViews,
+      sevenDayViews,
+      thirtyDayViews,
+      todayUnique,
+      yesterdayUnique,
+      sevenDayUnique,
+      thirtyDayUnique,
+      prevSevenUnique,
+      prevThirtyUnique,
     ] = await Promise.all([
       prisma.pageView.count({ where: { createdAt: { gte: todayStart } } }),
       prisma.pageView.count({ where: { createdAt: { gte: yesterdayStart, lt: todayStart } } }),
       prisma.pageView.count({ where: { createdAt: { gte: sevenDaysAgo } } }),
       prisma.pageView.count({ where: { createdAt: { gte: thirtyDaysAgo } } }),
-      prisma.pageView.groupBy({ by: ["sessionId"], where: { createdAt: { gte: todayStart } } }).then((r) => r.length),
-      prisma.pageView.groupBy({ by: ["sessionId"], where: { createdAt: { gte: yesterdayStart, lt: todayStart } } }).then((r) => r.length),
-      prisma.pageView.groupBy({ by: ["sessionId"], where: { createdAt: { gte: sevenDaysAgo } } }).then((r) => r.length),
-      prisma.pageView.groupBy({ by: ["sessionId"], where: { createdAt: { gte: thirtyDaysAgo } } }).then((r) => r.length),
-      prisma.pageView.groupBy({ by: ["sessionId"], where: { createdAt: { gte: prevSevenStart, lt: sevenDaysAgo } } }).then((r) => r.length),
-      prisma.pageView.groupBy({ by: ["sessionId"], where: { createdAt: { gte: prevThirtyStart, lt: thirtyDaysAgo } } }).then((r) => r.length),
+      prisma.pageView
+        .groupBy({ by: ["sessionId"], where: { createdAt: { gte: todayStart } } })
+        .then((r) => r.length),
+      prisma.pageView
+        .groupBy({
+          by: ["sessionId"],
+          where: { createdAt: { gte: yesterdayStart, lt: todayStart } },
+        })
+        .then((r) => r.length),
+      prisma.pageView
+        .groupBy({ by: ["sessionId"], where: { createdAt: { gte: sevenDaysAgo } } })
+        .then((r) => r.length),
+      prisma.pageView
+        .groupBy({ by: ["sessionId"], where: { createdAt: { gte: thirtyDaysAgo } } })
+        .then((r) => r.length),
+      prisma.pageView
+        .groupBy({
+          by: ["sessionId"],
+          where: { createdAt: { gte: prevSevenStart, lt: sevenDaysAgo } },
+        })
+        .then((r) => r.length),
+      prisma.pageView
+        .groupBy({
+          by: ["sessionId"],
+          where: { createdAt: { gte: prevThirtyStart, lt: thirtyDaysAgo } },
+        })
+        .then((r) => r.length),
     ]);
 
     return {
@@ -52,7 +80,11 @@ export async function getVisitorStats() {
         today: { views: todayViews, visitors: todayUnique },
         yesterday: { views: yesterdayViews, visitors: yesterdayUnique },
         sevenDay: { views: sevenDayViews, visitors: sevenDayUnique, prevVisitors: prevSevenUnique },
-        thirtyDay: { views: thirtyDayViews, visitors: thirtyDayUnique, prevVisitors: prevThirtyUnique },
+        thirtyDay: {
+          views: thirtyDayViews,
+          visitors: thirtyDayUnique,
+          prevVisitors: prevThirtyUnique,
+        },
       },
     };
   } catch (error) {
@@ -118,7 +150,10 @@ export async function getDeviceBreakdown(days: number = 30) {
     };
   } catch (error) {
     console.error("[ANALYTICS] getDeviceBreakdown failed:", error);
-    return { success: false as const, data: [] as { device: string; count: number; percentage: number }[] };
+    return {
+      success: false as const,
+      data: [] as { device: string; count: number; percentage: number }[],
+    };
   }
 }
 
@@ -154,7 +189,10 @@ export async function getDailyVisitorTrend(days: number = 30) {
     };
   } catch (error) {
     console.error("[ANALYTICS] getDailyVisitorTrend failed:", error);
-    return { success: false as const, data: [] as { date: string; views: number; visitors: number }[] };
+    return {
+      success: false as const,
+      data: [] as { date: string; views: number; visitors: number }[],
+    };
   }
 }
 
@@ -182,7 +220,8 @@ export async function getConversionStats(days: number = 30) {
       }),
     ]);
 
-    const conversionRate = totalVisitors > 0 ? parseFloat(((totalOrders / totalVisitors) * 100).toFixed(2)) : 0;
+    const conversionRate =
+      totalVisitors > 0 ? parseFloat(((totalOrders / totalVisitors) * 100).toFixed(2)) : 0;
 
     return {
       success: true as const,
@@ -198,11 +237,7 @@ export async function getConversionStats(days: number = 30) {
 // Track Page View (used by API route)
 // ═══════════════════════════════════════════
 
-export async function trackPageView(data: {
-  path: string;
-  sessionId: string;
-  device?: string;
-}) {
+export async function trackPageView(data: { path: string; sessionId: string; device?: string }) {
   try {
     await prisma.pageView.create({
       data: {
@@ -214,5 +249,128 @@ export async function trackPageView(data: {
     return { success: true };
   } catch {
     return { success: false };
+  }
+}
+
+// ═══════════════════════════════════════════
+// Advanced E-commerce Metrics
+// ═══════════════════════════════════════════
+
+export async function getAdvancedEcommerceMetrics(days: number = 30) {
+  await requireAdmin();
+
+  const since = new Date();
+  since.setDate(since.getDate() - days);
+
+  try {
+    const [orders, abandonedCarts] = await Promise.all([
+      prisma.order.aggregate({
+        where: {
+          createdAt: { gte: since },
+          deletedAt: null,
+          status: { not: "CANCELLED" },
+        },
+        _sum: { total: true },
+        _count: { id: true },
+      }),
+      prisma.abandonedCart.count({
+        where: { createdAt: { gte: since } },
+      }),
+    ]);
+
+    const totalRevenue = Number(orders._sum.total || 0);
+    const totalOrders = orders._count.id;
+    const aov = totalOrders > 0 ? Math.round(totalRevenue / totalOrders) : 0;
+
+    // Recovery rate could be calculated if we track recovered status
+    const recoveredCarts = await prisma.abandonedCart.count({
+      where: { createdAt: { gte: since }, status: "recovered" },
+    });
+
+    const recoveryRate =
+      abandonedCarts > 0 ? Math.round((recoveredCarts / abandonedCarts) * 100) : 0;
+
+    return {
+      success: true as const,
+      data: {
+        aov,
+        abandonedCarts,
+        recoveredCarts,
+        recoveryRate,
+      },
+    };
+  } catch (error) {
+    console.error("[ANALYTICS] getAdvancedEcommerceMetrics failed:", error);
+    return { success: false as const, data: null };
+  }
+}
+
+// ═══════════════════════════════════════════
+// Top Selling Products (By Volume)
+// ═══════════════════════════════════════════
+
+export async function getTopSellingProducts(take: number = 5) {
+  await requireAdmin();
+
+  try {
+    const topVariants = await prisma.orderItem.groupBy({
+      by: ["variantId"],
+      _sum: { quantity: true, totalPrice: true },
+      orderBy: { _sum: { quantity: "desc" } },
+      take,
+    });
+
+    // Fetch product details for these variants
+    const variantIds = topVariants.map((v) => v.variantId);
+
+    const variants = await prisma.productVariant.findMany({
+      where: { id: { in: variantIds } },
+      include: { product: { select: { name: true, category: { select: { name: true } } } } },
+    });
+
+    // Merge data
+    const topProducts = topVariants.map((tv) => {
+      const variant = variants.find((v) => v.id === tv.variantId);
+      return {
+        id: tv.variantId,
+        name: variant?.product.name || "Unknown Product",
+        category: variant?.product.category?.name || "Uncategorized",
+        sku: variant?.sku || "N/A",
+        sold: tv._sum.quantity || 0,
+        revenue: Number(tv._sum.totalPrice || 0),
+        image:
+          variant?.images && Array.isArray(variant.images) && variant.images.length > 0
+            ? (variant.images[0] as string)
+            : null,
+      };
+    });
+
+    return { success: true as const, data: topProducts };
+  } catch (error) {
+    console.error("[ANALYTICS] getTopSellingProducts failed:", error);
+    return { success: false as const, data: [] };
+  }
+}
+
+// ═══════════════════════════════════════════
+// Recent Activity Feed
+// ═══════════════════════════════════════════
+
+export async function getRecentActivityFeed(take: number = 10) {
+  await requireAdmin();
+
+  try {
+    const notifications = await prisma.notification.findMany({
+      orderBy: { createdAt: "desc" },
+      take,
+    });
+
+    return {
+      success: true as const,
+      data: notifications,
+    };
+  } catch (error) {
+    console.error("[ANALYTICS] getRecentActivityFeed failed:", error);
+    return { success: false as const, data: [] };
   }
 }

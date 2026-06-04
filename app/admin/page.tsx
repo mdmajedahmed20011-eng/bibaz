@@ -1,6 +1,6 @@
 /**
- * BIBAZ — Admin Dashboard (Advanced)
- * Premium dashboard with stats, quick actions, recent activity, revenue overview
+ * BIBAZ — Admin Dashboard (Advanced 10x)
+ * Premium dashboard with stats, quick actions, recent activity, revenue overview, and Pro Insights
  */
 
 import { getAdminDashboardStats, getDashboardAnalytics } from "@/actions/order.actions";
@@ -9,6 +9,9 @@ import {
   getConversionStats,
   getDeviceBreakdown,
   getTopPages,
+  getAdvancedEcommerceMetrics,
+  getTopSellingProducts,
+  getRecentActivityFeed,
 } from "@/actions/analytics.actions";
 import { DashboardCharts } from "@/components/admin/dashboard-charts";
 import { QuickStockUpdate } from "@/components/admin/quick-stock-update";
@@ -23,10 +26,12 @@ import {
   Plus,
   Eye,
   RefreshCw,
-  Users,
   TrendingUp,
   FileText,
   Smartphone,
+  Activity,
+  Award,
+  Zap,
 } from "lucide-react";
 import Link from "next/link";
 import {
@@ -36,6 +41,9 @@ import {
   DeviceBreakdownChart,
   TopPagesList,
   StaggeredGrid,
+  AdvancedMetricCard,
+  TopProductsList,
+  ActivityFeed,
 } from "@/components/admin/dashboard-ui";
 
 export const dynamic = "force-dynamic";
@@ -44,12 +52,23 @@ export default async function AdminDashboardPage() {
   const result = await getAdminDashboardStats();
   const analyticsResult = await getDashboardAnalytics("7d");
 
-  // Visitor analytics (fail silently if tables don't exist yet)
-  const [visitorResult, conversionResult, deviceResult, topPagesResult] = await Promise.allSettled([
+  // Advanced Pro Analytics
+  const [
+    visitorResult,
+    conversionResult,
+    deviceResult,
+    topPagesResult,
+    advMetricsResult,
+    topProductsResult,
+    activityFeedResult,
+  ] = await Promise.allSettled([
     getVisitorStats(),
     getConversionStats(),
     getDeviceBreakdown(),
     getTopPages(),
+    getAdvancedEcommerceMetrics(30),
+    getTopSellingProducts(5),
+    getRecentActivityFeed(7),
   ]);
 
   const visitors =
@@ -67,6 +86,18 @@ export default async function AdminDashboardPage() {
   const topPages =
     topPagesResult.status === "fulfilled" && topPagesResult.value.success
       ? topPagesResult.value.data
+      : [];
+  const advMetrics =
+    advMetricsResult.status === "fulfilled" && advMetricsResult.value.success
+      ? advMetricsResult.value.data
+      : null;
+  const topProducts =
+    topProductsResult.status === "fulfilled" && topProductsResult.value.success
+      ? topProductsResult.value.data
+      : [];
+  const activityFeed =
+    activityFeedResult.status === "fulfilled" && activityFeedResult.value.success
+      ? activityFeedResult.value.data
       : [];
 
   if (!result.success || !result.stats) {
@@ -101,9 +132,11 @@ export default async function AdminDashboardPage() {
       {/* Welcome Section */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-black tracking-tight text-gray-900 sm:text-3xl">Overview</h1>
+          <h1 className="text-2xl font-black tracking-tight text-gray-900 sm:text-3xl">
+            Command Center
+          </h1>
           <p className="mt-1 text-sm text-gray-500 font-medium">
-            Here&apos;s what&apos;s happening with your store today.
+            Advanced real-time overview of your e-commerce operations.
           </p>
         </div>
         <div className="flex gap-2">
@@ -125,7 +158,7 @@ export default async function AdminDashboardPage() {
         </div>
       </div>
 
-      {/* Primary Stats — 4 cards (Staggered Animation via Framer Motion) */}
+      {/* Primary Stats — 4 cards */}
       <StaggeredGrid className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         <StatCard
           title="Today's Orders"
@@ -202,112 +235,53 @@ export default async function AdminDashboardPage() {
         </StaggeredGrid>
       </div>
 
-      {/* Recent Orders Table */}
-      <div className="rounded-2xl border border-gray-200/60 bg-white/50 backdrop-blur-xl shadow-sm overflow-hidden">
-        <div className="flex items-center justify-between border-b border-gray-100/80 px-5 py-4 sm:px-6 bg-white/40">
-          <div>
-            <h2 className="text-sm font-bold text-gray-900">Recent Orders</h2>
-            <p className="text-xs font-medium text-gray-500 mt-0.5">Latest customer orders</p>
-          </div>
-          <Link
-            href="/admin/orders"
-            className="flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-bold text-gray-700 shadow-sm transition-all hover:bg-gray-50 hover:shadow"
-          >
-            View All
-            <ArrowUpRight className="h-3 w-3" />
-          </Link>
-        </div>
-
-        {/* Desktop: Table view */}
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-gray-100/80 text-left bg-gray-50/30">
-                <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-gray-400">
-                  Order
-                </th>
-                <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-gray-400">
-                  Customer
-                </th>
-                <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-gray-400 text-right">
-                  Total
-                </th>
-                <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-gray-400">
-                  Status
-                </th>
-                <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-gray-400">
-                  Date
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-50/50">
-              {stats.recentOrders.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center">
-                    <div className="flex flex-col items-center">
-                      <div className="h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center mb-2">
-                        <RefreshCw className="h-4 w-4 text-gray-400" />
-                      </div>
-                      <p className="text-sm font-medium text-gray-500">No orders yet</p>
-                    </div>
-                  </td>
-                </tr>
-              ) : (
-                stats.recentOrders.map((order) => (
-                  <tr key={order.id} className="transition-colors hover:bg-gray-50/60 group">
-                    <td className="px-6 py-4">
-                      <Link
-                        href={`/admin/orders/${order.id}`}
-                        className="text-sm font-bold text-gray-900 group-hover:text-blue-600 transition-colors"
-                      >
-                        {order.orderNumber}
-                      </Link>
-                    </td>
-                    <td className="px-6 py-4 text-sm font-medium text-gray-600">
-                      {order.guestName || "—"}
-                    </td>
-                    <td className="px-6 py-4 text-sm font-black text-gray-900 text-right font-mono">
-                      ৳{Number(order.total).toLocaleString()}
-                    </td>
-                    <td className="px-6 py-4">
-                      <OrderStatusBadge status={order.status} />
-                    </td>
-                    <td className="px-6 py-4 text-xs font-medium text-gray-400">
-                      {new Date(order.createdAt).toLocaleDateString("en-BD", {
-                        day: "numeric",
-                        month: "short",
-                        year: "numeric",
-                      })}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
       {/* ═══════════════════════════════════════════ */}
-      {/* Visitor Analytics Section                    */}
+      {/* Advanced Pro Analytics (Dark Mode Section)   */}
       {/* ═══════════════════════════════════════════ */}
-      <div className="rounded-2xl border border-gray-200/60 bg-white/50 backdrop-blur-xl p-5 shadow-sm sm:p-7 relative overflow-hidden">
-        {/* Decorative Background Blob */}
-        <div className="absolute top-0 right-0 -mr-20 -mt-20 h-64 w-64 rounded-full bg-blue-500/5 blur-3xl pointer-events-none" />
+      <div className="rounded-[2.5rem] bg-gray-950 p-6 sm:p-8 shadow-2xl relative overflow-hidden my-10">
+        {/* Deep ambient glows */}
+        <div className="absolute top-0 right-1/4 h-[500px] w-[500px] rounded-full bg-blue-600/20 blur-[120px] pointer-events-none mix-blend-screen" />
+        <div className="absolute bottom-0 left-1/4 h-[400px] w-[400px] rounded-full bg-purple-600/20 blur-[100px] pointer-events-none mix-blend-screen" />
 
-        <div className="mb-6 relative">
-          <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-            <div className="p-1.5 bg-blue-100/50 rounded-lg">
-              <Users className="h-5 w-5 text-blue-600" />
+        <div className="mb-8 relative z-10">
+          <h2 className="text-2xl font-black text-white flex items-center gap-3">
+            <div className="p-2 bg-white/10 rounded-xl border border-white/10 backdrop-blur-md">
+              <Zap className="h-6 w-6 text-blue-400" />
             </div>
-            Audience Overview
+            Pro Insights & Analytics
           </h2>
-          <p className="text-xs font-medium text-gray-500 mt-1">
-            Real-time traffic and visitor behavior analysis
+          <p className="text-sm font-medium text-gray-400 mt-2">
+            Advanced real-time intelligence for scaling your e-commerce business
           </p>
         </div>
 
-        {/* Visitor Stats Grid (Staggered Animation) */}
-        <StaggeredGrid className="grid grid-cols-2 gap-3 sm:grid-cols-4 mb-6 relative">
+        {/* Top Tier Metrics: AOV, Conversion, Abandoned Carts */}
+        <StaggeredGrid className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8 relative z-10">
+          <AdvancedMetricCard
+            title="Average Order Value"
+            value={advMetrics?.aov ? `৳${advMetrics.aov.toLocaleString("en-BD")}` : "৳0"}
+            subtitle="Trailing 30 days AOV"
+            icon={<DollarSign className="h-6 w-6" />}
+            gradient="from-emerald-500 to-teal-700"
+          />
+          <AdvancedMetricCard
+            title="Conversion Rate"
+            value={conversion?.conversionRate ? `${conversion.conversionRate}` : "0"}
+            subtitle={`${conversion?.totalOrders || 0} orders / ${conversion?.totalVisitors || 0} visitors`}
+            icon={<TrendingUp className="h-6 w-6" />}
+            gradient="from-blue-500 to-indigo-700"
+          />
+          <AdvancedMetricCard
+            title="Abandoned Carts"
+            value={advMetrics?.abandonedCarts || 0}
+            subtitle={`${advMetrics?.recoveryRate || 0}% recovery rate (${advMetrics?.recoveredCarts || 0} recovered)`}
+            icon={<ShoppingCart className="h-6 w-6" />}
+            gradient="from-rose-500 to-pink-700"
+          />
+        </StaggeredGrid>
+
+        {/* Visitor Stats Row */}
+        <StaggeredGrid className="grid grid-cols-2 gap-3 md:grid-cols-4 mb-8 relative z-10">
           <VisitorStatCard
             label="Today"
             visitors={visitors?.today?.visitors ?? 0}
@@ -332,55 +306,118 @@ export default async function AdminDashboardPage() {
           />
         </StaggeredGrid>
 
-        {/* Conversion + Device Breakdown */}
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 relative">
-          {/* Conversion Rate */}
-          <div className="rounded-2xl border border-gray-200/50 bg-white/60 p-5 shadow-[0_2px_10px_-3px_rgba(16,185,129,0.05)]">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="p-1.5 bg-emerald-100/50 rounded-md">
-                <TrendingUp className="h-4 w-4 text-emerald-600" />
-              </div>
-              <p className="text-xs font-bold uppercase tracking-wider text-gray-500">
-                Conversion Rate
-              </p>
+        {/* Device Breakdown & Top Pages */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 relative z-10">
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-6 shadow-xl backdrop-blur-xl">
+            <h3 className="text-sm font-bold uppercase tracking-widest text-gray-400 mb-6 flex items-center gap-2">
+              <Smartphone className="h-4 w-4 text-purple-400" /> Device Distribution
+            </h3>
+            <div className="h-48 flex items-center justify-center">
+              <DeviceBreakdownChart devices={devices} />
             </div>
-            <p className="text-4xl font-black tracking-tighter text-gray-900">
-              {conversion?.conversionRate ?? 0}
-              <span className="text-2xl text-gray-400">%</span>
-            </p>
-            <p className="text-[11px] font-semibold text-emerald-600 bg-emerald-50 inline-block px-2 py-0.5 rounded-full mt-3">
-              {conversion?.totalOrders ?? 0} orders / {conversion?.totalVisitors ?? 0} visitors
-            </p>
           </div>
+          {topPages && topPages.length > 0 && (
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-6 shadow-xl backdrop-blur-xl">
+              <h3 className="text-sm font-bold uppercase tracking-widest text-gray-400 mb-6 flex items-center gap-2">
+                <FileText className="h-4 w-4 text-indigo-400" /> Top Performing Pages
+              </h3>
+              <TopPagesList topPages={topPages.slice(0, 4)} />
+            </div>
+          )}
+        </div>
+      </div>
 
-          {/* Device Breakdown (Recharts Donut) */}
-          <div className="rounded-2xl border border-gray-200/50 bg-white/60 p-5 shadow-sm">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="p-1.5 bg-purple-100/50 rounded-md">
-                <Smartphone className="h-4 w-4 text-purple-600" />
-              </div>
-              <p className="text-xs font-bold uppercase tracking-wider text-gray-500">
-                Device Breakdown
-              </p>
+      {/* ═══════════════════════════════════════════ */}
+      {/* Bottom Section: Top Products, Activity, Orders */}
+      {/* ═══════════════════════════════════════════ */}
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        {/* Top Selling Products */}
+        <div className="xl:col-span-1 rounded-2xl border border-gray-200/60 bg-white/50 backdrop-blur-xl shadow-sm overflow-hidden p-5">
+          <div className="flex items-center gap-2 mb-4 border-b border-gray-100 pb-3">
+            <div className="p-1.5 bg-emerald-100/50 rounded-md">
+              <Award className="h-5 w-5 text-emerald-600" />
             </div>
-            <DeviceBreakdownChart devices={devices} />
+            <div>
+              <h2 className="text-sm font-bold text-gray-900">Top Sellers</h2>
+              <p className="text-xs text-gray-500">Highest volume products</p>
+            </div>
           </div>
+          <TopProductsList products={topProducts} />
         </div>
 
-        {/* Top Pages (Animated Bars) */}
-        {topPages && topPages.length > 0 && (
-          <div className="mt-6 rounded-2xl border border-gray-200/50 bg-white/60 p-5 shadow-sm relative">
-            <div className="flex items-center gap-2 mb-1">
-              <div className="p-1.5 bg-indigo-100/50 rounded-md">
-                <FileText className="h-4 w-4 text-indigo-600" />
-              </div>
-              <p className="text-xs font-bold uppercase tracking-wider text-gray-500">
-                Top Visited Pages (7d)
-              </p>
+        {/* Recent Activity Feed */}
+        <div className="xl:col-span-1 rounded-2xl border border-gray-200/60 bg-white/50 backdrop-blur-xl shadow-sm overflow-hidden p-5">
+          <div className="flex items-center gap-2 mb-4 border-b border-gray-100 pb-3">
+            <div className="p-1.5 bg-blue-100/50 rounded-md">
+              <Activity className="h-5 w-5 text-blue-600" />
             </div>
-            <TopPagesList topPages={topPages} />
+            <div>
+              <h2 className="text-sm font-bold text-gray-900">Live Activity</h2>
+              <p className="text-xs text-gray-500">System and admin events</p>
+            </div>
           </div>
-        )}
+          <ActivityFeed activities={activityFeed} />
+        </div>
+
+        {/* Recent Orders Table (Takes remaining space) */}
+        <div className="xl:col-span-1 rounded-2xl border border-gray-200/60 bg-white/50 backdrop-blur-xl shadow-sm overflow-hidden flex flex-col">
+          <div className="flex items-center justify-between border-b border-gray-100/80 px-5 py-4 bg-white/40">
+            <div>
+              <h2 className="text-sm font-bold text-gray-900">Recent Orders</h2>
+              <p className="text-xs font-medium text-gray-500 mt-0.5">Latest customer orders</p>
+            </div>
+            <Link
+              href="/admin/orders"
+              className="flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-bold text-gray-700 shadow-sm transition-all hover:bg-gray-50 hover:shadow"
+            >
+              View All
+              <ArrowUpRight className="h-3 w-3" />
+            </Link>
+          </div>
+
+          <div className="overflow-x-auto flex-1">
+            <table className="w-full">
+              <tbody className="divide-y divide-gray-50/50">
+                {stats.recentOrders.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="px-6 py-12 text-center">
+                      <div className="flex flex-col items-center">
+                        <div className="h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center mb-2">
+                          <RefreshCw className="h-4 w-4 text-gray-400" />
+                        </div>
+                        <p className="text-sm font-medium text-gray-500">No orders yet</p>
+                      </div>
+                    </td>
+                  </tr>
+                ) : (
+                  stats.recentOrders.slice(0, 5).map((order) => (
+                    <tr key={order.id} className="transition-colors hover:bg-gray-50/60 group">
+                      <td className="px-4 py-3">
+                        <Link
+                          href={`/admin/orders/${order.id}`}
+                          className="text-sm font-bold text-gray-900 group-hover:text-blue-600 transition-colors"
+                        >
+                          {order.orderNumber}
+                        </Link>
+                        <p className="text-xs font-medium text-gray-500 mt-0.5">
+                          {order.guestName || "—"}
+                        </p>
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <p className="text-sm font-black text-gray-900 font-mono">
+                          ৳{Number(order.total).toLocaleString()}
+                        </p>
+                        <div className="mt-1 flex justify-end">
+                          <OrderStatusBadge status={order.status} />
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -403,7 +440,7 @@ function OrderStatusBadge({ status }: { status: string }) {
 
   return (
     <span
-      className={`inline-flex rounded-md border px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest ${colors[status] || "bg-gray-100/50 text-gray-600 border-gray-200/50"}`}
+      className={`inline-flex rounded-md border px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest ${colors[status] || "bg-gray-100/50 text-gray-600 border-gray-200/50"}`}
     >
       {status}
     </span>

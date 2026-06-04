@@ -218,7 +218,7 @@ const CustomTooltip = ({ active, payload }: TooltipProps) => {
   if (active && payload && payload.length) {
     return (
       <div className="rounded-lg bg-gray-900 px-3 py-2 text-xs font-semibold text-white shadow-xl">
-        <span className="capitalize">{payload[0].name}</span>: {payload[0].value}%
+        <span className="capitalize">{payload[0]?.name}</span>: {payload[0]?.value}%
       </div>
     );
   }

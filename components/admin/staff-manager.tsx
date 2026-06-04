@@ -226,7 +226,7 @@ export function StaffManager({
                       }
                       className="rounded-lg border-gray-200 text-xs py-1.5 pl-3 pr-8 focus:ring-indigo-500 focus:border-indigo-500 disabled:opacity-50 disabled:bg-gray-50"
                     >
-                      <option value="USER">Remove Access (User)</option>
+                      <option value="CUSTOMER">Remove Access (Customer)</option>
                       <option value="STAFF">Staff</option>
                       <option value="MANAGER">Manager</option>
                       <option value="ADMIN">Admin</option>

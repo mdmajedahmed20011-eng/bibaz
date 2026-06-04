@@ -16,7 +16,8 @@ export async function createNotification(data: {
         type: data.type,
         title: data.title,
         message: data.message,
-        data: data.data,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        data: data.data ? (data.data as any) : undefined,
       },
     });
     return { success: true };

@@ -233,7 +233,26 @@ export async function createOrder(data: CreateOrderInput | any) {
         // 1. Generate unique order number atomically using Redis
         const { redis } = await import("@/lib/redis");
         const orderCounterKey = `order_count:${year}`;
-        const orderCountThisYear = await redis.incr(orderCounterKey);
+
+        // Auto-heal redis counter if it's somehow lower than the DB
+        let orderCountThisYear = await redis.incr(orderCounterKey);
+        const maxOrder = await tx.order.findFirst({
+          where: { orderNumber: { startsWith: `ORD-${year}-` } },
+          orderBy: { orderNumber: "desc" },
+          select: { orderNumber: true },
+        });
+
+        if (maxOrder && maxOrder.orderNumber) {
+          const parts = maxOrder.orderNumber.split("-");
+          if (parts.length === 3 && parts[2]) {
+            const dbMax = parseInt(parts[2], 10);
+            if (!isNaN(dbMax) && dbMax >= orderCountThisYear) {
+              orderCountThisYear = dbMax + 1;
+              await redis.set(orderCounterKey, orderCountThisYear.toString());
+            }
+          }
+        }
+
         const orderNumber = `ORD-${year}-${orderCountThisYear.toString().padStart(5, "0")}`;
 
         // 2. Create order with items
@@ -347,9 +366,9 @@ export async function createOrder(data: CreateOrderInput | any) {
 
           // Admin alert (DB notification for dashboard)
           await notify({
-            type: 'NEW_ORDER',
+            type: "NEW_ORDER",
             title: `New Order #${orderNumber}`,
-            message: `${shippingAddress.name || 'Customer'} placed an order for ৳${total.toLocaleString()}`,
+            message: `${shippingAddress.name || "Customer"} placed an order for ৳${total.toLocaleString()}`,
             data: { orderId: order.id, orderNumber, total: Number(total) },
           });
 
@@ -367,9 +386,9 @@ export async function createOrder(data: CreateOrderInput | any) {
             // DB notification for low stock
             for (const v of lowStockVariants) {
               await notify({
-                type: 'LOW_STOCK',
+                type: "LOW_STOCK",
                 title: `Low Stock: ${v.product.name}`,
-                message: `${v.product.name} (Size: ${v.size || 'OS'}, Color: ${v.color || 'None'}) has only ${v.stock} units left`,
+                message: `${v.product.name} (Size: ${v.size || "OS"}, Color: ${v.color || "None"}) has only ${v.stock} units left`,
                 data: { variantId: v.id, stock: v.stock },
               });
             }
@@ -924,7 +943,15 @@ export async function getAdminDashboardStats() {
  */
 export async function bulkUpdateOrderStatus(
   orderIds: string[],
-  status: "PENDING" | "CONFIRMED" | "PROCESSING" | "SHIPPED" | "DELIVERED" | "CANCELLED" | "RETURNED" | "REFUNDED",
+  status:
+    | "PENDING"
+    | "CONFIRMED"
+    | "PROCESSING"
+    | "SHIPPED"
+    | "DELIVERED"
+    | "CANCELLED"
+    | "RETURNED"
+    | "REFUNDED",
   note?: string
 ) {
   try {

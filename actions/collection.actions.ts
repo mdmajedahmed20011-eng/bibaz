@@ -177,7 +177,8 @@ export async function updateCollection(
     bannerImage?: string;
     isActive?: boolean;
     isFeatured?: boolean;
-    productIds?: unknown;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    productIds?: any;
     sortOrder?: number;
   }
 ) {
@@ -199,7 +200,8 @@ export async function updateCollection(
         bannerImage: data.bannerImage,
         isActive: data.isActive,
         isFeatured: data.isFeatured,
-        productIds: data.productIds as object | undefined,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        productIds: data.productIds as any,
         sortOrder: data.sortOrder,
       },
     });

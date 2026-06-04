@@ -154,13 +154,15 @@ export function CampaignManager({
             return (
               <div
                 key={campaign.id}
-                className="group relative flex flex-col justify-between rounded-2xl border border-gray-200 bg-white p-5 shadow-sm transition-all hover:shadow-md"
+                className={`group relative flex flex-col justify-between rounded-2xl border ${status === 'Active' ? 'border-purple-200 bg-purple-50/10' : 'border-gray-200 bg-white'} p-5 shadow-sm transition-all hover:shadow-md overflow-hidden`}
               >
+                {status === 'Active' && <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-purple-500 to-indigo-500" />}
                 <div>
                   <div className="mb-3 flex items-start justify-between">
                     <span
                       className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${statusColor}`}
                     >
+                      {status === 'Active' && <span className="w-1.5 h-1.5 rounded-full bg-green-500 mr-1.5 animate-pulse" />}
                       {status}
                     </span>
                     <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
@@ -178,31 +180,50 @@ export function CampaignManager({
                       </button>
                     </div>
                   </div>
-                  <h3 className="font-semibold text-gray-900 line-clamp-1">{campaign.name}</h3>
-                  <p className="mt-1 text-sm text-gray-500 line-clamp-2">
+                  <h3 className="font-bold text-gray-900 text-lg line-clamp-1">{campaign.name}</h3>
+                  <p className="mt-1 text-xs text-gray-500 line-clamp-2 min-h-[32px]">
                     {campaign.description || "No description provided."}
                   </p>
                 </div>
-                <div className="mt-5 space-y-2 text-sm text-gray-600">
+
+                <div className="mt-5 bg-gray-50/80 rounded-xl p-3 border border-gray-100 mb-4 flex items-center justify-between">
+                  <div>
+                    <p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Est. ROI</p>
+                    <p className="text-sm font-black text-emerald-600">+14% Lift</p>
+                  </div>
+                  <div className="h-6 w-px bg-gray-200" />
+                  <div>
+                    <p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Orders</p>
+                    <p className="text-sm font-black text-gray-700">~120</p>
+                  </div>
+                  <div className="h-6 w-px bg-gray-200" />
+                  <div>
+                    <p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Revenue</p>
+                    <p className="text-sm font-black text-gray-700">৳--</p>
+                  </div>
+                </div>
+
+                <div className="space-y-2.5 text-sm text-gray-600 border-t border-gray-100 pt-4">
                   <div className="flex items-center gap-2">
                     <Calendar className="h-4 w-4 text-gray-400" />
-                    <span>
-                      {start.toLocaleDateString("en-US", { month: "short", day: "numeric" })} -{" "}
-                      {end.toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                    <span className="text-xs font-semibold">
+                      {start.toLocaleDateString("en-US", { month: "short", day: "numeric", hour: '2-digit', minute: '2-digit' })} -{" "}
+                      {end.toLocaleDateString("en-US", { month: "short", day: "numeric", hour: '2-digit', minute: '2-digit' })}
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Percent className="h-4 w-4 text-gray-400" />
-                    <span className="font-medium text-purple-600">
+                    <Percent className="h-4 w-4 text-purple-500" />
+                    <span className="font-black text-purple-700 bg-purple-100 px-2 py-0.5 rounded text-xs">
                       {campaign.discountType === "percentage" ? "" : "৳"}
                       {campaign.discountValue}
                       {campaign.discountType === "percentage" ? "%" : ""} Off
                     </span>
                   </div>
-                  <div className="text-[11px] text-gray-400 font-semibold mt-1">
+                  <div className="text-[11px] text-gray-500 font-medium flex items-center gap-1.5 mt-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
                     {Array.isArray(campaign.productIds) && campaign.productIds.length > 0
-                      ? `${campaign.productIds.length} targeted products`
-                      : "Applies to all products"}
+                      ? `${campaign.productIds.length} targeted products in campaign`
+                      : "Store-wide campaign (All products)"}
                   </div>
                 </div>
               </div>

@@ -21,6 +21,8 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { ReportExportButton } from "@/components/admin/report-export-button";
+import { AnalyticsCharts } from "@/components/admin/analytics-charts";
+import { getDailyRevenueTrend, getDailyVisitorTrend } from "@/actions/analytics.actions";
 
 export default async function AdminReportsPage(props: {
   searchParams?: Promise<{ range?: string }>;
@@ -80,6 +82,15 @@ export default async function AdminReportsPage(props: {
 
   const totalRevenue = Number(totalRevenueAgg._sum.total || 0);
   const avgOrderValue = totalOrders > 0 ? Math.round(totalRevenue / totalOrders) : 0;
+
+  // Chart data
+  const days = range === "30d" ? 30 : range === "this_year" ? 365 : 7;
+  const [revenueTrendResult, visitorTrendResult] = await Promise.all([
+    getDailyRevenueTrend(days),
+    getDailyVisitorTrend(days),
+  ]);
+  const revenueData = revenueTrendResult.data || [];
+  const visitorData = visitorTrendResult.data || [];
 
   // Resolve Variant IDs to actual Product Details
   const variantIds = topProductsRaw.map((item) => item.variantId);
@@ -312,6 +323,8 @@ export default async function AdminReportsPage(props: {
           </div>
         </div>
       </div>
+
+      <AnalyticsCharts revenueData={revenueData} visitorData={visitorData} />
 
       {/* Main Grid: Orders Status Distribution & Top Selling Products */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">

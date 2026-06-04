@@ -46,8 +46,14 @@ export async function getCollectionBySlug(slug: string) {
       return { success: false, collection: null, products: [] };
     }
 
-    // Get products in this collection
-    const productIds = (collection.productIds as string[]) || [];
+    // Handle both legacy string[] and new smart collection { mode, ids, rules }
+    let productIds: string[] = [];
+    if (Array.isArray(collection.productIds)) {
+      productIds = collection.productIds as string[];
+    } else if (collection.productIds && typeof collection.productIds === 'object') {
+      productIds = (collection.productIds as any).cachedIds || (collection.productIds as any).ids || [];
+    }
+
     const products =
       productIds.length > 0
         ? await prisma.product.findMany({
@@ -102,7 +108,7 @@ export async function createCollection(data: {
   image?: string;
   bannerImage?: string;
   isFeatured?: boolean;
-  productIds?: string[];
+  productIds?: any;
 }) {
   const session = await auth();
   if (!session?.user) return { success: false, error: "Not authenticated" };
@@ -168,7 +174,7 @@ export async function updateCollection(
     bannerImage?: string;
     isActive?: boolean;
     isFeatured?: boolean;
-    productIds?: string[];
+    productIds?: any;
     sortOrder?: number;
   }
 ) {
@@ -246,3 +252,44 @@ export async function deleteCollection(id: string) {
     return { success: false, error: "Failed to delete collection" };
   }
 }
+
+/**
+ * Resolve Smart Collection Rules to Product IDs (Admin)
+ */
+export async function resolveSmartCollectionRules(rules: {
+  keyword?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  status?: "ACTIVE" | "DRAFT" | "OUT_OF_STOCK" | "ARCHIVED";
+}) {
+  const session = await auth();
+  if (!session?.user) return { success: false, productIds: [] };
+
+  try {
+    const where: any = { deletedAt: null };
+
+    if (rules.keyword) {
+      where.name = { contains: rules.keyword }; // For simplicity, using simple contains.
+    }
+    if (rules.status) {
+      where.status = rules.status;
+    }
+    if (rules.minPrice !== undefined || rules.maxPrice !== undefined) {
+      where.basePrice = {};
+      if (rules.minPrice !== undefined) where.basePrice.gte = rules.minPrice;
+      if (rules.maxPrice !== undefined) where.basePrice.lte = rules.maxPrice;
+    }
+
+    const products = await db.product.findMany({
+      where,
+      select: { id: true },
+      take: 200 // reasonable limit for collection
+    });
+
+    return { success: true, productIds: products.map((p: any) => p.id) };
+  } catch (error) {
+    console.error("[COLLECTION] resolveSmartCollectionRules error:", error);
+    return { success: false, productIds: [] };
+  }
+}
+

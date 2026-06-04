@@ -7,7 +7,13 @@ export function VisualOrderTimeline({
   timeline,
   currentStatus,
 }: {
-  timeline: Array<{ id: string; status: string; note: string; createdAt: Date; createdBy: string }>;
+  timeline: {
+    id: string;
+    status: string;
+    note: string | null;
+    createdAt: Date;
+    createdBy: string | null;
+  }[];
   currentStatus: string;
 }) {
   const steps = [
@@ -87,7 +93,7 @@ export function VisualOrderTimeline({
       <div className="space-y-6 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-200 before:to-transparent">
         {timeline?.map(
           (
-            entry: { id: string; status: string; note: string; createdAt: Date; createdBy: string },
+            entry: { id: string; status: string; note: string | null; createdAt: Date; createdBy: string | null },
             index: number
           ) => {
             const isLatest = index === 0;

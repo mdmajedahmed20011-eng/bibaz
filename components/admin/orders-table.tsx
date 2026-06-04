@@ -192,7 +192,7 @@ export function OrdersTable({ orders }: { orders: any[] }) {
                   <td className="px-4 py-3 text-right">
                     <button
                       onClick={() => handleDelete(order.id)}
-                      disabled={isDeleting}
+                      disabled={isProcessing}
                       className="text-red-500 hover:text-red-700 disabled:opacity-50"
                       title="Delete Order"
                     >

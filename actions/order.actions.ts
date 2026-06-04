@@ -924,7 +924,7 @@ export async function getAdminDashboardStats() {
  */
 export async function bulkUpdateOrderStatus(
   orderIds: string[],
-  status: "CONFIRMED" | "PROCESSING" | "SHIPPED" | "DELIVERED" | "CANCELLED",
+  status: "PENDING" | "CONFIRMED" | "PROCESSING" | "SHIPPED" | "DELIVERED" | "CANCELLED" | "RETURNED" | "REFUNDED",
   note?: string
 ) {
   try {

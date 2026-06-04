@@ -228,6 +228,46 @@ export function StatCard({
 }
 
 // ═══════════════════════════════════════════
+// QuickStatCard
+// ═══════════════════════════════════════════
+export function QuickStatCard({
+  label,
+  value,
+  icon,
+  href,
+  color,
+}: {
+  label: string;
+  value: string | number;
+  icon: React.ReactNode;
+  href: string;
+  color: "amber" | "indigo" | "teal" | "blue" | "emerald" | "rose";
+}) {
+  const colorStyles = {
+    amber: "bg-amber-50 text-amber-600 border-amber-100",
+    indigo: "bg-indigo-50 text-indigo-600 border-indigo-100",
+    teal: "bg-teal-50 text-teal-600 border-teal-100",
+    blue: "bg-blue-50 text-blue-600 border-blue-100",
+    emerald: "bg-emerald-50 text-emerald-600 border-emerald-100",
+    rose: "bg-rose-50 text-rose-600 border-rose-100",
+  };
+
+  return (
+    <Link href={href} className="block w-full">
+      <div className="flex items-center justify-between rounded-xl border border-gray-100 bg-white p-3.5 shadow-sm transition-all hover:border-gray-200 hover:shadow-md">
+        <div className="flex items-center gap-3">
+          <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border ${colorStyles[color]}`}>
+            {icon}
+          </div>
+          <p className="text-sm font-medium text-gray-600">{label}</p>
+        </div>
+        <p className="text-xl font-bold text-gray-900">{value}</p>
+      </div>
+    </Link>
+  );
+}
+
+// ═══════════════════════════════════════════
 // VisitorStatCard (Dark Neon Mode)
 // ═══════════════════════════════════════════
 export function VisitorStatCard({

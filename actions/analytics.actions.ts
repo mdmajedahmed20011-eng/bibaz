@@ -374,3 +374,43 @@ export async function getRecentActivityFeed(take: number = 10) {
     return { success: false as const, data: [] };
   }
 }
+
+// -------------------------------------------
+// Daily Revenue Trend (for charts)
+// -------------------------------------------
+
+export async function getDailyRevenueTrend(days: number = 30) {
+  await requireAdmin();
+
+  const since = new Date();
+  since.setDate(since.getDate() - days);
+
+  try {
+    const result = await prisma.$queryRaw<Array<{ date: string; revenue: bigint; orders: bigint }>>`
+      SELECT
+        DATE(created_at) as date,
+        SUM(total) as revenue,
+        COUNT(id) as orders
+      FROM orders
+      WHERE created_at >= ${since} AND status NOT IN ('CANCELLED', 'RETURNED', 'REFUNDED') AND deleted_at IS NULL
+      GROUP BY DATE(created_at)
+      ORDER BY date ASC
+    `;
+
+    return {
+      success: true as const,
+      data: result.map((r) => ({
+        date: String(r.date),
+        revenue: Number(r.revenue),
+        orders: Number(r.orders),
+      })),
+    };
+  } catch (error) {
+    console.error("[ANALYTICS] getDailyRevenueTrend failed:", error);
+    return {
+      success: false as const,
+      data: [] as { date: string; revenue: number; orders: number }[],
+    };
+  }
+}
+

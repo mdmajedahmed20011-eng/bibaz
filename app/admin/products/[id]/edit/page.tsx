@@ -7,6 +7,8 @@ import { getCategories, getProductCollections } from "@/actions/product.actions"
 import { getAdminCollections } from "@/actions/collection.actions";
 import { notFound } from "next/navigation";
 import { EditProductForm } from "@/components/admin/edit-product-form";
+import { SeoAnalyzer } from "@/components/admin/seo-analyzer";
+import { ProductInsights } from "@/components/admin/product-insights";
 
 export default async function AdminEditProductPage({
   params,
@@ -78,18 +80,31 @@ export default async function AdminEditProductPage({
   };
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
+    <div className="mx-auto max-w-6xl space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Edit Product</h1>
         <p className="text-sm text-gray-500">{product.name}</p>
       </div>
 
-      <EditProductForm
-        product={serializedProduct}
-        categories={categories}
-        collections={collections}
-        initialCollectionIds={initialCollectionIds}
-      />
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2">
+          <EditProductForm
+            product={serializedProduct}
+            categories={categories}
+            collections={collections}
+            initialCollectionIds={initialCollectionIds}
+          />
+        </div>
+        <div className="space-y-6">
+          <ProductInsights basePrice={Number(product.basePrice)} />
+          <SeoAnalyzer 
+            title={product.seoTitle || ""} 
+            desc={product.seoDesc || ""} 
+            name={product.name} 
+            description={product.description} 
+          />
+        </div>
+      </div>
     </div>
   );
 }

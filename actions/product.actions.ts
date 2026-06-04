@@ -827,6 +827,58 @@ export async function bulkUpdateStock(updates: { variantId: string; stock: numbe
 }
 
 /**
+ * Excel-style Bulk Update Products & Variants
+ */
+export async function bulkUpdateProductsAndVariants(data: {
+  products: { id: string; basePrice: number; status: string }[];
+  variants: { id: string; stock: number; price: number; sku: string }[];
+}) {
+  const session = await auth();
+  if (!session?.user) return { success: false, error: "Not authenticated" };
+
+  const role = (session.user as { role?: string }).role;
+  const allowedRoles = ["STAFF", "MANAGER", "ADMIN", "SUPER_ADMIN"];
+  if (!allowedRoles.includes(role || "")) {
+    return { success: false, error: "Insufficient permissions" };
+  }
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      // Update Products
+      for (const p of data.products) {
+        await tx.product.update({
+          where: { id: p.id },
+          data: { basePrice: p.basePrice, status: p.status as any },
+        });
+      }
+      // Update Variants
+      for (const v of data.variants) {
+        await tx.productVariant.update({
+          where: { id: v.id },
+          data: { stock: v.stock, price: v.price, sku: v.sku },
+        });
+      }
+    });
+
+    await prisma.auditLog.create({
+      data: {
+        adminId: session.user.id!,
+        action: "BULK_UPDATE_EXCEL",
+        entity: "Product",
+        entityId: "BULK",
+        newValue: { products: data.products.length, variants: data.variants.length },
+      },
+    });
+
+    revalidatePath("/admin/products");
+    return { success: true };
+  } catch (error) {
+    console.error("[PRODUCT] bulkUpdateProductsAndVariants error:", error);
+    return { success: false, error: "Failed to bulk update products" };
+  }
+}
+
+/**
  * Export products as CSV data (Admin+)
  */
 export async function exportProductsCSV() {

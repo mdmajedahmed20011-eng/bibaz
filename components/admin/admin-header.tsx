@@ -38,8 +38,6 @@ export function AdminHeader({ userName, userRole }: AdminHeaderProps) {
     MANAGER: "bg-green-100 text-green-700",
     STAFF: "bg-gray-100 text-gray-700",
   };
-  /* eslint-disable @typescript-eslint/no-unused-vars */
-
 
   return (
     <>

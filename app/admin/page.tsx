@@ -4,7 +4,12 @@
  */
 
 import { getAdminDashboardStats, getDashboardAnalytics } from "@/actions/order.actions";
-import { getVisitorStats, getConversionStats, getDeviceBreakdown, getTopPages } from "@/actions/analytics.actions";
+import {
+  getVisitorStats,
+  getConversionStats,
+  getDeviceBreakdown,
+  getTopPages,
+} from "@/actions/analytics.actions";
 import { DashboardCharts } from "@/components/admin/dashboard-charts";
 import { QuickStockUpdate } from "@/components/admin/quick-stock-update";
 import { prisma } from "@/lib/db";
@@ -15,18 +20,23 @@ import {
   AlertTriangle,
   Clock,
   ArrowUpRight,
-  ArrowDownRight,
   Plus,
   Eye,
   RefreshCw,
   Users,
   TrendingUp,
-  Smartphone,
-  Monitor,
-  Tablet,
   FileText,
+  Smartphone,
 } from "lucide-react";
 import Link from "next/link";
+import {
+  StatCard,
+  QuickStatCard,
+  VisitorStatCard,
+  DeviceBreakdownChart,
+  TopPagesList,
+  StaggeredGrid,
+} from "@/components/admin/dashboard-ui";
 
 export const dynamic = "force-dynamic";
 
@@ -42,10 +52,22 @@ export default async function AdminDashboardPage() {
     getTopPages(),
   ]);
 
-  const visitors = visitorResult.status === 'fulfilled' && visitorResult.value.success ? visitorResult.value.data : null;
-  const conversion = conversionResult.status === 'fulfilled' && conversionResult.value.success ? conversionResult.value.data : null;
-  const devices = deviceResult.status === 'fulfilled' && deviceResult.value.success ? deviceResult.value.data : [];
-  const topPages = topPagesResult.status === 'fulfilled' && topPagesResult.value.success ? topPagesResult.value.data : [];
+  const visitors =
+    visitorResult.status === "fulfilled" && visitorResult.value.success
+      ? visitorResult.value.data
+      : null;
+  const conversion =
+    conversionResult.status === "fulfilled" && conversionResult.value.success
+      ? conversionResult.value.data
+      : null;
+  const devices =
+    deviceResult.status === "fulfilled" && deviceResult.value.success
+      ? deviceResult.value.data
+      : [];
+  const topPages =
+    topPagesResult.status === "fulfilled" && topPagesResult.value.success
+      ? topPagesResult.value.data
+      : [];
 
   if (!result.success || !result.stats) {
     return (
@@ -75,36 +97,36 @@ export default async function AdminDashboardPage() {
   }[];
 
   return (
-    <div className="space-y-6 pb-20 lg:pb-6">
+    <div className="space-y-6 pb-20 lg:pb-6 overflow-hidden">
       {/* Welcome Section */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-xl font-bold text-gray-900 sm:text-2xl">Dashboard</h1>
-          <p className="mt-0.5 text-sm text-gray-500">
+          <h1 className="text-2xl font-black tracking-tight text-gray-900 sm:text-3xl">Overview</h1>
+          <p className="mt-1 text-sm text-gray-500 font-medium">
             Here&apos;s what&apos;s happening with your store today.
           </p>
         </div>
         <div className="flex gap-2">
           <Link
             href="/admin/products/new"
-            className="inline-flex items-center gap-1.5 rounded-lg bg-gray-900 px-3.5 py-2 text-xs font-medium text-white shadow-sm transition-all hover:bg-gray-800 hover:shadow-md active:scale-[0.98]"
+            className="inline-flex items-center gap-1.5 rounded-xl bg-gray-900 px-4 py-2.5 text-xs font-semibold text-white shadow-lg shadow-gray-900/20 transition-all hover:bg-gray-800 hover:shadow-xl hover:shadow-gray-900/30 active:scale-[0.98]"
           >
-            <Plus className="h-3.5 w-3.5" />
+            <Plus className="h-4 w-4" />
             <span className="hidden sm:inline">Add Product</span>
             <span className="sm:hidden">New</span>
           </Link>
           <Link
             href="/admin/orders"
-            className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3.5 py-2 text-xs font-medium text-gray-700 shadow-sm transition-all hover:bg-gray-50 hover:shadow active:scale-[0.98]"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-gray-200/80 bg-white/80 backdrop-blur-md px-4 py-2.5 text-xs font-semibold text-gray-700 shadow-sm transition-all hover:bg-white hover:shadow-md active:scale-[0.98]"
           >
-            <Eye className="h-3.5 w-3.5" />
+            <Eye className="h-4 w-4" />
             Orders
           </Link>
         </div>
       </div>
 
-      {/* Primary Stats — 4 cards */}
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+      {/* Primary Stats — 4 cards (Staggered Animation via Framer Motion) */}
+      <StaggeredGrid className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         <StatCard
           title="Today's Orders"
           value={stats.todayOrders.toString()}
@@ -141,7 +163,7 @@ export default async function AdminDashboardPage() {
           color="rose"
           href="/admin/products?stock=low"
         />
-      </div>
+      </StaggeredGrid>
 
       {/* Revenue + Quick Stats Row */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
@@ -151,151 +173,110 @@ export default async function AdminDashboardPage() {
         </div>
 
         {/* Quick Stats (Order Summary) & Low Stock Widgets */}
-        <div className="space-y-4 lg:col-span-1">
+        <StaggeredGrid className="space-y-4 lg:col-span-1">
           <div className="space-y-3">
             <QuickStatCard
               label="Pending Orders"
               value={stats.pendingOrders.toString()}
-              icon={<Clock className="h-4 w-4" />}
+              icon={<Clock className="h-5 w-5" />}
               href="/admin/orders?status=PENDING"
               color="amber"
             />
             <QuickStatCard
               label="Processing Orders"
               value={stats.processingOrders.toString()}
-              icon={<Package className="h-4 w-4" />}
+              icon={<Package className="h-5 w-5" />}
               href="/admin/orders?status=PROCESSING"
               color="indigo"
             />
             <QuickStatCard
               label="Delivered Orders"
               value={stats.deliveredOrders.toString()}
-              icon={<ShoppingCart className="h-4 w-4" />}
+              icon={<ShoppingCart className="h-5 w-5" />}
               href="/admin/orders?status=DELIVERED"
               color="teal"
             />
           </div>
 
           <QuickStockUpdate initialItems={lowStockVariants} />
-        </div>
+        </StaggeredGrid>
       </div>
 
       {/* Recent Orders Table */}
-      <div className="rounded-2xl border border-gray-200/80 bg-white shadow-sm">
-        <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4 sm:px-6">
+      <div className="rounded-2xl border border-gray-200/60 bg-white/50 backdrop-blur-xl shadow-sm overflow-hidden">
+        <div className="flex items-center justify-between border-b border-gray-100/80 px-5 py-4 sm:px-6 bg-white/40">
           <div>
-            <h2 className="text-sm font-semibold text-gray-900">Recent Orders</h2>
-            <p className="text-xs text-gray-500 mt-0.5">Latest customer orders</p>
+            <h2 className="text-sm font-bold text-gray-900">Recent Orders</h2>
+            <p className="text-xs font-medium text-gray-500 mt-0.5">Latest customer orders</p>
           </div>
           <Link
             href="/admin/orders"
-            className="flex items-center gap-1 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 transition-all hover:bg-gray-50"
+            className="flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-bold text-gray-700 shadow-sm transition-all hover:bg-gray-50 hover:shadow"
           >
             View All
             <ArrowUpRight className="h-3 w-3" />
           </Link>
         </div>
 
-        {/* Mobile: Card view */}
-        <div className="divide-y divide-gray-100 sm:hidden">
-          {stats.recentOrders.length === 0 ? (
-            <div className="flex flex-col items-center py-12 px-4">
-              <div className="h-12 w-12 rounded-full bg-gray-100 flex items-center justify-center mb-3">
-                <ShoppingCart className="h-5 w-5 text-gray-400" />
-              </div>
-              <p className="text-sm text-gray-500">No orders yet</p>
-              <p className="text-xs text-gray-400 mt-1">Orders will appear here</p>
-            </div>
-          ) : (
-            stats.recentOrders.map((order) => (
-              <Link
-                key={order.id}
-                href={`/admin/orders/${order.id}`}
-                className="flex items-center justify-between px-5 py-3.5 active:bg-gray-50"
-              >
-                <div>
-                  <p className="text-sm font-medium text-gray-900">{order.orderNumber}</p>
-                  <p className="text-xs text-gray-500 mt-0.5">
-                    {order.guestName || "Guest"} •{" "}
-                    {new Date(order.createdAt).toLocaleDateString("en-BD", {
-                      day: "numeric",
-                      month: "short",
-                    })}
-                  </p>
-                </div>
-                <div className="text-right">
-                  <p className="text-sm font-semibold text-gray-900">
-                    ৳{Number(order.total).toLocaleString()}
-                  </p>
-                  <OrderStatusBadge status={order.status} />
-                </div>
-              </Link>
-            ))
-          )}
-        </div>
-
         {/* Desktop: Table view */}
-        <div className="hidden overflow-x-auto sm:block">
+        <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-gray-100 text-left">
-                <th className="px-6 py-3 text-[11px] font-semibold uppercase tracking-wider text-gray-500">
+              <tr className="border-b border-gray-100/80 text-left bg-gray-50/30">
+                <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-gray-400">
                   Order
                 </th>
-                <th className="px-6 py-3 text-[11px] font-semibold uppercase tracking-wider text-gray-500">
+                <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-gray-400">
                   Customer
                 </th>
-                <th className="px-6 py-3 text-[11px] font-semibold uppercase tracking-wider text-gray-500">
+                <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-gray-400 text-right">
                   Total
                 </th>
-                <th className="px-6 py-3 text-[11px] font-semibold uppercase tracking-wider text-gray-500">
+                <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-gray-400">
                   Status
                 </th>
-                <th className="px-6 py-3 text-[11px] font-semibold uppercase tracking-wider text-gray-500">
-                  Payment
-                </th>
-                <th className="px-6 py-3 text-[11px] font-semibold uppercase tracking-wider text-gray-500">
+                <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-gray-400">
                   Date
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
+            <tbody className="divide-y divide-gray-50/50">
               {stats.recentOrders.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center">
+                  <td colSpan={5} className="px-6 py-12 text-center">
                     <div className="flex flex-col items-center">
                       <div className="h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center mb-2">
                         <RefreshCw className="h-4 w-4 text-gray-400" />
                       </div>
-                      <p className="text-sm text-gray-500">No orders yet</p>
+                      <p className="text-sm font-medium text-gray-500">No orders yet</p>
                     </div>
                   </td>
                 </tr>
               ) : (
                 stats.recentOrders.map((order) => (
-                  <tr key={order.id} className="transition-colors hover:bg-gray-50/50">
-                    <td className="px-6 py-3.5">
+                  <tr key={order.id} className="transition-colors hover:bg-gray-50/60 group">
+                    <td className="px-6 py-4">
                       <Link
                         href={`/admin/orders/${order.id}`}
-                        className="text-sm font-medium text-blue-600 hover:text-blue-700 hover:underline"
+                        className="text-sm font-bold text-gray-900 group-hover:text-blue-600 transition-colors"
                       >
                         {order.orderNumber}
                       </Link>
                     </td>
-                    <td className="px-6 py-3.5 text-sm text-gray-700">{order.guestName || "—"}</td>
-                    <td className="px-6 py-3.5 text-sm font-semibold text-gray-900">
+                    <td className="px-6 py-4 text-sm font-medium text-gray-600">
+                      {order.guestName || "—"}
+                    </td>
+                    <td className="px-6 py-4 text-sm font-black text-gray-900 text-right font-mono">
                       ৳{Number(order.total).toLocaleString()}
                     </td>
-                    <td className="px-6 py-3.5">
+                    <td className="px-6 py-4">
                       <OrderStatusBadge status={order.status} />
                     </td>
-                    <td className="px-6 py-3.5">
-                      <PaymentStatusBadge status={order.paymentStatus} />
-                    </td>
-                    <td className="px-6 py-3.5 text-sm text-gray-500">
+                    <td className="px-6 py-4 text-xs font-medium text-gray-400">
                       {new Date(order.createdAt).toLocaleDateString("en-BD", {
                         day: "numeric",
                         month: "short",
+                        year: "numeric",
                       })}
                     </td>
                   </tr>
@@ -309,17 +290,24 @@ export default async function AdminDashboardPage() {
       {/* ═══════════════════════════════════════════ */}
       {/* Visitor Analytics Section                    */}
       {/* ═══════════════════════════════════════════ */}
-      <div className="rounded-2xl border border-gray-200/80 bg-white p-5 shadow-sm sm:p-6">
-        <div className="mb-5">
-          <h2 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
-            <Users className="h-4 w-4 text-blue-500" />
-            Visitor Analytics
+      <div className="rounded-2xl border border-gray-200/60 bg-white/50 backdrop-blur-xl p-5 shadow-sm sm:p-7 relative overflow-hidden">
+        {/* Decorative Background Blob */}
+        <div className="absolute top-0 right-0 -mr-20 -mt-20 h-64 w-64 rounded-full bg-blue-500/5 blur-3xl pointer-events-none" />
+
+        <div className="mb-6 relative">
+          <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+            <div className="p-1.5 bg-blue-100/50 rounded-lg">
+              <Users className="h-5 w-5 text-blue-600" />
+            </div>
+            Audience Overview
           </h2>
-          <p className="text-xs text-gray-500 mt-0.5">Traffic overview based on page views</p>
+          <p className="text-xs font-medium text-gray-500 mt-1">
+            Real-time traffic and visitor behavior analysis
+          </p>
         </div>
 
-        {/* Visitor Stats Grid */}
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 mb-6">
+        {/* Visitor Stats Grid (Staggered Animation) */}
+        <StaggeredGrid className="grid grid-cols-2 gap-3 sm:grid-cols-4 mb-6 relative">
           <VisitorStatCard
             label="Today"
             visitors={visitors?.today?.visitors ?? 0}
@@ -342,70 +330,55 @@ export default async function AdminDashboardPage() {
             views={visitors?.thirtyDay?.views ?? 0}
             prevVisitors={visitors?.thirtyDay?.prevVisitors}
           />
-        </div>
+        </StaggeredGrid>
 
         {/* Conversion + Device Breakdown */}
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 relative">
           {/* Conversion Rate */}
-          <div className="rounded-xl border border-gray-100 bg-gray-50/50 p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <TrendingUp className="h-4 w-4 text-emerald-500" />
-              <p className="text-xs font-semibold text-gray-700">Conversion Rate</p>
+          <div className="rounded-2xl border border-gray-200/50 bg-white/60 p-5 shadow-[0_2px_10px_-3px_rgba(16,185,129,0.05)]">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="p-1.5 bg-emerald-100/50 rounded-md">
+                <TrendingUp className="h-4 w-4 text-emerald-600" />
+              </div>
+              <p className="text-xs font-bold uppercase tracking-wider text-gray-500">
+                Conversion Rate
+              </p>
             </div>
-            <p className="text-2xl font-bold text-gray-900">
-              {conversion?.conversionRate ?? 0}%
+            <p className="text-4xl font-black tracking-tighter text-gray-900">
+              {conversion?.conversionRate ?? 0}
+              <span className="text-2xl text-gray-400">%</span>
             </p>
-            <p className="text-[11px] text-gray-500 mt-1">
-              {conversion?.totalOrders ?? 0} orders from {conversion?.totalVisitors ?? 0} visitors (30d)
+            <p className="text-[11px] font-semibold text-emerald-600 bg-emerald-50 inline-block px-2 py-0.5 rounded-full mt-3">
+              {conversion?.totalOrders ?? 0} orders / {conversion?.totalVisitors ?? 0} visitors
             </p>
           </div>
 
-          {/* Device Breakdown */}
-          <div className="rounded-xl border border-gray-100 bg-gray-50/50 p-4">
-            <p className="text-xs font-semibold text-gray-700 mb-3">Device Breakdown (30d)</p>
-            {devices && devices.length > 0 ? (
-              <div className="space-y-2">
-                {devices.map((d: { device: string; percentage: number }) => {
-                  const DeviceIcon = d.device === 'mobile' ? Smartphone : d.device === 'tablet' ? Tablet : Monitor;
-                  return (
-                    <div key={d.device} className="flex items-center gap-2">
-                      <DeviceIcon className="h-3.5 w-3.5 text-gray-400" />
-                      <span className="text-xs text-gray-600 capitalize w-16">{d.device}</span>
-                      <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-blue-500 rounded-full transition-all"
-                          style={{ width: `${d.percentage}%` }}
-                        />
-                      </div>
-                      <span className="text-xs font-medium text-gray-700 w-10 text-right">{d.percentage}%</span>
-                    </div>
-                  );
-                })}
+          {/* Device Breakdown (Recharts Donut) */}
+          <div className="rounded-2xl border border-gray-200/50 bg-white/60 p-5 shadow-sm">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="p-1.5 bg-purple-100/50 rounded-md">
+                <Smartphone className="h-4 w-4 text-purple-600" />
               </div>
-            ) : (
-              <p className="text-xs text-gray-400">No data yet</p>
-            )}
+              <p className="text-xs font-bold uppercase tracking-wider text-gray-500">
+                Device Breakdown
+              </p>
+            </div>
+            <DeviceBreakdownChart devices={devices} />
           </div>
         </div>
 
-        {/* Top Pages */}
+        {/* Top Pages (Animated Bars) */}
         {topPages && topPages.length > 0 && (
-          <div className="mt-5">
-            <div className="flex items-center gap-2 mb-3">
-              <FileText className="h-4 w-4 text-purple-500" />
-              <p className="text-xs font-semibold text-gray-700">Top Visited Pages (7d)</p>
+          <div className="mt-6 rounded-2xl border border-gray-200/50 bg-white/60 p-5 shadow-sm relative">
+            <div className="flex items-center gap-2 mb-1">
+              <div className="p-1.5 bg-indigo-100/50 rounded-md">
+                <FileText className="h-4 w-4 text-indigo-600" />
+              </div>
+              <p className="text-xs font-bold uppercase tracking-wider text-gray-500">
+                Top Visited Pages (7d)
+              </p>
             </div>
-            <div className="divide-y divide-gray-100">
-              {topPages.map((page: { path: string; views: number }, i: number) => (
-                <div key={page.path} className="flex items-center justify-between py-2">
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <span className="text-[10px] font-bold text-gray-400 w-4">{i + 1}</span>
-                    <span className="text-xs text-gray-700 truncate">{page.path}</span>
-                  </div>
-                  <span className="text-xs font-semibold text-gray-900 ml-4 shrink-0">{page.views.toLocaleString()}</span>
-                </div>
-              ))}
-            </div>
+            <TopPagesList topPages={topPages} />
           </div>
         )}
       </div>
@@ -414,177 +387,25 @@ export default async function AdminDashboardPage() {
 }
 
 // ═══════════════════════════════════════════
-// Components
+// Helpers for badges (Kept Server-Side)
 // ═══════════════════════════════════════════
-
-function StatCard({
-  title,
-  value,
-  icon,
-  trend,
-  trendValue,
-  color,
-  href,
-}: {
-  title: string;
-  value: string;
-  icon: React.ReactNode;
-  trend: "up" | "down" | "neutral";
-  trendValue: string;
-  color: "blue" | "emerald" | "amber" | "rose";
-  href?: string;
-}) {
-  const colorMap = {
-    blue: { bg: "bg-blue-50", text: "text-blue-600", icon: "bg-blue-100" },
-    emerald: { bg: "bg-emerald-50", text: "text-emerald-600", icon: "bg-emerald-100" },
-    amber: { bg: "bg-amber-50", text: "text-amber-600", icon: "bg-amber-100" },
-    rose: { bg: "bg-rose-50", text: "text-rose-600", icon: "bg-rose-100" },
-  };
-
-  const trendColors = {
-    up: "text-emerald-600",
-    down: "text-rose-600",
-    neutral: "text-gray-400",
-  };
-
-  const Wrapper = href ? Link : "div";
-
-  return (
-    <Wrapper
-      href={href || ""}
-      className="group rounded-2xl border border-gray-200/80 bg-white p-4 shadow-sm transition-all hover:shadow-md hover:border-gray-300/80 active:scale-[0.98] sm:p-5"
-    >
-      <div className="flex items-start justify-between">
-        <div
-          className={`flex h-9 w-9 items-center justify-center rounded-xl ${colorMap[color].icon} ${colorMap[color].text} sm:h-10 sm:w-10`}
-        >
-          {icon}
-        </div>
-        <div className={`flex items-center gap-0.5 text-[11px] font-medium ${trendColors[trend]}`}>
-          {trend === "up" && <ArrowUpRight className="h-3 w-3" />}
-          {trend === "down" && <ArrowDownRight className="h-3 w-3" />}
-          <span className="hidden sm:inline">{trendValue}</span>
-        </div>
-      </div>
-      <div className="mt-3">
-        <p className="text-lg font-bold text-gray-900 sm:text-2xl">{value}</p>
-        <p className="mt-0.5 text-[11px] font-medium text-gray-500 sm:text-xs">{title}</p>
-      </div>
-    </Wrapper>
-  );
-}
-
-function QuickStatCard({
-  label,
-  value,
-  icon,
-  href,
-  color,
-}: {
-  label: string;
-  value: string;
-  icon: React.ReactNode;
-  href?: string;
-  color: "purple" | "indigo" | "teal" | "amber";
-}) {
-  const colorMap = {
-    purple: "bg-purple-50 text-purple-600",
-    indigo: "bg-indigo-50 text-indigo-600",
-    teal: "bg-teal-50 text-teal-600",
-    amber: "bg-amber-50 text-amber-600",
-  };
-
-  const Wrapper = href ? Link : "div";
-
-  return (
-    <Wrapper
-      href={href || ""}
-      className="flex items-center gap-3.5 rounded-2xl border border-gray-200/80 bg-white p-4 shadow-sm transition-all hover:shadow-md active:scale-[0.98]"
-    >
-      <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${colorMap[color]}`}>
-        {icon}
-      </div>
-      <div>
-        <p className="text-lg font-bold text-gray-900">{value}</p>
-        <p className="text-xs text-gray-500">{label}</p>
-      </div>
-    </Wrapper>
-  );
-}
-
 function OrderStatusBadge({ status }: { status: string }) {
   const colors: Record<string, string> = {
-    PENDING: "bg-amber-50 text-amber-700 border-amber-200",
-    CONFIRMED: "bg-blue-50 text-blue-700 border-blue-200",
-    PROCESSING: "bg-indigo-50 text-indigo-700 border-indigo-200",
-    SHIPPED: "bg-purple-50 text-purple-700 border-purple-200",
-    DELIVERED: "bg-emerald-50 text-emerald-700 border-emerald-200",
-    CANCELLED: "bg-rose-50 text-rose-700 border-rose-200",
-    RETURNED: "bg-orange-50 text-orange-700 border-orange-200",
-    REFUNDED: "bg-gray-50 text-gray-700 border-gray-200",
+    PENDING: "bg-amber-100/50 text-amber-700 border-amber-200/50",
+    CONFIRMED: "bg-blue-100/50 text-blue-700 border-blue-200/50",
+    PROCESSING: "bg-indigo-100/50 text-indigo-700 border-indigo-200/50",
+    SHIPPED: "bg-purple-100/50 text-purple-700 border-purple-200/50",
+    DELIVERED: "bg-emerald-100/50 text-emerald-700 border-emerald-200/50",
+    CANCELLED: "bg-rose-100/50 text-rose-700 border-rose-200/50",
+    RETURNED: "bg-orange-100/50 text-orange-700 border-orange-200/50",
+    REFUNDED: "bg-gray-100/50 text-gray-700 border-gray-200/50",
   };
 
   return (
     <span
-      className={`inline-flex rounded-md border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${colors[status] || "bg-gray-50 text-gray-600 border-gray-200"}`}
+      className={`inline-flex rounded-md border px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest ${colors[status] || "bg-gray-100/50 text-gray-600 border-gray-200/50"}`}
     >
       {status}
     </span>
-  );
-}
-
-function PaymentStatusBadge({ status }: { status: string }) {
-  const colors: Record<string, string> = {
-    UNPAID: "bg-rose-50 text-rose-700 border-rose-200",
-    PAID: "bg-emerald-50 text-emerald-700 border-emerald-200",
-    PARTIALLY_REFUNDED: "bg-orange-50 text-orange-700 border-orange-200",
-    REFUNDED: "bg-gray-50 text-gray-700 border-gray-200",
-    FAILED: "bg-red-50 text-red-700 border-red-200",
-  };
-
-  return (
-    <span
-      className={`inline-flex rounded-md border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${colors[status] || "bg-gray-50 text-gray-600 border-gray-200"}`}
-    >
-      {status}
-    </span>
-  );
-}
-
-function VisitorStatCard({
-  label,
-  visitors,
-  views,
-  prevVisitors,
-}: {
-  label: string;
-  visitors: number;
-  views: number;
-  prevVisitors?: number;
-}) {
-  let trend: "up" | "down" | "neutral" = "neutral";
-  let trendPercent = 0;
-
-  if (prevVisitors !== undefined && prevVisitors > 0) {
-    const change = ((visitors - prevVisitors) / prevVisitors) * 100;
-    trendPercent = Math.abs(Math.round(change));
-    trend = change > 0 ? "up" : change < 0 ? "down" : "neutral";
-  }
-
-  return (
-    <div className="rounded-xl border border-gray-100 bg-gray-50/50 p-3">
-      <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-500">{label}</p>
-      <p className="text-xl font-bold text-gray-900 mt-1">{visitors.toLocaleString()}</p>
-      <div className="flex items-center justify-between mt-1">
-        <p className="text-[10px] text-gray-400">{views.toLocaleString()} views</p>
-        {prevVisitors !== undefined && trend !== "neutral" && (
-          <span
-            className={`text-[10px] font-medium ${trend === "up" ? "text-emerald-600" : "text-rose-600"}`}
-          >
-            {trend === "up" ? "↑" : "↓"} {trendPercent}%
-          </span>
-        )}
-      </div>
-    </div>
   );
 }

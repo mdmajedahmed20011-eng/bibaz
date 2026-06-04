@@ -6,6 +6,7 @@
  */
 
 import { useState } from "react";
+import { toast } from "sonner";
 import { bulkUpdateSettings } from "@/actions/settings.actions";
 import { ImageUpload } from "./image-upload";
 import {
@@ -223,7 +224,7 @@ export function SettingsManager({ initialSettings, isTwoFactorEnabled }: Setting
         setSecretKey("");
         setQrCode("");
         setVerificationCode("");
-        alert("Two-factor authentication enabled successfully!");
+        toast.success("Two-factor authentication enabled successfully!");
       } else {
         setTfaError(res.error || "Verification failed");
       }
@@ -247,7 +248,7 @@ export function SettingsManager({ initialSettings, isTwoFactorEnabled }: Setting
       if (res.success) {
         setTwoFactorEnabled(false);
         setVerificationCode("");
-        alert("Two-factor authentication disabled successfully!");
+        toast.success("Two-factor authentication disabled successfully!");
       } else {
         setTfaError(res.error || "Verification failed");
       }
@@ -282,7 +283,7 @@ export function SettingsManager({ initialSettings, isTwoFactorEnabled }: Setting
       setSavedMsg(true);
       setTimeout(() => setSavedMsg(false), 2500);
     } else {
-      alert(result.error || "Failed to save");
+      toast.error(result.error || "Failed to save");
     }
   }
 

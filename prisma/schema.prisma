@@ -590,3 +590,54 @@ model AbandonedCart {
   @@map("abandoned_carts")
 }
 
+// ═══════════════════════════════════════════
+// TABLE 22: Page Views (Analytics)
+// Basic daily visitor tracking
+// ═══════════════════════════════════════════
+
+model PageView {
+  id        String   @id @default(cuid())
+  path      String
+  sessionId String   @map("session_id")
+  device    String?  // mobile, tablet, desktop
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([createdAt])
+  @@index([sessionId, createdAt])
+  @@index([path, createdAt])
+  @@map("page_views")
+}
+
+// ═══════════════════════════════════════════
+// TABLE 23: Notifications (Admin Alerts)
+// ═══════════════════════════════════════════
+
+model Notification {
+  id        String   @id @default(cuid())
+  type      String   // NEW_ORDER, LOW_STOCK, NEW_REVIEW, SYSTEM
+  title     String
+  message   String   @db.Text
+  data      Json?    // Extra payload (orderId, productId, etc.)
+  isRead    Boolean  @default(false) @map("is_read")
+  createdAt DateTime @default(now()) @map("created_at")
+  readAt    DateTime? @map("read_at")
+
+  @@index([isRead, createdAt])
+  @@index([createdAt])
+  @@map("notifications")
+}
+
+// ═══════════════════════════════════════════
+// TABLE 24: Newsletter Subscribers
+// ═══════════════════════════════════════════
+
+model NewsletterSubscriber {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  isActive  Boolean  @default(true) @map("is_active")
+  source    String   @default("footer")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("newsletter_subscribers")
+}
+

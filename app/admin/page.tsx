@@ -4,6 +4,7 @@
  */
 
 import { getAdminDashboardStats, getDashboardAnalytics } from "@/actions/order.actions";
+import { getVisitorStats, getConversionStats, getDeviceBreakdown, getTopPages } from "@/actions/analytics.actions";
 import { DashboardCharts } from "@/components/admin/dashboard-charts";
 import { QuickStockUpdate } from "@/components/admin/quick-stock-update";
 import { prisma } from "@/lib/db";
@@ -18,6 +19,12 @@ import {
   Plus,
   Eye,
   RefreshCw,
+  Users,
+  TrendingUp,
+  Smartphone,
+  Monitor,
+  Tablet,
+  FileText,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -26,6 +33,19 @@ export const dynamic = "force-dynamic";
 export default async function AdminDashboardPage() {
   const result = await getAdminDashboardStats();
   const analyticsResult = await getDashboardAnalytics("7d");
+
+  // Visitor analytics (fail silently if tables don't exist yet)
+  const [visitorResult, conversionResult, deviceResult, topPagesResult] = await Promise.allSettled([
+    getVisitorStats(),
+    getConversionStats(),
+    getDeviceBreakdown(),
+    getTopPages(),
+  ]);
+
+  const visitors = visitorResult.status === 'fulfilled' && visitorResult.value.success ? visitorResult.value.data : null;
+  const conversion = conversionResult.status === 'fulfilled' && conversionResult.value.success ? conversionResult.value.data : null;
+  const devices = deviceResult.status === 'fulfilled' && deviceResult.value.success ? deviceResult.value.data : [];
+  const topPages = topPagesResult.status === 'fulfilled' && topPagesResult.value.success ? topPagesResult.value.data : [];
 
   if (!result.success || !result.stats) {
     return (
@@ -285,6 +305,110 @@ export default async function AdminDashboardPage() {
           </table>
         </div>
       </div>
+
+      {/* ═══════════════════════════════════════════ */}
+      {/* Visitor Analytics Section                    */}
+      {/* ═══════════════════════════════════════════ */}
+      <div className="rounded-2xl border border-gray-200/80 bg-white p-5 shadow-sm sm:p-6">
+        <div className="mb-5">
+          <h2 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+            <Users className="h-4 w-4 text-blue-500" />
+            Visitor Analytics
+          </h2>
+          <p className="text-xs text-gray-500 mt-0.5">Traffic overview based on page views</p>
+        </div>
+
+        {/* Visitor Stats Grid */}
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 mb-6">
+          <VisitorStatCard
+            label="Today"
+            visitors={visitors?.today?.visitors ?? 0}
+            views={visitors?.today?.views ?? 0}
+          />
+          <VisitorStatCard
+            label="Yesterday"
+            visitors={visitors?.yesterday?.visitors ?? 0}
+            views={visitors?.yesterday?.views ?? 0}
+          />
+          <VisitorStatCard
+            label="7 Days"
+            visitors={visitors?.sevenDay?.visitors ?? 0}
+            views={visitors?.sevenDay?.views ?? 0}
+            prevVisitors={visitors?.sevenDay?.prevVisitors}
+          />
+          <VisitorStatCard
+            label="30 Days"
+            visitors={visitors?.thirtyDay?.visitors ?? 0}
+            views={visitors?.thirtyDay?.views ?? 0}
+            prevVisitors={visitors?.thirtyDay?.prevVisitors}
+          />
+        </div>
+
+        {/* Conversion + Device Breakdown */}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          {/* Conversion Rate */}
+          <div className="rounded-xl border border-gray-100 bg-gray-50/50 p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <TrendingUp className="h-4 w-4 text-emerald-500" />
+              <p className="text-xs font-semibold text-gray-700">Conversion Rate</p>
+            </div>
+            <p className="text-2xl font-bold text-gray-900">
+              {conversion?.conversionRate ?? 0}%
+            </p>
+            <p className="text-[11px] text-gray-500 mt-1">
+              {conversion?.totalOrders ?? 0} orders from {conversion?.totalVisitors ?? 0} visitors (30d)
+            </p>
+          </div>
+
+          {/* Device Breakdown */}
+          <div className="rounded-xl border border-gray-100 bg-gray-50/50 p-4">
+            <p className="text-xs font-semibold text-gray-700 mb-3">Device Breakdown (30d)</p>
+            {devices && devices.length > 0 ? (
+              <div className="space-y-2">
+                {devices.map((d: { device: string; percentage: number }) => {
+                  const DeviceIcon = d.device === 'mobile' ? Smartphone : d.device === 'tablet' ? Tablet : Monitor;
+                  return (
+                    <div key={d.device} className="flex items-center gap-2">
+                      <DeviceIcon className="h-3.5 w-3.5 text-gray-400" />
+                      <span className="text-xs text-gray-600 capitalize w-16">{d.device}</span>
+                      <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-blue-500 rounded-full transition-all"
+                          style={{ width: `${d.percentage}%` }}
+                        />
+                      </div>
+                      <span className="text-xs font-medium text-gray-700 w-10 text-right">{d.percentage}%</span>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="text-xs text-gray-400">No data yet</p>
+            )}
+          </div>
+        </div>
+
+        {/* Top Pages */}
+        {topPages && topPages.length > 0 && (
+          <div className="mt-5">
+            <div className="flex items-center gap-2 mb-3">
+              <FileText className="h-4 w-4 text-purple-500" />
+              <p className="text-xs font-semibold text-gray-700">Top Visited Pages (7d)</p>
+            </div>
+            <div className="divide-y divide-gray-100">
+              {topPages.map((page: { path: string; views: number }, i: number) => (
+                <div key={page.path} className="flex items-center justify-between py-2">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <span className="text-[10px] font-bold text-gray-400 w-4">{i + 1}</span>
+                    <span className="text-xs text-gray-700 truncate">{page.path}</span>
+                  </div>
+                  <span className="text-xs font-semibold text-gray-900 ml-4 shrink-0">{page.views.toLocaleString()}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -424,5 +548,43 @@ function PaymentStatusBadge({ status }: { status: string }) {
     >
       {status}
     </span>
+  );
+}
+
+function VisitorStatCard({
+  label,
+  visitors,
+  views,
+  prevVisitors,
+}: {
+  label: string;
+  visitors: number;
+  views: number;
+  prevVisitors?: number;
+}) {
+  let trend: "up" | "down" | "neutral" = "neutral";
+  let trendPercent = 0;
+
+  if (prevVisitors !== undefined && prevVisitors > 0) {
+    const change = ((visitors - prevVisitors) / prevVisitors) * 100;
+    trendPercent = Math.abs(Math.round(change));
+    trend = change > 0 ? "up" : change < 0 ? "down" : "neutral";
+  }
+
+  return (
+    <div className="rounded-xl border border-gray-100 bg-gray-50/50 p-3">
+      <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-500">{label}</p>
+      <p className="text-xl font-bold text-gray-900 mt-1">{visitors.toLocaleString()}</p>
+      <div className="flex items-center justify-between mt-1">
+        <p className="text-[10px] text-gray-400">{views.toLocaleString()} views</p>
+        {prevVisitors !== undefined && trend !== "neutral" && (
+          <span
+            className={`text-[10px] font-medium ${trend === "up" ? "text-emerald-600" : "text-rose-600"}`}
+          >
+            {trend === "up" ? "↑" : "↓"} {trendPercent}%
+          </span>
+        )}
+      </div>
+    </div>
   );
 }

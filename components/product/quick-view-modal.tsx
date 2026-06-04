@@ -1,22 +1,21 @@
 "use client";
 
 /**
- * BIBAZ — Quick View Modal (Premium v3.0)
- * Glassmorphism modal popup with elegant layout, dual action buttons,
- * interactive size selector, quantity control, and deep product linking.
- * Refactored: Outer wrapper handles dialog state and scroll block,
- * and renders Inner panel with a key to naturally reset state on item changes.
+ * BIBAZ — Quick View Modal (Premium v4.0)
+ * Glassmorphism modal with REAL variant data fetched from DB.
+ * No more fake/hardcoded variants — fetches via getProductVariants server action.
  */
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { X, Heart, Minus, Plus, ShoppingBag } from "lucide-react";
+import { X, Heart, Minus, Plus, ShoppingBag, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { formatPrice } from "@/lib/utils";
 import { useCartStore } from "@/store/cart-store";
 import { useQuickViewStore, type QuickViewProduct } from "@/store/quick-view-store";
+import { getProductVariants, type QuickViewVariant } from "@/actions/quick-view.actions";
 
 export function QuickViewModal() {
   const { isOpen, product, closeQuickView } = useQuickViewStore();
@@ -55,61 +54,39 @@ function QuickViewModalInner({ product, onClose }: QuickViewModalInnerProps) {
   const router = useRouter();
   const addItem = useCartStore((state) => state.addItem);
 
-  // States (Resets automatically when product.id key changes!)
+  // States
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
 
-  // Determine variants dynamically based on category
-  const isSaree = product.category?.toLowerCase() === "saree";
-  const variants = isSaree
-    ? [
-        {
-          id: `${product.id}-v1`,
-          size: "Free Size",
-          color: "As Shown",
-          price: product.price,
-          stock: 8,
-          sku: "SKU-001",
-        },
-      ]
-    : [
-        {
-          id: `${product.id}-v1`,
-          size: "S",
-          color: "As Shown",
-          price: product.price,
-          stock: 5,
-          sku: "SKU-001",
-        },
-        {
-          id: `${product.id}-v2`,
-          size: "M",
-          color: "As Shown",
-          price: product.price,
-          stock: 8,
-          sku: "SKU-002",
-        },
-        {
-          id: `${product.id}-v3`,
-          size: "L",
-          color: "As Shown",
-          price: product.price,
-          stock: 6,
-          sku: "SKU-003",
-        },
-        {
-          id: `${product.id}-v4`,
-          size: "XL",
-          color: "As Shown",
-          price: product.price,
-          stock: 3,
-          sku: "SKU-004",
-        },
-      ];
+  // Real variant state
+  const [variants, setVariants] = useState<QuickViewVariant[]>([]);
+  const [isLoadingVariants, setIsLoadingVariants] = useState(true);
 
-  const availableSizes = variants.map((v) => v.size);
+  // Fetch real variants from DB when the modal opens
+  useEffect(() => {
+    let cancelled = false;
+
+    async function fetchVariants() {
+      setIsLoadingVariants(true);
+      const result = await getProductVariants(product.id);
+      if (!cancelled) {
+        setVariants(result.success ? result.data : []);
+        setIsLoadingVariants(false);
+      }
+    }
+
+    fetchVariants();
+    return () => {
+      cancelled = true;
+    };
+  }, [product.id]);
+
+  // Derive unique sizes from real variants
+  const availableSizes = [...new Set(variants.map((v) => v.size).filter(Boolean))] as string[];
+
+  // Find selected variant
   const selectedVariant = selectedSize
     ? (variants.find((v) => v.size === selectedSize) ?? null)
     : null;
@@ -123,35 +100,16 @@ function QuickViewModalInner({ product, onClose }: QuickViewModalInnerProps) {
     ? Math.round(((product.compareAtPrice! - currentPrice) / product.compareAtPrice!) * 100)
     : 0;
 
-  // Secondary Image switcher (from product-card logic)
-  const secondaryImage = (() => {
-    const img = product.image;
-    if (img.includes("borka 1")) return "/images/products/borka/borka 2.jpg";
-    if (img.includes("borka 2")) return "/images/products/borka/borka 3.jpg";
-    if (img.includes("borka 3")) return "/images/products/borka/borka 4.jpg";
-    if (img.includes("borka 4")) return "/images/products/borka/borka 1.jpg";
+  // Build image gallery from variant images + product image
+  const variantImages = selectedVariant?.images?.length
+    ? selectedVariant.images
+    : variants.length > 0
+      ? variants.flatMap((v) => v.images || [])
+      : [];
 
-    if (img.includes("bouthik 1")) return "/images/products/boutique/bouthik 2.webp";
-    if (img.includes("bouthik 2")) return "/images/products/boutique/bouthik 3.webp";
-    if (img.includes("bouthik 3")) return "/images/products/boutique/bouthik 4.webp";
-    if (img.includes("bouthik 4")) return "/images/products/boutique/bouthik 1.webp";
-
-    if (img.includes("tree prices 1")) return "/images/products/three-piece/tree prices 2.webp";
-    if (img.includes("tree prices 2")) return "/images/products/three-piece/tree prices 3.webp";
-    if (img.includes("tree prices 3")) return "/images/products/three-piece/tree prices 4.webp";
-    if (img.includes("tree prices 4")) return "/images/products/three-piece/tree prices 1.webp";
-
-    if (img.includes("0560000083852")) return "/images/products/saree/shari 2.webp";
-    if (img.includes("shari 2")) return "/images/products/saree/shari 3.webp";
-    if (img.includes("shari 3")) return "/images/products/saree/shari 4.webp";
-    if (img.includes("shari 4")) return "/images/products/saree/shari 5.webp";
-    if (img.includes("shari 5")) return "/images/products/saree/0560000083852.webp";
-
-    return img;
-  })();
-
-  const images =
-    secondaryImage !== product.image ? [product.image, secondaryImage] : [product.image];
+  const allImages = variantImages.length > 0
+    ? [...new Set([product.image, ...variantImages])]
+    : [product.image];
 
   const handleAddToCart = () => {
     if (!selectedVariant) {
@@ -223,7 +181,7 @@ function QuickViewModalInner({ product, onClose }: QuickViewModalInnerProps) {
       <div className="w-full md:w-1/2 bg-[#f5f5f5] p-6 flex flex-col justify-between max-h-[40vh] md:max-h-full">
         <div className="relative flex-1 aspect-[3/4] max-h-[35vh] md:max-h-[55vh] overflow-hidden rounded-sm bg-neutral-100">
           <Image
-            src={images[activeImageIndex] ?? product.image}
+            src={allImages[activeImageIndex] ?? product.image}
             alt={product.name}
             fill
             className="object-contain transition-transform duration-700 hover:scale-103 bg-[#f5f5f5]"
@@ -247,13 +205,13 @@ function QuickViewModalInner({ product, onClose }: QuickViewModalInnerProps) {
         </div>
 
         {/* Thumbnails if multiple images exist */}
-        {images.length > 1 && (
-          <div className="flex gap-2.5 mt-4 justify-center">
-            {images.map((img, idx) => (
+        {allImages.length > 1 && (
+          <div className="flex gap-2.5 mt-4 justify-center overflow-x-auto scrollbar-hide">
+            {allImages.slice(0, 5).map((img, idx) => (
               <button
                 key={idx}
                 onClick={() => setActiveImageIndex(idx)}
-                className={`relative h-14 w-11 overflow-hidden border transition-all cursor-pointer ${
+                className={`relative h-14 w-11 overflow-hidden border transition-all cursor-pointer shrink-0 ${
                   activeImageIndex === idx
                     ? "border-accent scale-103 shadow-sm"
                     : "border-border/60 opacity-60 hover:opacity-100"
@@ -309,29 +267,68 @@ function QuickViewModalInner({ product, onClose }: QuickViewModalInnerProps) {
               )}
             </div>
 
-            <div className="flex flex-wrap gap-2">
-              {availableSizes.map((size) => {
-                const variant = variants.find((v) => v.size === size);
-                const inStock = variant ? variant.stock > 0 : false;
-                return (
-                  <button
-                    key={size}
-                    onClick={() => setSelectedSize(size)}
-                    disabled={!inStock}
-                    className={`h-10 min-w-[42px] px-3.5 text-xs font-semibold border rounded-sm transition-all duration-200 cursor-pointer ${
-                      selectedSize === size
-                        ? "bg-foreground text-background border-foreground shadow-sm"
-                        : inStock
-                          ? "border-border text-foreground hover:border-foreground hover:bg-neutral-50"
-                          : "border-border/30 text-muted-foreground/30 line-through cursor-not-allowed bg-neutral-50/20"
-                    }`}
-                    aria-pressed={selectedSize === size}
-                  >
-                    {size}
-                  </button>
-                );
-              })}
-            </div>
+            {isLoadingVariants ? (
+              <div className="flex items-center gap-2 py-3">
+                <Loader2 className="h-4 w-4 animate-spin text-accent" />
+                <span className="text-xs text-muted-foreground">Loading sizes...</span>
+              </div>
+            ) : availableSizes.length === 0 ? (
+              <p className="text-xs text-muted-foreground py-2">
+                No sizes available for this product.
+              </p>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {availableSizes.map((size) => {
+                  const variant = variants.find((v) => v.size === size);
+                  const inStock = variant ? variant.stock > 0 : false;
+                  return (
+                    <button
+                      key={size}
+                      onClick={() => {
+                        setSelectedSize(size);
+                        setQuantity(1);
+                        setActiveImageIndex(0);
+                      }}
+                      disabled={!inStock}
+                      className={`h-10 min-w-[42px] px-3.5 text-xs font-semibold border rounded-sm transition-all duration-200 cursor-pointer ${
+                        selectedSize === size
+                          ? "bg-foreground text-background border-foreground shadow-sm"
+                          : inStock
+                            ? "border-border text-foreground hover:border-foreground hover:bg-neutral-50"
+                            : "border-border/30 text-muted-foreground/30 line-through cursor-not-allowed bg-neutral-50/20"
+                      }`}
+                      aria-pressed={selectedSize === size}
+                    >
+                      {size}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Color indicator if selected variant has color */}
+            {selectedVariant?.color && selectedVariant.color !== "As Shown" && (
+              <p className="text-[10px] text-muted-foreground mt-2">
+                Color: <span className="font-semibold text-foreground">{selectedVariant.color}</span>
+              </p>
+            )}
+
+            {/* Stock indicator */}
+            {selectedVariant && (
+              <p className={`text-[10px] mt-1.5 font-medium ${
+                selectedVariant.stock <= 3 && selectedVariant.stock > 0
+                  ? "text-warning"
+                  : selectedVariant.stock === 0
+                    ? "text-sale"
+                    : "text-success"
+              }`}>
+                {selectedVariant.stock === 0
+                  ? "Out of stock"
+                  : selectedVariant.stock <= 3
+                    ? `Only ${selectedVariant.stock} left!`
+                    : "In stock"}
+              </p>
+            )}
           </div>
 
           {/* Quantity */}
@@ -368,27 +365,33 @@ function QuickViewModalInner({ product, onClose }: QuickViewModalInnerProps) {
           <div className="flex gap-3">
             <button
               onClick={handleAddToCart}
-              disabled={!selectedSize || !isInStock}
+              disabled={!selectedSize || !isInStock || isLoadingVariants}
               className={`flex-1 flex items-center justify-center gap-2 h-11 text-xs font-bold uppercase tracking-[0.12em] transition-all rounded-sm cursor-pointer ${
-                !selectedSize
+                !selectedSize || isLoadingVariants
                   ? "bg-neutral-100 border border-neutral-200 text-neutral-400 opacity-60 cursor-not-allowed"
                   : "bg-foreground hover:bg-neutral-800 text-background"
               }`}
             >
               <ShoppingBag className="h-4 w-4" />
-              {!selectedSize ? "Select Size" : !isInStock ? "Out of Stock" : "ADD TO BAG"}
+              {isLoadingVariants
+                ? "Loading..."
+                : !selectedSize
+                  ? "Select Size"
+                  : !isInStock
+                    ? "Out of Stock"
+                    : "ADD TO BAG"}
             </button>
 
             <button
               onClick={handleBuyNow}
-              disabled={!selectedSize || !isInStock}
+              disabled={!selectedSize || !isInStock || isLoadingVariants}
               className={`flex-1 flex items-center justify-center gap-2 h-11 text-xs font-bold uppercase tracking-[0.12em] transition-all rounded-sm cursor-pointer shadow-sm ${
-                !selectedSize
+                !selectedSize || isLoadingVariants
                   ? "bg-neutral-100 border border-neutral-200 text-neutral-400 opacity-60 cursor-not-allowed"
                   : "bg-[#b33a3a] hover:bg-[#9c2f2f] text-white"
               }`}
             >
-              {!selectedSize ? "Select Size" : "BUY NOW"}
+              {isLoadingVariants ? "Loading..." : !selectedSize ? "Select Size" : "BUY NOW"}
             </button>
 
             {/* Wishlist */}

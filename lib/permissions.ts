@@ -82,3 +82,23 @@ export async function requirePermission(requiredPermission: string) {
 
   return { userId: session.user.id, role, user: session.user };
 }
+
+/**
+ * Simple admin role check. Throws if the user is not an admin-level role.
+ * Use this for actions that don't need granular permission checks.
+ */
+export async function requireAdmin() {
+  const session = await auth();
+  if (!session?.user?.id) {
+    throw new Error("Not authenticated");
+  }
+
+  const role = (session.user as { role: RoleLevel }).role || "CUSTOMER";
+  const adminRoles: RoleLevel[] = ["STAFF", "MANAGER", "ADMIN", "SUPER_ADMIN"];
+
+  if (!adminRoles.includes(role)) {
+    throw new Error("Access denied. Admin role required.");
+  }
+
+  return { userId: session.user.id, role, user: session.user };
+}

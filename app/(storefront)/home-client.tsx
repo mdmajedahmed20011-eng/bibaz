@@ -1,43 +1,144 @@
 /* eslint-disable */
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
-import Link from "next/link";
-import Image from "next/image";
-import { ChevronLeft, ChevronRight, ArrowUpRight, Star, Sparkles, ShoppingBag } from "lucide-react";
-import { ProductCard } from "@/components/product/product-card";
-import { formatPrice } from "@/lib/utils";
+/**
+ * BIBAZ — Home UI Orchestrator (Refactored v4.0)
+ * Lightweight orchestrator using next/dynamic for below-fold lazy loading.
+ * Hero is eager-loaded (above-fold), all other sections are code-split.
+ */
+
+import dynamic from "next/dynamic";
+import { HeroSlider, type HeroSlide } from "@/components/home/hero-slider";
 import { TrustBadges } from "@/components/home/trust-badges";
+import type { CategoryItem } from "@/components/home/category-grid";
+import type { LookbookLook } from "@/components/home/lookbook-section";
+import type { CollectionShowcaseItem } from "@/components/home/collections-showcase";
+import type { ArrivalsProduct } from "@/components/home/new-arrivals-grid";
+import type { Testimonial } from "@/components/home/testimonials-carousel";
 
-/* ──────────────── Scroll Reveal Hook ──────────────── */
+/* ──────────────── Dynamic Imports with Loading Skeletons ──────────────── */
 
-function useScrollReveal(threshold = 0.15) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [isVisible, setIsVisible] = useState(false);
+const CategoryGrid = dynamic(
+  () => import("@/components/home/category-grid").then((mod) => mod.CategoryGrid),
+  {
+    loading: () => (
+      <section className="py-16 md:py-24 bg-[#f8f5f0]">
+        <div className="container mx-auto px-4 md:px-12 lg:px-16 max-w-7xl">
+          <div className="h-6 w-48 skeleton-shimmer mx-auto mb-12 rounded" />
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-5">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="aspect-[3/4] skeleton-shimmer rounded-sm" />
+            ))}
+          </div>
+        </div>
+      </section>
+    ),
+    ssr: false,
+  }
+);
 
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const entry = entries[0];
-        if (entry && entry.isIntersecting) {
-          setIsVisible(true);
-          observer.disconnect();
-        }
-      },
-      { threshold, rootMargin: "0px 0px -40px 0px" }
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [threshold]);
+const NewArrivalsGrid = dynamic(
+  () => import("@/components/home/new-arrivals-grid").then((mod) => mod.NewArrivalsGrid),
+  {
+    loading: () => (
+      <section className="py-16 md:py-28 bg-white">
+        <div className="container mx-auto px-4 md:px-12 lg:px-16 max-w-7xl">
+          <div className="h-6 w-40 skeleton-shimmer mb-12 rounded" />
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-x-3 gap-y-8 md:gap-x-6 md:gap-y-14">
+            {[...Array(8)].map((_, i) => (
+              <div key={i}>
+                <div className="aspect-[3/4] skeleton-shimmer mb-3 rounded-sm" />
+                <div className="h-3 w-3/4 skeleton-shimmer rounded mb-2" />
+                <div className="h-3 w-1/2 skeleton-shimmer rounded" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    ),
+    ssr: false,
+  }
+);
 
-  return { ref, isVisible };
-}
+const LookbookSection = dynamic(
+  () => import("@/components/home/lookbook-section").then((mod) => mod.LookbookSection),
+  {
+    loading: () => (
+      <section className="py-16 md:py-24 bg-surface-warm">
+        <div className="container mx-auto px-4 md:px-12 lg:px-16 max-w-7xl">
+          <div className="grid grid-cols-12 gap-16 items-center">
+            <div className="col-span-5 space-y-4">
+              <div className="h-8 w-48 skeleton-shimmer rounded" />
+              <div className="h-12 w-full skeleton-shimmer rounded" />
+              <div className="h-12 w-full skeleton-shimmer rounded" />
+            </div>
+            <div className="col-span-7 aspect-[3/4] skeleton-shimmer rounded-sm" />
+          </div>
+        </div>
+      </section>
+    ),
+    ssr: false,
+  }
+);
+
+const CollectionsShowcase = dynamic(
+  () => import("@/components/home/collections-showcase").then((mod) => mod.CollectionsShowcase),
+  {
+    loading: () => (
+      <section className="py-16 md:py-24 bg-white">
+        <div className="container mx-auto px-4 md:px-12 lg:px-16 max-w-7xl">
+          <div className="h-6 w-48 skeleton-shimmer mx-auto mb-12 rounded" />
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-6">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="aspect-[4/5] skeleton-shimmer rounded-sm" />
+            ))}
+          </div>
+        </div>
+      </section>
+    ),
+    ssr: false,
+  }
+);
+
+const TestimonialsCarousel = dynamic(
+  () => import("@/components/home/testimonials-carousel").then((mod) => mod.TestimonialsCarousel),
+  {
+    loading: () => (
+      <section className="py-16 md:py-24 bg-[#f8f5f0]">
+        <div className="container mx-auto px-4 md:px-12 lg:px-16 max-w-5xl">
+          <div className="h-6 w-40 skeleton-shimmer mx-auto mb-10 rounded" />
+          <div className="h-48 skeleton-shimmer rounded-sm" />
+        </div>
+      </section>
+    ),
+    ssr: false,
+  }
+);
+
+const EditorialSection = dynamic(
+  () => import("@/components/home/editorial-section").then((mod) => mod.EditorialSection),
+  {
+    loading: () => (
+      <section className="py-16 md:py-28 bg-white">
+        <div className="container mx-auto px-4 md:px-12 lg:px-16 max-w-7xl">
+          <div className="grid grid-cols-12 gap-16 items-center">
+            <div className="col-span-5 aspect-[3/4] skeleton-shimmer rounded-sm" />
+            <div className="col-span-7 space-y-4">
+              <div className="h-8 w-64 skeleton-shimmer rounded" />
+              <div className="h-24 skeleton-shimmer rounded" />
+              <div className="h-12 w-48 skeleton-shimmer rounded" />
+            </div>
+          </div>
+        </div>
+      </section>
+    ),
+    ssr: false,
+  }
+);
 
 /* ──────────────── Static Data ──────────────── */
 
-const heroSlides = [
+const heroSlides: HeroSlide[] = [
   {
     image: "/images/homebanner/Biba_NXT-D.jpg",
     title: "ATELIER OF MODEST GRACE",
@@ -64,7 +165,7 @@ const heroSlides = [
   },
 ];
 
-const testimonials = [
+const testimonials: Testimonial[] = [
   {
     quote:
       "The fabric quality and intricate embroidery on the Kurta set are simply outstanding. It draped elegantly and felt extremely premium. BIBAZ has completely elevated my festive wardrobe.",
@@ -88,40 +189,6 @@ const testimonials = [
   },
 ];
 
-/* ──────────────── Image With Skeleton ──────────────── */
-
-function ImageWithSkeleton({
-  src,
-  alt,
-  fill = true,
-  sizes,
-  className = "",
-  priority = false,
-}: {
-  src: string;
-  alt: string;
-  fill?: boolean;
-  sizes?: string;
-  className?: string;
-  priority?: boolean;
-}) {
-  const [loaded, setLoaded] = useState(false);
-  return (
-    <>
-      {!loaded && <div className="absolute inset-0 skeleton-shimmer z-[1]" />}
-      <Image
-        src={src}
-        alt={alt}
-        fill={fill}
-        sizes={sizes}
-        priority={priority}
-        className={`${className} transition-opacity duration-500 ${loaded ? "opacity-100" : "opacity-0"}`}
-        onLoad={() => setLoaded(true)}
-      />
-    </>
-  );
-}
-
 /* ──────────────── Main Component ──────────────── */
 
 export function HomeUI({
@@ -129,55 +196,10 @@ export function HomeUI({
   dbCategories,
 }: {
   dbProducts: any[];
-
   dbCategories: any[];
 }) {
-  const [currentSlide, setCurrentSlide] = useState(0);
-  const [activeLookIndex, setActiveLookIndex] = useState(0);
-  const [activeTestimonial, setActiveTestimonial] = useState(0);
-  const [heroReady, setHeroReady] = useState(false);
-
-  // Scroll reveal hooks for each section
-  const categoryReveal = useScrollReveal(0.1);
-  const arrivalsReveal = useScrollReveal(0.1);
-  const lookbookReveal = useScrollReveal(0.1);
-  const collectionsReveal = useScrollReveal(0.1);
-  const testimonialsReveal = useScrollReveal(0.1);
-  const editorialReveal = useScrollReveal(0.1);
-
-  // Hero entrance animation
-  useEffect(() => {
-    const t = setTimeout(() => setHeroReady(true), 100);
-    return () => clearTimeout(t);
-  }, []);
-
-  // Auto-slide hero
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % heroSlides.length);
-    }, 7000);
-    return () => clearInterval(timer);
-  }, []);
-
-  // Auto-slide testimonials
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setActiveTestimonial((prev) => (prev + 1) % testimonials.length);
-    }, 6000);
-    return () => clearInterval(timer);
-  }, []);
-
-  const handleNextSlide = useCallback(
-    () => setCurrentSlide((prev) => (prev + 1) % heroSlides.length),
-    []
-  );
-  const handlePrevSlide = useCallback(
-    () => setCurrentSlide((prev) => (prev - 1 + heroSlides.length) % heroSlides.length),
-    []
-  );
-
-  // Map database categories to UI
-  const mappedCategories = dbCategories.slice(0, 4).map((c, i) => {
+  /* ── Map database categories to UI ── */
+  const mappedCategories: CategoryItem[] = dbCategories.slice(0, 4).map((c, i) => {
     const fallbackImages = [
       "/images/products/boutique/bouthik 2.webp",
       "/images/products/saree/shari 3.webp",
@@ -192,8 +214,8 @@ export function HomeUI({
     };
   });
 
-  // Map database products to UI
-  const mappedProducts = dbProducts.slice(0, 8).map((p) => {
+  /* ── Map database products to UI ── */
+  const mappedProducts: ArrivalsProduct[] = dbProducts.slice(0, 8).map((p) => {
     const variantPrice = p.variants?.[0]?.price ? Number(p.variants[0].price) : Number(p.basePrice);
     const variantImages = p.variants?.[0]?.images;
     return {
@@ -211,8 +233,8 @@ export function HomeUI({
     };
   });
 
-  // Use db products if available (at least 3), otherwise use premium fallback items
-  const lookbookLooks =
+  /* ── Lookbook looks ── */
+  const lookbookLooks: LookbookLook[] =
     dbProducts.length >= 3
       ? dbProducts.slice(0, 3).map((p, i) => {
           const variantPrice = p.variants?.[0]?.price
@@ -230,7 +252,7 @@ export function HomeUI({
             subtitle: p.name,
             slug: p.slug,
             price: variantPrice,
-            tag: tags[i % 3],
+            tag: tags[i % 3] as string,
           };
         })
       : [
@@ -263,8 +285,8 @@ export function HomeUI({
           },
         ];
 
-  // All collections showcase using db categories
-  const allCollections = dbCategories.slice(0, 6).map((c, i) => {
+  /* ── Collections showcase ── */
+  const allCollections: CollectionShowcaseItem[] = dbCategories.slice(0, 6).map((c, i) => {
     const fallbackImages = [
       "/images/products/boutique/bouthik 2.webp",
       "/images/products/three-piece/tree prices 1.webp",
@@ -292,706 +314,29 @@ export function HomeUI({
 
   return (
     <div className="flex flex-col bg-[#fdfcfa] overflow-hidden">
-      {/* ═══════ 1. CINEMATIC HERO SLIDER ═══════ */}
-      <section className="relative w-full h-[65vh] md:h-[88vh] overflow-hidden bg-neutral-950 group border-b border-border/20">
-        {/* Decorative vertical lines */}
-        <div className="absolute inset-0 z-20 pointer-events-none border-x-[1px] border-white/5 max-w-7xl mx-auto flex justify-between">
-          <div className="w-[1px] h-full bg-white/5" />
-          <div className="w-[1px] h-full bg-white/5" />
-        </div>
+      {/* 1. HERO — Eager loaded (above fold) */}
+      <HeroSlider slides={heroSlides} />
 
-        {heroSlides.map((slide, index) => {
-          const isActive = index === currentSlide;
-          return (
-            <div
-              key={slide.image}
-              className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
-                isActive ? "opacity-100 z-10" : "opacity-0 z-0 pointer-events-none"
-              }`}
-            >
-              <div
-                className={`absolute inset-0 transition-transform duration-[8500ms] cubic-bezier(0.1, 1, 0.1, 1) ${
-                  isActive ? "scale-105" : "scale-100"
-                }`}
-              >
-                <ImageWithSkeleton
-                  src={slide.image}
-                  alt={slide.title}
-                  sizes="100vw"
-                  priority={index === 0}
-                  className="object-cover"
-                />
-                <div
-                  className={`absolute inset-0 bg-gradient-to-r ${slide.color} via-black/30 to-transparent`}
-                />
-                <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-black/80 to-transparent" />
-              </div>
-
-              {/* Hero Content with staggered entrance */}
-              <div className="relative z-20 h-full flex items-center">
-                <div className="container mx-auto px-6 md:px-12 lg:px-16">
-                  <div
-                    className={`max-w-2xl transition-all duration-[1000ms] delay-300 transform ${
-                      isActive && heroReady
-                        ? "opacity-100 translate-y-0"
-                        : "opacity-0 translate-y-8"
-                    }`}
-                  >
-                    {/* Overline with animated line */}
-                    <div className="flex items-center gap-2 mb-4">
-                      <span
-                        className={`h-[1px] bg-accent transition-all duration-700 delay-500 ${
-                          isActive && heroReady ? "w-8" : "w-0"
-                        }`}
-                      />
-                      <p
-                        className={`text-[10px] md:text-xs uppercase tracking-[0.3em] text-accent font-bold transition-all duration-700 delay-500 ${
-                          isActive && heroReady
-                            ? "opacity-100 translate-x-0"
-                            : "opacity-0 -translate-x-4"
-                        }`}
-                      >
-                        {slide.overline}
-                      </p>
-                    </div>
-
-                    {/* Title with staggered word reveal */}
-                    <h1
-                      className={`text-[32px] sm:text-[44px] md:text-[56px] lg:text-[68px] font-bold text-white leading-[1.05] tracking-tight mb-5 font-heading transition-all duration-[800ms] delay-[400ms] ${
-                        isActive && heroReady
-                          ? "opacity-100 translate-y-0"
-                          : "opacity-0 translate-y-6"
-                      }`}
-                    >
-                      {slide.title}
-                    </h1>
-
-                    <p
-                      className={`text-xs sm:text-sm md:text-base text-neutral-200 max-w-md leading-relaxed mb-8 md:mb-10 font-medium font-sans transition-all duration-[800ms] delay-[600ms] ${
-                        isActive && heroReady
-                          ? "opacity-100 translate-y-0"
-                          : "opacity-0 translate-y-4"
-                      }`}
-                    >
-                      {slide.subtitle}
-                    </p>
-
-                    <div
-                      className={`flex flex-wrap gap-4 transition-all duration-[800ms] delay-[800ms] ${
-                        isActive && heroReady
-                          ? "opacity-100 translate-y-0"
-                          : "opacity-0 translate-y-4"
-                      }`}
-                    >
-                      <Link
-                        href={slide.link}
-                        className="inline-flex items-center justify-center gap-2 h-12 md:h-13 px-8 bg-white hover:bg-neutral-100 text-black text-xs font-bold uppercase tracking-[0.15em] transition-all rounded-sm shadow-lg hover:shadow-xl active:scale-[0.97] group/btn cursor-pointer"
-                      >
-                        Shop Collection
-                        <ArrowUpRight className="h-4 w-4 transition-transform group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5" />
-                      </Link>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          );
-        })}
-
-        {/* Navigation arrows */}
-        <button
-          onClick={handlePrevSlide}
-          className="absolute left-4 md:left-6 top-1/2 -translate-y-1/2 z-30 flex items-center justify-center size-10 md:size-13 rounded-full border border-white/10 bg-black/20 text-white hover:bg-white hover:text-black hover:border-white transition-all duration-300 md:opacity-0 md:group-hover:opacity-100 focus:opacity-100 cursor-pointer backdrop-blur-[2px]"
-          aria-label="Previous slide"
-        >
-          <ChevronLeft className="h-5 w-5" strokeWidth={1.5} />
-        </button>
-        <button
-          onClick={handleNextSlide}
-          className="absolute right-4 md:right-6 top-1/2 -translate-y-1/2 z-30 flex items-center justify-center size-10 md:size-13 rounded-full border border-white/10 bg-black/20 text-white hover:bg-white hover:text-black hover:border-white transition-all duration-300 md:opacity-0 md:group-hover:opacity-100 focus:opacity-100 cursor-pointer backdrop-blur-[2px]"
-          aria-label="Next slide"
-        >
-          <ChevronRight className="h-5 w-5" strokeWidth={1.5} />
-        </button>
-
-        {/* Progress dots */}
-        <div className="absolute bottom-6 md:bottom-8 left-0 right-0 z-30 flex justify-center gap-3">
-          {heroSlides.map((_, index) => (
-            <button
-              key={index}
-              onClick={() => setCurrentSlide(index)}
-              className={`h-2 rounded-full transition-all duration-500 cursor-pointer ${
-                index === currentSlide ? "w-8 bg-accent" : "w-2 bg-white/30 hover:bg-white/60"
-              }`}
-              aria-label={`Slide ${index + 1}`}
-            />
-          ))}
-        </div>
-      </section>
-
-      {/* ═══════ 2. TRUST BADGES ═══════ */}
+      {/* 2. TRUST BADGES — Lightweight, eager */}
       <TrustBadges />
 
-      {/* ═══════ 3. CATEGORY GRID ═══════ */}
-      {mappedCategories.length > 0 && (
-        <section className="py-16 md:py-24 bg-[#f8f5f0] border-b border-border/40">
-          <div
-            ref={categoryReveal.ref}
-            className="container mx-auto px-4 md:px-12 lg:px-16 max-w-7xl"
-          >
-            {/* Section heading */}
-            <div
-              className={`text-center max-w-lg mx-auto mb-10 md:mb-16 transition-all duration-700 ${
-                categoryReveal.isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
-              }`}
-            >
-              <p className="text-[10px] uppercase tracking-[0.25em] text-accent font-bold mb-3">
-                ATELIER CATEGORIES
-              </p>
-              <h2 className="text-2xl md:text-[36px] font-bold tracking-tight text-foreground font-heading">
-                Shop Collections
-              </h2>
-              <div
-                className={`h-[2px] bg-accent mx-auto mt-4 transition-all duration-700 delay-300 ${
-                  categoryReveal.isVisible ? "w-12" : "w-0"
-                }`}
-              />
-            </div>
+      {/* 3. CATEGORY GRID — Lazy loaded */}
+      <CategoryGrid categories={mappedCategories} />
 
-            {/* Category cards with staggered animation */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-5">
-              {mappedCategories.map((category, i) => (
-                <Link
-                  key={category.slug}
-                  href={`/collections/${category.slug}`}
-                  className={`group relative overflow-hidden rounded-sm aspect-[3/4] shadow-sm bg-neutral-100 transition-all duration-700 ${
-                    categoryReveal.isVisible
-                      ? "opacity-100 translate-y-0 scale-100"
-                      : "opacity-0 translate-y-10 scale-[0.96]"
-                  }`}
-                  style={{
-                    transitionDelay: categoryReveal.isVisible ? `${200 + i * 120}ms` : "0ms",
-                  }}
-                >
-                  <ImageWithSkeleton
-                    src={category.image}
-                    alt={category.name}
-                    className="object-cover transition-transform duration-[1200ms] group-hover:scale-105 group-active:scale-105"
-                    sizes="(max-width: 768px) 50vw, 25vw"
-                  />
-                  <div className="absolute inset-3 border border-white/10 group-hover:border-white/20 transition-colors pointer-events-none z-10" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-                  <div className="absolute bottom-0 left-0 right-0 p-4 md:p-5 z-20">
-                    <p className="text-[9px] uppercase tracking-[0.2em] text-accent font-bold mb-1">
-                      {category.productCount} Products
-                    </p>
-                    <h3 className="text-white text-sm md:text-lg font-bold tracking-tight mb-2">
-                      {category.name}
-                    </h3>
-                    <p className="text-[10px] text-white/70 uppercase tracking-wider font-semibold opacity-0 -translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 group-active:opacity-100 group-active:translate-y-0 transition-all duration-300 font-sans">
-                      Explore Collection →
-                    </p>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
+      {/* 4. NEW ARRIVALS — Lazy loaded */}
+      <NewArrivalsGrid products={mappedProducts} />
 
-      {/* ═══════ 4. NEW ARRIVALS ═══════ */}
-      {mappedProducts.length > 0 && (
-        <section className="py-16 md:py-28 bg-white">
-          <div
-            ref={arrivalsReveal.ref}
-            className="container mx-auto px-4 md:px-12 lg:px-16 max-w-7xl"
-          >
-            {/* Header */}
-            <div
-              className={`flex flex-col md:flex-row md:items-end justify-between mb-10 md:mb-16 gap-4 transition-all duration-700 ${
-                arrivalsReveal.isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
-              }`}
-            >
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <span
-                    className={`h-[2px] bg-accent transition-all duration-700 delay-200 ${
-                      arrivalsReveal.isVisible ? "w-6" : "w-0"
-                    }`}
-                  />
-                  <p className="text-[10px] uppercase tracking-[0.2em] text-accent font-bold">
-                    JUST RELEASED
-                  </p>
-                </div>
-                <h2 className="text-2xl sm:text-3xl md:text-[38px] font-bold tracking-tight text-foreground font-heading">
-                  New Arrivals
-                </h2>
-              </div>
-              <Link
-                href="/collections/new-arrivals"
-                className="text-xs font-bold uppercase tracking-[0.2em] text-foreground border-b border-accent hover:border-foreground pb-1.5 transition-colors inline-flex items-center gap-1.5 cursor-pointer"
-              >
-                Browse All Items <ArrowUpRight className="h-3.5 w-3.5" />
-              </Link>
-            </div>
+      {/* 5. LOOKBOOK — Lazy loaded */}
+      <LookbookSection looks={lookbookLooks} />
 
-            {/* Product grid with staggered reveal */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-x-3 gap-y-8 md:gap-x-6 md:gap-y-14">
-              {mappedProducts.map((product, i) => (
-                <div
-                  key={product.id}
-                  className={`transition-all duration-600 ${
-                    arrivalsReveal.isVisible
-                      ? "opacity-100 translate-y-0"
-                      : "opacity-0 translate-y-10"
-                  }`}
-                  style={{
-                    transitionDelay: arrivalsReveal.isVisible ? `${200 + i * 80}ms` : "0ms",
-                  }}
-                >
-                  <ProductCard {...product} />
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
+      {/* 6. ALL COLLECTIONS — Lazy loaded */}
+      <CollectionsShowcase collections={allCollections} />
 
-      {/* ═══════ 5. LOOKBOOK / EDITORIAL PICKS ═══════ */}
-      {lookbookLooks.length > 0 && (
-        <section className="py-16 md:py-24 bg-surface-warm border-t border-accent/15 overflow-hidden relative">
-          <div
-            ref={lookbookReveal.ref}
-            className="container mx-auto px-4 md:px-12 lg:px-16 max-w-7xl"
-          >
-            {/* ─── DESKTOP DUAL COLUMN VIEW ─── */}
-            <div className="hidden lg:grid grid-cols-12 gap-8 lg:gap-16 items-center">
-              {/* Left Column: Heading + Interactive Buttons with Gold Strips */}
-              <div
-                className={`col-span-5 space-y-7 z-10 transition-all duration-700 ${
-                  lookbookReveal.isVisible
-                    ? "opacity-100 translate-x-0"
-                    : "opacity-0 -translate-x-10"
-                }`}
-              >
-                <div className="space-y-3">
-                  <p className="text-[10px] uppercase tracking-[0.25em] text-accent font-bold">
-                    BIBAZ EDITORIALS
-                  </p>
-                  <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground font-heading leading-tight">
-                    Hand-Picked <br /> Showcase
-                  </h2>
-                </div>
+      {/* 7. TESTIMONIALS — Lazy loaded */}
+      <TestimonialsCarousel testimonials={testimonials} />
 
-                {/* Advanced vertical tab container with gold highlight effect */}
-                <div className="flex flex-col gap-3.5 pt-2">
-                  {lookbookLooks.map((look, idx) => (
-                    <button
-                      key={look.id}
-                      onClick={() => setActiveLookIndex(idx)}
-                      className={`group relative flex items-center justify-between p-5 border text-left rounded-sm transition-all duration-500 cursor-pointer overflow-hidden ${
-                        activeLookIndex === idx
-                          ? "bg-white border-accent shadow-md pl-8 scale-[1.01]"
-                          : "border-border/60 bg-transparent text-muted-foreground hover:bg-white/40 hover:text-foreground pl-6"
-                      }`}
-                    >
-                      {/* Active sliding gold strip indicator */}
-                      <div
-                        className={`absolute left-0 top-0 bottom-0 w-[4px] bg-accent transition-all duration-500 ${
-                          activeLookIndex === idx
-                            ? "opacity-100 scale-y-100"
-                            : "opacity-0 scale-y-0"
-                        }`}
-                      />
-
-                      <div className="space-y-0.5">
-                        <p className="text-[9px] uppercase tracking-wider text-accent font-bold">
-                          {look.tag}
-                        </p>
-                        <h4 className="text-sm font-bold text-foreground transition-colors duration-300 font-sans line-clamp-1">
-                          {look.subtitle}
-                        </h4>
-                      </div>
-
-                      <span
-                        className={`h-2 w-2 rounded-full transition-all duration-500 ${
-                          activeLookIndex === idx
-                            ? "bg-accent scale-125"
-                            : "bg-neutral-300 group-hover:bg-neutral-400"
-                        }`}
-                      />
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Right Column: Premium Interactive Showcase with zoom effect */}
-              <div
-                className={`col-span-7 relative transition-all duration-700 delay-200 ${
-                  lookbookReveal.isVisible
-                    ? "opacity-100 translate-x-0"
-                    : "opacity-0 translate-x-10"
-                }`}
-              >
-                {lookbookLooks.map((look, idx) => {
-                  if (idx !== activeLookIndex) return null;
-                  return (
-                    <div
-                      key={look.id}
-                      className="grid grid-cols-12 gap-6 items-center animate-[slideInRight_0.6s_cubic-bezier(0.16,1,0.3,1)_forwards]"
-                    >
-                      <div className="col-span-7 relative aspect-[3/4] overflow-hidden rounded-sm bg-neutral-100 shadow-xl border border-accent/5 group">
-                        <ImageWithSkeleton
-                          src={look.image}
-                          alt={look.title}
-                          className="object-cover transition-transform duration-[6000ms] ease-out scale-100 group-hover:scale-103"
-                          sizes="40vw"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                      </div>
-
-                      <div className="col-span-5 space-y-5 pr-2">
-                        <div className="space-y-3">
-                          <span className="inline-flex px-2.5 py-1 bg-accent-light border border-accent/20 rounded-sm text-[9px] text-accent font-bold uppercase tracking-wider font-sans">
-                            Atelier Pick
-                          </span>
-                          <h3 className="text-xl md:text-2xl font-bold tracking-tight text-foreground font-heading leading-snug">
-                            {look.subtitle}
-                          </h3>
-                          <p className="text-lg font-bold text-foreground">
-                            {formatPrice(look.price)}
-                          </p>
-                        </div>
-
-                        <div className="border-t border-accent/15 pt-5">
-                          <Link
-                            href={`/products/${look.slug}`}
-                            className="inline-flex items-center justify-center gap-2 w-full h-12 bg-foreground hover:bg-neutral-800 text-background text-xs font-bold uppercase tracking-[0.15em] transition-all rounded-sm active:scale-[0.97] shadow-sm hover:shadow-md group/btn cursor-pointer"
-                          >
-                            <ShoppingBag className="h-4 w-4" /> Shop Now
-                            <ArrowUpRight className="h-4 w-4 transition-transform group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5" />
-                          </Link>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* ─── MOBILE NATIVE INTERACTIVE VIEW (Optimized aspect & glassmorphism) ─── */}
-            <div className="block lg:hidden space-y-6">
-              {/* Heading */}
-              <div className="text-center space-y-1">
-                <p className="text-[10px] uppercase tracking-[0.25em] text-accent font-bold">
-                  BIBAZ EDITORIALS
-                </p>
-                <h2 className="text-2xl font-bold tracking-tight text-foreground font-heading">
-                  Hand-Picked Showcase
-                </h2>
-              </div>
-
-              {/* Horizontal Pill Tabs */}
-              <div className="flex gap-2 pb-3 overflow-x-auto scrollbar-hide snap-x px-1 justify-start md:justify-center">
-                {lookbookLooks.map((look, idx) => (
-                  <button
-                    key={look.id}
-                    onClick={() => setActiveLookIndex(idx)}
-                    className={`snap-center shrink-0 px-4 py-2.5 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all duration-300 border cursor-pointer ${
-                      activeLookIndex === idx
-                        ? "bg-foreground text-background border-foreground shadow-sm scale-[1.02]"
-                        : "bg-white/80 text-muted-foreground border-border hover:bg-white"
-                    }`}
-                  >
-                    {look.tag?.split(" ")[0] || "LOOK"}
-                  </button>
-                ))}
-              </div>
-
-              {/* Self-contained aspect-[3/4] swipeable mockup card */}
-              <div className="relative max-w-sm mx-auto">
-                {lookbookLooks.map((look, idx) => {
-                  if (idx !== activeLookIndex) return null;
-                  return (
-                    <div
-                      key={look.id}
-                      className="relative aspect-[3/4] rounded-sm overflow-hidden bg-neutral-100 shadow-xl border border-accent/5 animate-scale-in group"
-                    >
-                      <ImageWithSkeleton
-                        src={look.image}
-                        alt={look.subtitle}
-                        className="object-cover"
-                        sizes="(max-width: 640px) 100vw, 400px"
-                      />
-
-                      {/* Subdued top-right index counter */}
-                      <div className="absolute top-4 right-4 z-20 px-3 py-1 bg-black/60 backdrop-blur-md rounded-sm text-[9px] text-white/90 font-bold tracking-widest font-sans">
-                        0{idx + 1} / 0{lookbookLooks.length}
-                      </div>
-
-                      {/* Overlaid quick arrows */}
-                      <button
-                        onClick={(e) => {
-                          e.preventDefault();
-                          setActiveLookIndex(
-                            (prev) => (prev - 1 + lookbookLooks.length) % lookbookLooks.length
-                          );
-                        }}
-                        className="absolute left-3 top-1/2 -translate-y-1/2 z-20 flex items-center justify-center size-9 rounded-full bg-white/95 text-foreground border border-border/10 shadow-md cursor-pointer transition-transform active:scale-90 animate-fade-in"
-                        aria-label="Previous look"
-                      >
-                        <ChevronLeft className="h-4.5 w-4.5 stroke-[2]" />
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.preventDefault();
-                          setActiveLookIndex((prev) => (prev + 1) % lookbookLooks.length);
-                        }}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 z-20 flex items-center justify-center size-9 rounded-full bg-white/95 text-foreground border border-border/10 shadow-md cursor-pointer transition-transform active:scale-90 animate-fade-in"
-                        aria-label="Next look"
-                      >
-                        <ChevronRight className="h-4.5 w-4.5 stroke-[2]" />
-                      </button>
-
-                      {/* Advanced Floating Bottom Glassmorphic Card */}
-                      <div className="absolute bottom-4 inset-x-4 z-20 bg-white/90 dark:bg-black/90 backdrop-blur-lg border border-white/20 dark:border-white/10 p-4 rounded-sm shadow-2xl flex items-center justify-between gap-3">
-                        <div className="space-y-0.5 min-w-0 flex-1">
-                          <span className="inline-block text-[8px] text-accent font-bold uppercase tracking-widest font-sans">
-                            {look.tag}
-                          </span>
-                          <h4 className="text-xs font-bold text-foreground truncate font-heading leading-tight">
-                            {look.subtitle}
-                          </h4>
-                          <p className="text-xs font-bold text-foreground/80">
-                            {formatPrice(look.price)}
-                          </p>
-                        </div>
-                        <Link
-                          href={`/products/${look.slug}`}
-                          className="shrink-0 flex items-center justify-center h-10 px-4 bg-foreground hover:bg-neutral-800 text-background text-[10px] font-bold uppercase tracking-wider transition-all rounded-sm active:scale-95 group/btn"
-                        >
-                          Shop Now{" "}
-                          <ArrowUpRight className="ml-1 h-3.5 w-3.5 transition-transform group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5" />
-                        </Link>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* ═══════ 6. ALL COLLECTIONS SHOWCASE ═══════ */}
-      <section className="py-16 md:py-24 bg-white border-b border-border/20">
-        <div
-          ref={collectionsReveal.ref}
-          className="container mx-auto px-4 md:px-12 lg:px-16 max-w-7xl"
-        >
-          <div
-            className={`text-center max-w-lg mx-auto mb-10 md:mb-16 transition-all duration-700 ${
-              collectionsReveal.isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
-            }`}
-          >
-            <p className="text-[10px] uppercase tracking-[0.25em] text-accent font-bold mb-3">
-              EXPLORE EVERYTHING
-            </p>
-            <h2 className="text-2xl md:text-[36px] font-bold tracking-tight text-foreground font-heading">
-              All Collections
-            </h2>
-            <div
-              className={`h-[2px] bg-accent mx-auto mt-4 transition-all duration-700 delay-300 ${
-                collectionsReveal.isVisible ? "w-12" : "w-0"
-              }`}
-            />
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-6">
-            {allCollections.map((collection, i) => (
-              <Link
-                key={collection.title}
-                href={collection.href}
-                className={`group relative overflow-hidden rounded-sm aspect-[4/5] shadow-sm bg-neutral-100 transition-all duration-700 ${
-                  collectionsReveal.isVisible
-                    ? "opacity-100 translate-y-0 scale-100"
-                    : "opacity-0 translate-y-10 scale-[0.96]"
-                }`}
-                style={{
-                  transitionDelay: collectionsReveal.isVisible ? `${200 + i * 120}ms` : "0ms",
-                }}
-              >
-                <ImageWithSkeleton
-                  src={collection.image}
-                  alt={collection.title}
-                  className="object-cover transition-transform duration-[1200ms] group-hover:scale-105 group-active:scale-105"
-                  sizes="(max-width: 768px) 50vw, 33vw"
-                />
-                <div className="absolute inset-3 border border-white/10 group-hover:border-white/25 transition-colors pointer-events-none z-10" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/25 to-transparent" />
-                <div className="absolute bottom-0 left-0 right-0 p-4 md:p-6 z-20">
-                  <p className="text-[9px] uppercase tracking-[0.2em] text-accent font-bold mb-1.5">
-                    {collection.tag}
-                  </p>
-                  <h3 className="text-white text-sm md:text-lg font-bold tracking-tight">
-                    {collection.title}
-                  </h3>
-                  <div className="mt-2 flex items-center gap-1.5 opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 group-active:opacity-100 group-active:translate-y-0 transition-all duration-300">
-                    <span className="text-[10px] text-white/80 uppercase tracking-wider font-bold font-sans">
-                      Shop Now
-                    </span>
-                    <ArrowUpRight className="h-3.5 w-3.5 text-white/80" />
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ═══════ 7. TESTIMONIALS CAROUSEL ═══════ */}
-      <section className="py-16 md:py-24 bg-[#f8f5f0] border-b border-border/20">
-        <div
-          ref={testimonialsReveal.ref}
-          className="container mx-auto px-4 md:px-12 lg:px-16 max-w-5xl"
-        >
-          <div
-            className={`text-center max-w-sm mx-auto mb-8 md:mb-10 transition-all duration-700 ${
-              testimonialsReveal.isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
-            }`}
-          >
-            <p className="text-[10px] uppercase tracking-[0.25em] text-accent font-bold">
-              CLIENT REVIEW JOURNAL
-            </p>
-            <h2 className="text-2xl font-bold text-foreground font-heading mt-2">Testimonials</h2>
-          </div>
-          <div
-            className={`relative p-6 md:p-14 bg-white border border-border/40 shadow-sm rounded-sm text-center transition-all duration-700 delay-200 ${
-              testimonialsReveal.isVisible
-                ? "opacity-100 translate-y-0 scale-100"
-                : "opacity-0 translate-y-6 scale-[0.97]"
-            }`}
-          >
-            {/* Stars */}
-            <div className="flex gap-1 justify-center mb-5 text-accent">
-              {[...Array(testimonials[activeTestimonial]?.stars)].map((_, i) => (
-                <Star
-                  key={i}
-                  className="h-4 w-4 fill-current animate-[scaleIn_0.3s_ease-out_forwards]"
-                  style={{ animationDelay: `${i * 80}ms` }}
-                />
-              ))}
-            </div>
-
-            {/* Quote */}
-            <p
-              key={activeTestimonial}
-              className="text-sm sm:text-base md:text-lg text-foreground/80 font-medium leading-relaxed font-heading max-w-2xl mx-auto italic animate-[fadeInUp_0.5s_cubic-bezier(0.16,1,0.3,1)_forwards]"
-            >
-              &ldquo;{testimonials[activeTestimonial]?.quote}&rdquo;
-            </p>
-
-            {/* Author */}
-            <div
-              key={`author-${activeTestimonial}`}
-              className="mt-5 animate-[fadeInUp_0.5s_cubic-bezier(0.16,1,0.3,1)_0.15s_both]"
-            >
-              <h4 className="text-xs font-bold uppercase tracking-wider text-foreground">
-                {testimonials[activeTestimonial]?.author}
-              </h4>
-              <p className="text-[10px] text-muted-foreground mt-0.5">
-                {testimonials[activeTestimonial]?.designation}
-              </p>
-            </div>
-
-            {/* Navigation dots */}
-            <div className="flex justify-center gap-2.5 mt-7">
-              {testimonials.map((_, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => setActiveTestimonial(idx)}
-                  className={`h-2 rounded-full transition-all duration-300 cursor-pointer ${
-                    activeTestimonial === idx
-                      ? "w-7 bg-accent"
-                      : "w-2 bg-neutral-200 hover:bg-neutral-300"
-                  }`}
-                  aria-label={`Testimonial ${idx + 1}`}
-                />
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ═══════ 8. EDITORIAL / BRAND STORY ═══════ */}
-      <section className="py-16 md:py-28 bg-white relative border-b border-border/20">
-        <div className="absolute top-0 bottom-0 left-1/3 w-[1px] bg-border/20 hidden lg:block" />
-        <div
-          ref={editorialReveal.ref}
-          className="container mx-auto px-4 md:px-12 lg:px-16 max-w-7xl"
-        >
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-16 items-center">
-            {/* Left: Image */}
-            <div
-              className={`lg:col-span-5 relative group transition-all duration-700 ${
-                editorialReveal.isVisible
-                  ? "opacity-100 translate-x-0"
-                  : "opacity-0 -translate-x-10"
-              }`}
-            >
-              <div className="absolute -inset-2 bg-accent-light border border-accent/25 rounded-sm -z-10 translate-x-4 translate-y-4 transition-transform duration-500 group-hover:translate-x-2 group-hover:translate-y-2" />
-              <div className="relative aspect-[3/4] overflow-hidden rounded-sm bg-neutral-100 shadow-lg">
-                <ImageWithSkeleton
-                  src="/images/products/boutique/bouthik 3.webp"
-                  alt="Exclusive Silk Abaya Drape"
-                  className="object-cover transition-transform duration-[1200ms] group-hover:scale-105 group-active:scale-105"
-                  sizes="(max-width: 1024px) 100vw, 40vw"
-                />
-              </div>
-            </div>
-
-            {/* Right: Content */}
-            <div
-              className={`lg:col-span-7 space-y-6 lg:pl-6 transition-all duration-700 delay-200 ${
-                editorialReveal.isVisible ? "opacity-100 translate-x-0" : "opacity-0 translate-x-10"
-              }`}
-            >
-              <div className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <Sparkles className="h-4 w-4 text-accent animate-pulse" />
-                  <p className="text-[10px] uppercase tracking-[0.25em] text-accent font-bold">
-                    THE CREATIVE STORY
-                  </p>
-                </div>
-                <h2 className="text-2xl sm:text-3xl md:text-[44px] font-bold tracking-tight leading-[1.1] text-foreground font-heading">
-                  Woven with Artisanal Devotion,
-                  <br />
-                  <span className="italic font-normal text-muted-foreground font-heading">
-                    Crafted to Inspire Poise.
-                  </span>
-                </h2>
-              </div>
-              <div className="p-5 md:p-8 bg-[#f8f5f0] border-l-2 border-accent rounded-sm shadow-sm relative overflow-hidden">
-                <div className="absolute top-2 right-2 text-accent/10 text-7xl font-serif select-none font-bold">
-                  &ldquo;
-                </div>
-                <p className="text-xs md:text-sm text-foreground/80 leading-relaxed font-medium italic z-10 relative">
-                  &ldquo;Every BIBAZ creation represents a harmonious bridge connecting generational
-                  loom weavers with contemporary silhouettes, yielding unparalleled luxury draping
-                  for the modern woman.&rdquo;
-                </p>
-              </div>
-              <div className="pt-3 flex flex-wrap gap-4">
-                <Link
-                  href="/collections"
-                  className="inline-flex items-center justify-center h-12 px-8 bg-foreground text-background text-xs font-bold uppercase tracking-[0.15em] hover:bg-neutral-800 transition-all rounded-sm shadow-sm active:scale-[0.97]"
-                >
-                  Explore Collections
-                </Link>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* 8. EDITORIAL — Lazy loaded */}
+      <EditorialSection />
     </div>
   );
 }

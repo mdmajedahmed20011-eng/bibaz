@@ -313,6 +313,7 @@ export async function createOrder(data: CreateOrderInput | any) {
         try {
           const { sendEmail, orderConfirmationEmail, newOrderAlertEmail } =
             await import("@/lib/email");
+          const { notify } = await import("@/lib/notifications");
 
           const customerEmail = guestEmail || null;
           if (customerEmail) {
@@ -335,7 +336,7 @@ export async function createOrder(data: CreateOrderInput | any) {
             await sendEmail(emailData);
           }
 
-          // Admin alert
+          // Admin alert (email)
           const adminAlert = newOrderAlertEmail({
             orderNumber,
             customerName: shippingAddress.name,
@@ -343,6 +344,14 @@ export async function createOrder(data: CreateOrderInput | any) {
             itemCount: items.length,
           });
           await sendEmail(adminAlert);
+
+          // Admin alert (DB notification for dashboard)
+          await notify({
+            type: 'NEW_ORDER',
+            title: `New Order #${orderNumber}`,
+            message: `${shippingAddress.name || 'Customer'} placed an order for ৳${total.toLocaleString()}`,
+            data: { orderId: order.id, orderNumber, total: Number(total) },
+          });
 
           // Low stock warning check
           const lowStockVariants = await prisma.productVariant.findMany({
@@ -355,6 +364,16 @@ export async function createOrder(data: CreateOrderInput | any) {
           });
 
           if (lowStockVariants.length > 0) {
+            // DB notification for low stock
+            for (const v of lowStockVariants) {
+              await notify({
+                type: 'LOW_STOCK',
+                title: `Low Stock: ${v.product.name}`,
+                message: `${v.product.name} (Size: ${v.size || 'OS'}, Color: ${v.color || 'None'}) has only ${v.stock} units left`,
+                data: { variantId: v.id, stock: v.stock },
+              });
+            }
+
             const lowStockAlertHtml = `
             <h3>⚠️ Low Stock Warning</h3>
             <p>The following variants are running low on stock (less than 5 units remaining):</p>

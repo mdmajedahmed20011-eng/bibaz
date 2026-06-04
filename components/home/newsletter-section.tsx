@@ -8,6 +8,7 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
+import { subscribeNewsletter } from "@/actions/newsletter.actions";
 
 export function NewsletterSection() {
   const [email, setEmail] = useState("");
@@ -22,12 +23,21 @@ export function NewsletterSection() {
     }
 
     setIsSubmitting(true);
-    await new Promise((resolve) => setTimeout(resolve, 800));
-    toast.success("Subscribed!", {
-      description: "You'll receive updates on new arrivals and offers.",
-    });
-    setEmail("");
-    setIsSubmitting(false);
+    try {
+      const result = await subscribeNewsletter(email.trim());
+      if (result.success) {
+        toast.success(result.message || "Subscribed!", {
+          description: "You'll receive updates on new arrivals and offers.",
+        });
+        setEmail("");
+      } else {
+        toast.error(result.error || "Something went wrong. Please try again.");
+      }
+    } catch {
+      toast.error("Network error. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (

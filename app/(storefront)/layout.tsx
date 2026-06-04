@@ -11,6 +11,8 @@ import { QuickViewModal } from "@/components/product/quick-view-modal";
 import { ScrollProgress } from "@/components/ui/scroll-progress";
 import { BackToTop } from "@/components/ui/back-to-top";
 import { WhatsAppButton } from "@/components/ui/whatsapp-button";
+import { PageTracker } from "@/components/ui/page-tracker";
+import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
 import { getStorefrontSettings } from "@/actions/settings.actions";
 import { auth } from "@/lib/auth";
 export default async function StorefrontLayout({ children }: { children: React.ReactNode }) {
@@ -37,6 +39,8 @@ export default async function StorefrontLayout({ children }: { children: React.R
       <ScrollProgress />
       <BackToTop />
       <WhatsAppButton phoneNumber="8801700000000" />
+      <MobileBottomNav />
+      <PageTracker />
     </>
   );
 }

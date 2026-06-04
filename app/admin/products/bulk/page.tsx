@@ -38,13 +38,13 @@ export default async function BulkEditorPage() {
     orderBy: { createdAt: "desc" },
   });
 
-  const products = rawProducts.map(p => ({
+  const products = rawProducts.map((p) => ({
     ...p,
     basePrice: Number(p.basePrice),
-    variants: p.variants.map(v => ({
+    variants: p.variants.map((v) => ({
       ...v,
-      price: Number(v.price)
-    }))
+      price: Number(v.price),
+    })),
   }));
 
   return (
@@ -68,7 +68,8 @@ export default async function BulkEditorPage() {
       </div>
 
       <div className="bg-blue-50 border border-blue-200 text-blue-800 p-4 rounded-xl text-sm">
-        <strong>Pro Tip:</strong> You can edit directly in the table cells just like Excel. Once you are done making all your changes, click the "Save All Changes" button.
+        <strong>Pro Tip:</strong> You can edit directly in the table cells just like Excel. Once you
+        are done making all your changes, click the &quot;Save All Changes&quot; button.
       </div>
 
       <ExcelBulkEditor initialProducts={products} />

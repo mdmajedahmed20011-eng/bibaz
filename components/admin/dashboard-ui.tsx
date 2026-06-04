@@ -256,7 +256,9 @@ export function QuickStatCard({
     <Link href={href} className="block w-full">
       <div className="flex items-center justify-between rounded-xl border border-gray-100 bg-white p-3.5 shadow-sm transition-all hover:border-gray-200 hover:shadow-md">
         <div className="flex items-center gap-3">
-          <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border ${colorStyles[color]}`}>
+          <div
+            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border ${colorStyles[color]}`}
+          >
             {icon}
           </div>
           <p className="text-sm font-medium text-gray-600">{label}</p>
@@ -399,6 +401,7 @@ export function TopProductsList({
         >
           <div className="h-12 w-12 rounded-lg bg-gray-100 overflow-hidden shrink-0 border border-gray-200">
             {p.image ? (
+              // eslint-disable-next-line @next/next/no-img-element
               <img src={p.image} alt={p.name} className="h-full w-full object-cover" />
             ) : (
               <div className="h-full w-full flex items-center justify-center text-gray-400">

@@ -59,6 +59,7 @@ function ImageWithSkeleton({
 
 /* ──────────────── Animation Variants ──────────────── */
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const leftColumnVariants: any = {
   hidden: { opacity: 0, x: -40 },
   visible: {
@@ -68,6 +69,7 @@ const leftColumnVariants: any = {
   },
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const rightColumnVariants: any = {
   hidden: { opacity: 0, x: 40 },
   visible: {
@@ -120,9 +122,7 @@ export function LookbookSection({ looks }: LookbookSectionProps) {
                   {/* Active sliding gold strip */}
                   <div
                     className={`absolute left-0 top-0 bottom-0 w-[4px] bg-accent transition-all duration-500 ${
-                      activeLookIndex === idx
-                        ? "opacity-100 scale-y-100"
-                        : "opacity-0 scale-y-0"
+                      activeLookIndex === idx ? "opacity-100 scale-y-100" : "opacity-0 scale-y-0"
                     }`}
                   />
                   <div className="space-y-0.5">
@@ -172,9 +172,7 @@ export function LookbookSection({ looks }: LookbookSectionProps) {
                       <h3 className="text-xl md:text-2xl font-bold tracking-tight text-foreground font-heading leading-snug">
                         {look.subtitle}
                       </h3>
-                      <p className="text-lg font-bold text-foreground">
-                        {formatPrice(look.price)}
-                      </p>
+                      <p className="text-lg font-bold text-foreground">{formatPrice(look.price)}</p>
                     </div>
                     <div className="border-t border-accent/15 pt-5">
                       <Link
@@ -245,9 +243,7 @@ export function LookbookSection({ looks }: LookbookSectionProps) {
                   <button
                     onClick={(e) => {
                       e.preventDefault();
-                      setActiveLookIndex(
-                        (prev) => (prev - 1 + looks.length) % looks.length
-                      );
+                      setActiveLookIndex((prev) => (prev - 1 + looks.length) % looks.length);
                     }}
                     className="absolute left-3 top-1/2 -translate-y-1/2 z-20 flex items-center justify-center size-9 rounded-full bg-white/95 text-foreground border border-border/10 shadow-md cursor-pointer transition-transform active:scale-90 animate-fade-in"
                     aria-label="Previous look"

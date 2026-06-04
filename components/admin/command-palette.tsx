@@ -86,6 +86,13 @@ export function CommandPalette() {
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const resultsRef = useRef<HTMLDivElement>(null);
 
+  const handleClose = useCallback(() => {
+    setIsOpen(false);
+    setQuery("");
+    setResults(null);
+    setSelectedIndex(0);
+  }, []);
+
   // ⌘K / Ctrl+K keyboard shortcut
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
@@ -101,7 +108,7 @@ export function CommandPalette() {
 
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen]);
+  }, [isOpen, handleClose]);
 
   // Focus input when opening
   useEffect(() => {
@@ -115,6 +122,7 @@ export function CommandPalette() {
     if (debounceRef.current) clearTimeout(debounceRef.current);
 
     if (!query || query.length < 2) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setResults(null);
       setIsSearching(false);
       return;
@@ -133,19 +141,12 @@ export function CommandPalette() {
     };
   }, [query]);
 
-  const handleClose = () => {
-    setIsOpen(false);
-    setQuery("");
-    setResults(null);
-    setSelectedIndex(0);
-  };
-
   const navigateTo = useCallback(
     (href: string) => {
       handleClose();
       router.push(href);
     },
-    [router]
+    [router, handleClose]
   );
 
   // Build flat list of all navigable items for keyboard navigation
@@ -205,9 +206,7 @@ export function CommandPalette() {
   // Scroll selected item into view
   useEffect(() => {
     if (resultsRef.current) {
-      const selected = resultsRef.current.querySelector(
-        `[data-index="${selectedIndex}"]`
-      );
+      const selected = resultsRef.current.querySelector(`[data-index="${selectedIndex}"]`);
       if (selected) {
         selected.scrollIntoView({ block: "nearest" });
       }
@@ -216,9 +215,7 @@ export function CommandPalette() {
 
   const hasResults =
     results &&
-    (results.orders.length > 0 ||
-      results.products.length > 0 ||
-      results.customers.length > 0);
+    (results.orders.length > 0 || results.products.length > 0 || results.customers.length > 0);
 
   let currentFlatIndex = 0;
 
@@ -278,9 +275,7 @@ export function CommandPalette() {
                   onKeyDown={handleKeyDown}
                   className="flex-1 text-sm text-gray-900 placeholder-gray-400 focus:outline-none"
                 />
-                {isSearching && (
-                  <Loader2 className="h-4 w-4 shrink-0 animate-spin text-gray-400" />
-                )}
+                {isSearching && <Loader2 className="h-4 w-4 shrink-0 animate-spin text-gray-400" />}
                 <button
                   onClick={handleClose}
                   className="shrink-0 rounded-md p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
@@ -290,10 +285,7 @@ export function CommandPalette() {
               </div>
 
               {/* Results */}
-              <div
-                ref={resultsRef}
-                className="max-h-[400px] overflow-y-auto p-2"
-              >
+              <div ref={resultsRef} className="max-h-[400px] overflow-y-auto p-2">
                 {/* Quick Actions */}
                 {filteredActions.length > 0 && (
                   <div className="mb-2">
@@ -309,15 +301,11 @@ export function CommandPalette() {
                           data-index={thisIndex}
                           onClick={() => navigateTo(action.href)}
                           className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left transition-colors ${
-                            selectedIndex === thisIndex
-                              ? "bg-gray-100"
-                              : "hover:bg-gray-50"
+                            selectedIndex === thisIndex ? "bg-gray-100" : "hover:bg-gray-50"
                           }`}
                         >
                           <Icon className="h-4 w-4 shrink-0 text-gray-500" />
-                          <span className="flex-1 text-sm text-gray-700">
-                            {action.label}
-                          </span>
+                          <span className="flex-1 text-sm text-gray-700">{action.label}</span>
                           <ArrowRight className="h-3 w-3 shrink-0 text-gray-400" />
                         </button>
                       );
@@ -340,13 +328,9 @@ export function CommandPalette() {
                             <button
                               key={order.id}
                               data-index={thisIndex}
-                              onClick={() =>
-                                navigateTo(`/admin/orders/${order.id}`)
-                              }
+                              onClick={() => navigateTo(`/admin/orders/${order.id}`)}
                               className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left transition-colors ${
-                                selectedIndex === thisIndex
-                                  ? "bg-gray-100"
-                                  : "hover:bg-gray-50"
+                                selectedIndex === thisIndex ? "bg-gray-100" : "hover:bg-gray-50"
                               }`}
                             >
                               <ShoppingCart className="h-4 w-4 shrink-0 text-blue-500" />
@@ -355,8 +339,7 @@ export function CommandPalette() {
                                   {order.orderNumber}
                                 </p>
                                 <p className="truncate text-[11px] text-gray-500">
-                                  {order.guestName || "Guest"} •{" "}
-                                  ৳{order.total.toLocaleString()} •{" "}
+                                  {order.guestName || "Guest"} • ৳{order.total.toLocaleString()} •{" "}
                                   {order.status}
                                 </p>
                               </div>
@@ -379,13 +362,9 @@ export function CommandPalette() {
                             <button
                               key={product.id}
                               data-index={thisIndex}
-                              onClick={() =>
-                                navigateTo(`/admin/products/${product.id}`)
-                              }
+                              onClick={() => navigateTo(`/admin/products/${product.id}`)}
                               className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left transition-colors ${
-                                selectedIndex === thisIndex
-                                  ? "bg-gray-100"
-                                  : "hover:bg-gray-50"
+                                selectedIndex === thisIndex ? "bg-gray-100" : "hover:bg-gray-50"
                               }`}
                             >
                               <Package className="h-4 w-4 shrink-0 text-emerald-500" />
@@ -394,8 +373,7 @@ export function CommandPalette() {
                                   {product.name}
                                 </p>
                                 <p className="truncate text-[11px] text-gray-500">
-                                  ৳{product.basePrice.toLocaleString()} •{" "}
-                                  {product.status}
+                                  ৳{product.basePrice.toLocaleString()} • {product.status}
                                 </p>
                               </div>
                               <ArrowRight className="h-3 w-3 shrink-0 text-gray-400" />
@@ -417,15 +395,9 @@ export function CommandPalette() {
                             <button
                               key={customer.id}
                               data-index={thisIndex}
-                              onClick={() =>
-                                navigateTo(
-                                  `/admin/customers/${customer.id}`
-                                )
-                              }
+                              onClick={() => navigateTo(`/admin/customers/${customer.id}`)}
                               className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left transition-colors ${
-                                selectedIndex === thisIndex
-                                  ? "bg-gray-100"
-                                  : "hover:bg-gray-50"
+                                selectedIndex === thisIndex ? "bg-gray-100" : "hover:bg-gray-50"
                               }`}
                             >
                               <Users className="h-4 w-4 shrink-0 text-purple-500" />
@@ -435,9 +407,7 @@ export function CommandPalette() {
                                 </p>
                                 <p className="truncate text-[11px] text-gray-500">
                                   {customer.email}
-                                  {customer.phone
-                                    ? ` • ${customer.phone}`
-                                    : ""}
+                                  {customer.phone ? ` • ${customer.phone}` : ""}
                                 </p>
                               </div>
                               <ArrowRight className="h-3 w-3 shrink-0 text-gray-400" />
@@ -453,12 +423,8 @@ export function CommandPalette() {
                 {query.length >= 2 && !isSearching && !hasResults && (
                   <div className="flex flex-col items-center py-8 px-4">
                     <Search className="h-8 w-8 text-gray-300" />
-                    <p className="mt-2 text-sm font-medium text-gray-500">
-                      No results found
-                    </p>
-                    <p className="mt-0.5 text-xs text-gray-400">
-                      Try a different search term
-                    </p>
+                    <p className="mt-2 text-sm font-medium text-gray-500">No results found</p>
+                    <p className="mt-0.5 text-xs text-gray-400">Try a different search term</p>
                   </div>
                 )}
               </div>

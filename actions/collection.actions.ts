@@ -50,8 +50,11 @@ export async function getCollectionBySlug(slug: string) {
     let productIds: string[] = [];
     if (Array.isArray(collection.productIds)) {
       productIds = collection.productIds as string[];
-    } else if (collection.productIds && typeof collection.productIds === 'object') {
-      productIds = (collection.productIds as any).cachedIds || (collection.productIds as any).ids || [];
+    } else if (collection.productIds && typeof collection.productIds === "object") {
+      productIds =
+        ((collection.productIds as Record<string, unknown>).cachedIds as string[]) ||
+        ((collection.productIds as Record<string, unknown>).ids as string[]) ||
+        [];
     }
 
     const products =
@@ -108,7 +111,7 @@ export async function createCollection(data: {
   image?: string;
   bannerImage?: string;
   isFeatured?: boolean;
-  productIds?: any;
+  productIds?: unknown;
 }) {
   const session = await auth();
   if (!session?.user) return { success: false, error: "Not authenticated" };
@@ -174,7 +177,7 @@ export async function updateCollection(
     bannerImage?: string;
     isActive?: boolean;
     isFeatured?: boolean;
-    productIds?: any;
+    productIds?: unknown;
     sortOrder?: number;
   }
 ) {
@@ -266,6 +269,7 @@ export async function resolveSmartCollectionRules(rules: {
   if (!session?.user) return { success: false, productIds: [] };
 
   try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const where: any = { deletedAt: null };
 
     if (rules.keyword) {
@@ -283,13 +287,12 @@ export async function resolveSmartCollectionRules(rules: {
     const products = await db.product.findMany({
       where,
       select: { id: true },
-      take: 200 // reasonable limit for collection
+      take: 200, // reasonable limit for collection
     });
 
-    return { success: true, productIds: products.map((p: any) => p.id) };
+    return { success: true, productIds: products.map((p: { id: string }) => p.id) };
   } catch (error) {
     console.error("[COLLECTION] resolveSmartCollectionRules error:", error);
     return { success: false, productIds: [] };
   }
 }
-

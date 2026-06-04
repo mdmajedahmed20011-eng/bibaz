@@ -75,6 +75,7 @@ export function OrderQuickView({ orderId, onClose }: OrderQuickViewProps) {
   }, [orderId]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchOrder();
   }, [fetchOrder]);
 
@@ -111,8 +112,7 @@ export function OrderQuickView({ orderId, onClose }: OrderQuickViewProps) {
   };
 
   const address =
-    order?.shippingAddress &&
-    typeof order.shippingAddress === "object"
+    order?.shippingAddress && typeof order.shippingAddress === "object"
       ? (order.shippingAddress as {
           street?: string;
           area?: string;
@@ -163,9 +163,7 @@ export function OrderQuickView({ orderId, onClose }: OrderQuickViewProps) {
                 {/* Header */}
                 <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
                   <div>
-                    <h3 className="text-base font-bold text-gray-900">
-                      {order.orderNumber}
-                    </h3>
+                    <h3 className="text-base font-bold text-gray-900">{order.orderNumber}</h3>
                     <p className="text-xs text-gray-500 mt-0.5">
                       {new Date(order.createdAt).toLocaleDateString("en-BD", {
                         day: "numeric",
@@ -308,8 +306,8 @@ export function OrderQuickView({ orderId, onClose }: OrderQuickViewProps) {
                                 {item.variant?.product?.name || "Product"}
                               </p>
                               <p className="text-xs text-gray-500">
-                                {item.variant?.size || "OS"} /{" "}
-                                {item.variant?.color || "Default"} × {item.quantity}
+                                {item.variant?.size || "OS"} / {item.variant?.color || "Default"} ×{" "}
+                                {item.quantity}
                               </p>
                             </div>
                             <p className="text-sm font-semibold text-gray-900">
@@ -334,9 +332,7 @@ export function OrderQuickView({ orderId, onClose }: OrderQuickViewProps) {
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-xs text-gray-500">
-                        Payment Status
-                      </span>
+                      <span className="text-xs text-gray-500">Payment Status</span>
                       <span
                         className={`rounded-md px-2 py-0.5 text-[10px] font-bold ${paymentStatusColors[order.paymentStatus] || "bg-gray-50 text-gray-600"}`}
                       >
@@ -350,16 +346,12 @@ export function OrderQuickView({ orderId, onClose }: OrderQuickViewProps) {
                       </div>
                       <div className="flex justify-between text-xs text-gray-500">
                         <span>Shipping</span>
-                        <span>
-                          ৳{Number(order.shippingCharge).toLocaleString()}
-                        </span>
+                        <span>৳{Number(order.shippingCharge).toLocaleString()}</span>
                       </div>
                       {Number(order.discount) > 0 && (
                         <div className="flex justify-between text-xs text-emerald-600">
                           <span>Discount</span>
-                          <span>
-                            -৳{Number(order.discount).toLocaleString()}
-                          </span>
+                          <span>-৳{Number(order.discount).toLocaleString()}</span>
                         </div>
                       )}
                       <div className="flex justify-between text-sm font-bold text-gray-900 pt-1 border-t border-gray-200/60">

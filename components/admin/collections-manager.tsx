@@ -281,7 +281,7 @@ function CollectionForm({
     image?: string;
     bannerImage?: string;
     isFeatured?: boolean;
-    productIds?: any;
+    productIds?: unknown;
   }) => Promise<void>;
   onCancel: () => void;
 }) {
@@ -291,22 +291,37 @@ function CollectionForm({
   const [bannerImage, setBannerImage] = useState(collection?.bannerImage || "");
   const [isFeatured, setIsFeatured] = useState(collection?.isFeatured || false);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const initialProductIdsData = collection?.productIds as any;
-  const isSmartInit = initialProductIdsData && typeof initialProductIdsData === 'object' && !Array.isArray(initialProductIdsData);
-  
+  const isSmartInit =
+    initialProductIdsData &&
+    typeof initialProductIdsData === "object" &&
+    !Array.isArray(initialProductIdsData);
+
   const [mode, setMode] = useState<"manual" | "smart">(isSmartInit ? "smart" : "manual");
-  
+
   const [selectedProductIds, setSelectedProductIds] = useState<string[]>(
-    Array.isArray(initialProductIdsData) ? initialProductIdsData : (isSmartInit ? initialProductIdsData.cachedIds || [] : [])
+    Array.isArray(initialProductIdsData)
+      ? initialProductIdsData
+      : isSmartInit
+        ? initialProductIdsData.cachedIds || []
+        : []
   );
 
-  const [rules, setRules] = useState<{ keyword: string, minPrice: string, maxPrice: string, status: string }>(
-    isSmartInit && initialProductIdsData.rules ? {
-      keyword: initialProductIdsData.rules.keyword || "",
-      minPrice: initialProductIdsData.rules.minPrice?.toString() || "",
-      maxPrice: initialProductIdsData.rules.maxPrice?.toString() || "",
-      status: initialProductIdsData.rules.status || ""
-    } : { keyword: "", minPrice: "", maxPrice: "", status: "" }
+  const [rules, setRules] = useState<{
+    keyword: string;
+    minPrice: string;
+    maxPrice: string;
+    status: string;
+  }>(
+    isSmartInit && initialProductIdsData.rules
+      ? {
+          keyword: initialProductIdsData.rules.keyword || "",
+          minPrice: initialProductIdsData.rules.minPrice?.toString() || "",
+          maxPrice: initialProductIdsData.rules.maxPrice?.toString() || "",
+          status: initialProductIdsData.rules.status || "",
+        }
+      : { keyword: "", minPrice: "", maxPrice: "", status: "" }
   );
 
   const [searchTerm, setSearchTerm] = useState("");
@@ -319,7 +334,9 @@ function CollectionForm({
       keyword: rules.keyword || undefined,
       minPrice: rules.minPrice ? Number(rules.minPrice) : undefined,
       maxPrice: rules.maxPrice ? Number(rules.maxPrice) : undefined,
-      status: rules.status ? (rules.status as "ACTIVE" | "DRAFT" | "OUT_OF_STOCK" | "ARCHIVED") : undefined,
+      status: rules.status
+        ? (rules.status as "ACTIVE" | "DRAFT" | "OUT_OF_STOCK" | "ARCHIVED")
+        : undefined,
     };
     const res = await resolveSmartCollectionRules(parsedRules);
     if (res.success) {
@@ -337,7 +354,8 @@ function CollectionForm({
       return;
     }
     setSaving(true);
-    
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let finalProductIdsData: any = selectedProductIds;
     if (mode === "smart") {
       finalProductIdsData = {
@@ -348,7 +366,7 @@ function CollectionForm({
           maxPrice: rules.maxPrice ? Number(rules.maxPrice) : undefined,
           status: rules.status || undefined,
         },
-        cachedIds: selectedProductIds
+        cachedIds: selectedProductIds,
       };
     }
 
@@ -442,29 +460,59 @@ function CollectionForm({
             </h4>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div>
-                <label className="block text-[10px] font-bold text-gray-600 uppercase mb-1">Title Contains</label>
-                <input type="text" value={rules.keyword} onChange={e => setRules({...rules, keyword: e.target.value})} className="w-full text-xs p-1.5 border border-gray-200 rounded" placeholder="e.g. Shirt" />
+                <label className="block text-[10px] font-bold text-gray-600 uppercase mb-1">
+                  Title Contains
+                </label>
+                <input
+                  type="text"
+                  value={rules.keyword}
+                  onChange={(e) => setRules({ ...rules, keyword: e.target.value })}
+                  className="w-full text-xs p-1.5 border border-gray-200 rounded"
+                  placeholder="e.g. Shirt"
+                />
               </div>
               <div>
-                <label className="block text-[10px] font-bold text-gray-600 uppercase mb-1">Status</label>
-                <select value={rules.status} onChange={e => setRules({...rules, status: e.target.value})} className="w-full text-xs p-1.5 border border-gray-200 rounded">
+                <label className="block text-[10px] font-bold text-gray-600 uppercase mb-1">
+                  Status
+                </label>
+                <select
+                  value={rules.status}
+                  onChange={(e) => setRules({ ...rules, status: e.target.value })}
+                  className="w-full text-xs p-1.5 border border-gray-200 rounded"
+                >
                   <option value="">Any Status</option>
                   <option value="ACTIVE">Active Only</option>
                   <option value="DRAFT">Draft</option>
                 </select>
               </div>
               <div>
-                <label className="block text-[10px] font-bold text-gray-600 uppercase mb-1">Min Price (৳)</label>
-                <input type="number" value={rules.minPrice} onChange={e => setRules({...rules, minPrice: e.target.value})} className="w-full text-xs p-1.5 border border-gray-200 rounded" placeholder="0" />
+                <label className="block text-[10px] font-bold text-gray-600 uppercase mb-1">
+                  Min Price (৳)
+                </label>
+                <input
+                  type="number"
+                  value={rules.minPrice}
+                  onChange={(e) => setRules({ ...rules, minPrice: e.target.value })}
+                  className="w-full text-xs p-1.5 border border-gray-200 rounded"
+                  placeholder="0"
+                />
               </div>
               <div>
-                <label className="block text-[10px] font-bold text-gray-600 uppercase mb-1">Max Price (৳)</label>
-                <input type="number" value={rules.maxPrice} onChange={e => setRules({...rules, maxPrice: e.target.value})} className="w-full text-xs p-1.5 border border-gray-200 rounded" placeholder="9999" />
+                <label className="block text-[10px] font-bold text-gray-600 uppercase mb-1">
+                  Max Price (৳)
+                </label>
+                <input
+                  type="number"
+                  value={rules.maxPrice}
+                  onChange={(e) => setRules({ ...rules, maxPrice: e.target.value })}
+                  className="w-full text-xs p-1.5 border border-gray-200 rounded"
+                  placeholder="9999"
+                />
               </div>
             </div>
             <div className="flex justify-end mt-2">
-              <button 
-                onClick={handleApplyRules} 
+              <button
+                onClick={handleApplyRules}
                 disabled={resolving}
                 className="bg-purple-600 text-white text-xs px-3 py-1.5 rounded font-medium hover:bg-purple-700 disabled:opacity-50"
               >
@@ -477,7 +525,8 @@ function CollectionForm({
         {/* Product Selection Picker */}
         <div className="space-y-2 border-t border-gray-100 pt-3">
           <label className="block text-xs font-semibold text-gray-700">
-            {mode === "smart" ? "Matched Products" : "Assign Products to Collection"} ({selectedProductIds.length} Selected)
+            {mode === "smart" ? "Matched Products" : "Assign Products to Collection"} (
+            {selectedProductIds.length} Selected)
           </label>
           {mode === "manual" && (
             <input
@@ -525,11 +574,15 @@ function CollectionForm({
                   </label>
                 );
               })}
-            {mode === "manual" && allProducts.filter((p) => p.name.toLowerCase().includes(searchTerm.toLowerCase())).length === 0 && (
-              <p className="text-center text-xs text-gray-400 py-4">No matching products found</p>
-            )}
+            {mode === "manual" &&
+              allProducts.filter((p) => p.name.toLowerCase().includes(searchTerm.toLowerCase()))
+                .length === 0 && (
+                <p className="text-center text-xs text-gray-400 py-4">No matching products found</p>
+              )}
             {mode === "smart" && selectedProductIds.length === 0 && (
-              <p className="text-center text-xs text-gray-400 py-4">No products match your rules yet. Hit "Apply Rules & Preview".</p>
+              <p className="text-center text-xs text-gray-400 py-4">
+                No products match your rules yet. Hit &quot;Apply Rules &amp; Preview&quot;.
+              </p>
             )}
           </div>
         </div>

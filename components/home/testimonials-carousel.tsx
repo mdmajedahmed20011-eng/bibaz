@@ -24,6 +24,7 @@ interface TestimonialsCarouselProps {
 
 /* ──────────────── Animation Variants ──────────────── */
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const slideVariants: any = {
   enter: { opacity: 0, y: 20 },
   center: {
@@ -123,9 +124,7 @@ export function TestimonialsCarousel({ testimonials }: TestimonialsCarouselProps
               <h4 className="text-xs font-bold uppercase tracking-wider text-foreground">
                 {current.author}
               </h4>
-              <p className="text-[10px] text-muted-foreground mt-0.5">
-                {current.designation}
-              </p>
+              <p className="text-[10px] text-muted-foreground mt-0.5">{current.designation}</p>
             </motion.div>
           </AnimatePresence>
 
@@ -136,9 +135,7 @@ export function TestimonialsCarousel({ testimonials }: TestimonialsCarouselProps
                 key={idx}
                 onClick={() => setActiveIndex(idx)}
                 className={`h-2 rounded-full transition-all duration-300 cursor-pointer ${
-                  activeIndex === idx
-                    ? "w-7 bg-accent"
-                    : "w-2 bg-neutral-200 hover:bg-neutral-300"
+                  activeIndex === idx ? "w-7 bg-accent" : "w-2 bg-neutral-200 hover:bg-neutral-300"
                 }`}
                 aria-label={`Testimonial ${idx + 1}`}
               />

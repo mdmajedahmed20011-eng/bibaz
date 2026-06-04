@@ -29,6 +29,7 @@ interface NewArrivalsGridProps {
 
 /* ──────────────── Animation Variants ──────────────── */
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const containerVariants: any = {
   hidden: { opacity: 0 },
   visible: {
@@ -37,6 +38,7 @@ const containerVariants: any = {
   },
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const headingVariants: any = {
   hidden: { opacity: 0, y: 30 },
   visible: {
@@ -46,6 +48,7 @@ const headingVariants: any = {
   },
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const cardVariants: any = {
   hidden: { opacity: 0, y: 40 },
   visible: {

@@ -25,6 +25,7 @@ interface CategoryGridProps {
 
 /* ──────────────── Animation Variants ──────────────── */
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const containerVariants: any = {
   hidden: { opacity: 0 },
   visible: {
@@ -36,6 +37,7 @@ const containerVariants: any = {
   },
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const headingVariants: any = {
   hidden: { opacity: 0, y: 30 },
   visible: {
@@ -45,6 +47,7 @@ const headingVariants: any = {
   },
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const cardVariants: any = {
   hidden: { opacity: 0, y: 40, scale: 0.96 },
   visible: {
@@ -99,7 +102,10 @@ export function CategoryGrid({ categories }: CategoryGridProps) {
         className="container mx-auto px-4 md:px-12 lg:px-16 max-w-7xl"
       >
         {/* Section heading */}
-        <motion.div variants={headingVariants} className="text-center max-w-lg mx-auto mb-10 md:mb-16">
+        <motion.div
+          variants={headingVariants}
+          className="text-center max-w-lg mx-auto mb-10 md:mb-16"
+        >
           <p className="text-[10px] uppercase tracking-[0.25em] text-accent font-bold mb-3">
             ATELIER CATEGORIES
           </p>
@@ -116,7 +122,10 @@ export function CategoryGrid({ categories }: CategoryGridProps) {
         </motion.div>
 
         {/* Category cards with staggered animation */}
-        <motion.div variants={containerVariants} className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-5">
+        <motion.div
+          variants={containerVariants}
+          className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-5"
+        >
           {categories.map((category) => (
             <motion.div key={category.slug} variants={cardVariants}>
               <Link

@@ -848,6 +848,7 @@ export async function bulkUpdateProductsAndVariants(data: {
       for (const p of data.products) {
         await tx.product.update({
           where: { id: p.id },
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           data: { basePrice: p.basePrice, status: p.status as any },
         });
       }

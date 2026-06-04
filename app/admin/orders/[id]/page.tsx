@@ -10,6 +10,7 @@ import Link from "next/link";
 import { ArrowLeft, Clock } from "lucide-react";
 import { OrderStatusUpdateForm } from "@/components/admin/order-status-form";
 import { OrderNotesForm } from "@/components/admin/order-notes-form";
+import { VisualOrderTimeline } from "@/components/admin/visual-timeline";
 import { prisma } from "@/lib/db";
 
 export default async function AdminOrderDetailPage({
@@ -191,31 +192,12 @@ export default async function AdminOrderDetailPage({
           </div>
 
           {/* Timeline */}
-          <div className="rounded-xl border border-gray-200 bg-white p-6">
-            <h2 className="mb-4 text-lg font-semibold text-gray-900">Order Timeline</h2>
-            <div className="space-y-4">
-              {order.timeline?.map((entry: any, index: number) => (
-                <div key={entry.id} className="flex gap-3">
-                  <div className="flex flex-col items-center">
-                    <div
-                      className={`h-3 w-3 rounded-full ${
-                        index === 0 ? "bg-blue-500" : "bg-gray-300"
-                      }`}
-                    />
-                    {index < (order.timeline?.length || 0) - 1 && (
-                      <div className="w-px flex-1 bg-gray-200" />
-                    )}
-                  </div>
-                  <div className="pb-4">
-                    <p className="text-sm font-medium text-gray-900">{entry.status}</p>
-                    {entry.note && <p className="text-xs text-gray-500">{entry.note}</p>}
-                    <p className="text-xs text-gray-400">
-                      {new Date(entry.createdAt).toLocaleString("en-BD")}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
+          <div className="rounded-xl border border-gray-200 bg-white p-6 md:p-10">
+            <h2 className="mb-8 text-lg font-bold text-gray-900 flex items-center gap-2">
+              <Clock className="w-5 h-5 text-gray-400" />
+              Advanced Order Tracking
+            </h2>
+            <VisualOrderTimeline timeline={order.timeline} currentStatus={order.status} />
           </div>
         </div>
 

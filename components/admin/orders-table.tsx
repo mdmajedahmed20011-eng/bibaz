@@ -2,14 +2,15 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { deleteOrder, bulkDeleteOrders } from "@/actions/order.actions";
-import { Trash2 } from "lucide-react";
+import { deleteOrder, bulkDeleteOrders, bulkUpdateOrderStatus } from "@/actions/order.actions";
+import { Trash2, Edit3 } from "lucide-react";
 import { toast } from "sonner";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function OrdersTable({ orders }: { orders: any[] }) {
   const [selectedOrders, setSelectedOrders] = useState<Set<string>>(new Set());
-  const [isDeleting, setIsDeleting] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [bulkStatus, setBulkStatus] = useState("");
 
   const toggleSelect = (id: string) => {
     const newSet = new Set(selectedOrders);
@@ -28,19 +29,19 @@ export function OrdersTable({ orders }: { orders: any[] }) {
 
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to delete this order?")) return;
-    setIsDeleting(true);
+    setIsProcessing(true);
     const res = await deleteOrder(id);
     if (res.success) {
       toast.success("Order deleted");
     } else {
       toast.error(res.error || "Failed to delete order");
     }
-    setIsDeleting(false);
+    setIsProcessing(false);
   };
 
   const handleBulkDelete = async () => {
     if (!confirm(`Are you sure you want to delete ${selectedOrders.size} orders?`)) return;
-    setIsDeleting(true);
+    setIsProcessing(true);
     const res = await bulkDeleteOrders(Array.from(selectedOrders));
     if (res.success) {
       toast.success(`${res.count} orders deleted`);
@@ -48,24 +49,73 @@ export function OrdersTable({ orders }: { orders: any[] }) {
     } else {
       toast.error(res.error || "Failed to delete orders");
     }
-    setIsDeleting(false);
+    setIsProcessing(false);
+  };
+
+  const handleBulkStatusUpdate = async () => {
+    if (!bulkStatus) return toast.error("Please select a status");
+    if (!confirm(`Update ${selectedOrders.size} orders to ${bulkStatus}?`)) return;
+
+    setIsProcessing(true);
+    const res = await bulkUpdateOrderStatus(
+      Array.from(selectedOrders),
+      bulkStatus as
+        | "PENDING"
+        | "CONFIRMED"
+        | "PROCESSING"
+        | "SHIPPED"
+        | "DELIVERED"
+        | "CANCELLED"
+        | "RETURNED"
+        | "REFUNDED"
+    );
+    if (res.success) {
+      toast.success(`${res.updated} orders updated successfully`);
+      setSelectedOrders(new Set());
+      setBulkStatus("");
+    } else {
+      toast.error(res.error || "Failed to update orders");
+    }
+    setIsProcessing(false);
   };
 
   return (
     <div className="space-y-4">
       {selectedOrders.size > 0 && (
-        <div className="flex items-center justify-between rounded-lg bg-indigo-50 px-4 py-2 border border-indigo-100">
-          <span className="text-sm font-medium text-indigo-900">
+        <div className="flex flex-wrap items-center justify-between rounded-lg bg-indigo-50 px-4 py-3 border border-indigo-100 gap-4 shadow-sm">
+          <span className="text-sm font-bold text-indigo-900 bg-white px-2 py-1 rounded-md shadow-sm border border-indigo-100">
             {selectedOrders.size} orders selected
           </span>
-          <button
-            onClick={handleBulkDelete}
-            disabled={isDeleting}
-            className="flex items-center gap-1.5 rounded-md bg-red-600 px-3 py-1.5 text-xs font-semibold text-white transition-all hover:bg-red-700 disabled:opacity-50"
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-            Delete Selected
-          </button>
+          <div className="flex flex-wrap items-center gap-2">
+            <select
+              value={bulkStatus}
+              onChange={(e) => setBulkStatus(e.target.value)}
+              className="rounded-md border border-gray-300 py-1.5 px-3 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            >
+              <option value="">Change Status...</option>
+              <option value="CONFIRMED">Confirm</option>
+              <option value="PROCESSING">Process</option>
+              <option value="SHIPPED">Ship</option>
+              <option value="DELIVERED">Deliver</option>
+              <option value="CANCELLED">Cancel</option>
+            </select>
+            <button
+              onClick={handleBulkStatusUpdate}
+              disabled={isProcessing || !bulkStatus}
+              className="flex items-center gap-1.5 rounded-md bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white transition-all hover:bg-indigo-700 disabled:opacity-50"
+            >
+              <Edit3 className="h-3.5 w-3.5" /> Update
+            </button>
+            <div className="h-5 w-px bg-indigo-200 mx-1"></div>
+            <button
+              onClick={handleBulkDelete}
+              disabled={isProcessing}
+              className="flex items-center gap-1.5 rounded-md bg-red-600 px-3 py-1.5 text-xs font-semibold text-white transition-all hover:bg-red-700 disabled:opacity-50"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              Delete
+            </button>
+          </div>
         </div>
       )}
 

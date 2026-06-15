@@ -4,6 +4,8 @@ import { prisma } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 
+import { withCache } from "@/lib/redis";
+
 async function requireAdmin() {
   const session = await auth();
   if (!session?.user?.id) return { authorized: false, error: "Not authenticated", userId: null };
@@ -16,15 +18,21 @@ async function requireAdmin() {
 }
 
 export async function getHomepageSections() {
-  try {
-    const sections = await prisma.homepageSection.findMany({
-      orderBy: { sortOrder: "asc" },
-    });
-    return { success: true, sections };
-  } catch (error) {
-    console.error("[HOMEPAGE] getHomepageSections error:", error);
-    return { success: false, error: "Failed to fetch homepage sections", sections: [] };
-  }
+  return withCache(
+    "homepage_sections",
+    async () => {
+      try {
+        const sections = await prisma.homepageSection.findMany({
+          orderBy: { sortOrder: "asc" },
+        });
+        return { success: true, sections };
+      } catch (error) {
+        console.error("[HOMEPAGE] getHomepageSections error:", error);
+        return { success: false, error: "Failed to fetch homepage sections", sections: [] };
+      }
+    },
+    3600 // Cache for 1 hour
+  );
 }
 
 export async function createHomepageSection(data: {

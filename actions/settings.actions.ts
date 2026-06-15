@@ -12,6 +12,8 @@ const db = prisma as any;
 import { auth } from "@/lib/auth";
 import { revalidatePath, revalidateTag } from "next/cache";
 
+import { withCache } from "@/lib/redis";
+
 // ═══════════════════════════════════════════
 // PUBLIC — Get settings (for storefront)
 // ═══════════════════════════════════════════
@@ -53,23 +55,29 @@ export async function getSettingsByGroup(group: string) {
  * Get all settings needed for the storefront (general, branding, shipping, social)
  */
 export async function getStorefrontSettings() {
-  try {
-    const settings = await db.siteSetting.findMany({
-      where: {
-        group: { in: ["general", "branding", "shipping", "social"] },
-      },
-    });
+  return withCache(
+    "storefront_settings",
+    async () => {
+      try {
+        const settings = await db.siteSetting.findMany({
+          where: {
+            group: { in: ["general", "branding", "shipping", "social"] },
+          },
+        });
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const map: Record<string, any> = {};
-    for (const s of settings) {
-      map[s.key] = s.value;
-    }
-    return { success: true, settings: map };
-  } catch (error) {
-    console.error("[SETTINGS] getStorefrontSettings error:", error);
-    return { success: false, settings: {} };
-  }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const map: Record<string, any> = {};
+        for (const s of settings) {
+          map[s.key] = s.value;
+        }
+        return { success: true, settings: map };
+      } catch (error) {
+        console.error("[SETTINGS] getStorefrontSettings error:", error);
+        return { success: false, settings: {} };
+      }
+    },
+    3600 // Cache for 1 hour
+  );
 }
 
 /**

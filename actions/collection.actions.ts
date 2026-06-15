@@ -13,6 +13,8 @@ const db = prisma as any;
 import { auth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 
+import { withCache } from "@/lib/redis";
+
 // ═══════════════════════════════════════════
 // PUBLIC
 // ═══════════════════════════════════════════
@@ -21,58 +23,70 @@ import { revalidatePath } from "next/cache";
  * Get all active collections (for storefront)
  */
 export async function getCollections() {
-  try {
-    const collections = await db.collection.findMany({
-      where: { isActive: true },
-      orderBy: { sortOrder: "asc" },
-    });
-    return { success: true, collections };
-  } catch (error) {
-    console.error("[COLLECTION] getCollections error:", error);
-    return { success: false, collections: [] };
-  }
+  return withCache(
+    "storefront_collections",
+    async () => {
+      try {
+        const collections = await db.collection.findMany({
+          where: { isActive: true },
+          orderBy: { sortOrder: "asc" },
+        });
+        return { success: true, collections };
+      } catch (error) {
+        console.error("[COLLECTION] getCollections error:", error);
+        return { success: false, collections: [] };
+      }
+    },
+    3600 // Cache for 1 hour
+  );
 }
 
 /**
  * Get collection by slug with products
  */
 export async function getCollectionBySlug(slug: string) {
-  try {
-    const collection = await db.collection.findUnique({
-      where: { slug },
-    });
+  return withCache(
+    `collection_${slug}`,
+    async () => {
+      try {
+        const collection = await db.collection.findUnique({
+          where: { slug },
+        });
 
-    if (!collection) {
-      return { success: false, collection: null, products: [] };
-    }
+        if (!collection) {
+          return { success: false, collection: null, products: [] };
+        }
 
-    // Handle both legacy string[] and new smart collection { mode, ids, rules }
-    let productIds: string[] = [];
-    if (Array.isArray(collection.productIds)) {
-      productIds = collection.productIds as string[];
-    } else if (collection.productIds && typeof collection.productIds === "object") {
-      productIds =
-        ((collection.productIds as Record<string, unknown>).cachedIds as string[]) ||
-        ((collection.productIds as Record<string, unknown>).ids as string[]) ||
-        [];
-    }
+        // Handle both legacy string[] and new smart collection { mode, ids, rules }
+        let productIds: string[] = [];
+        if (Array.isArray(collection.productIds)) {
+          productIds = collection.productIds as string[];
+        } else if (collection.productIds && typeof collection.productIds === "object") {
+          productIds =
+            ((collection.productIds as Record<string, unknown>).cachedIds as string[]) ||
+            ((collection.productIds as Record<string, unknown>).ids as string[]) ||
+            [];
+        }
 
-    const products =
-      productIds.length > 0
-        ? await prisma.product.findMany({
-            where: { id: { in: productIds }, status: "ACTIVE", deletedAt: null },
-            include: {
-              variants: { where: { isActive: true }, take: 1 },
-              category: { select: { name: true, slug: true } },
-            },
-          })
-        : [];
+        const products =
+          productIds.length > 0
+            ? await prisma.product.findMany({
+                where: { id: { in: productIds }, status: "ACTIVE", deletedAt: null },
+                include: {
+                  variants: { where: { isActive: true }, take: 1 },
+                  category: { select: { name: true, slug: true } },
+                },
+              })
+            : [];
 
-    return { success: true, collection, products };
-  } catch (error) {
-    console.error("[COLLECTION] getCollectionBySlug error:", error);
-    return { success: false, collection: null, products: [] };
-  }
+        return { success: true, collection, products };
+      } catch (error) {
+        console.error("[COLLECTION] getCollectionBySlug error:", error);
+        return { success: false, collection: null, products: [] };
+      }
+    },
+    1800 // Cache for 30 minutes
+  );
 }
 
 // ═══════════════════════════════════════════

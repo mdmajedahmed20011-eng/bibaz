@@ -34,6 +34,33 @@ interface ProductInfoProps {
   };
 }
 
+const colorMap: Record<string, string> = {
+  red: "#ff0000",
+  blue: "#0000ff",
+  green: "#008000",
+  yellow: "#ffff00",
+  black: "#000000",
+  white: "#ffffff",
+  "black/white": "linear-gradient(135deg, #000000 50%, #ffffff 50%)",
+  "red/blue": "linear-gradient(135deg, #ff0000 50%, #0000ff 50%)",
+  "red blue": "linear-gradient(135deg, #ff0000 50%, #0000ff 50%)",
+  maroon: "#800000",
+  purple: "#800080",
+  "sky blue": "#87ceeb",
+  magenta: "#ff00ff",
+  "golden yellow": "#ffdf00",
+  golden: "#ffd700",
+  "olive green": "#808000",
+  teal: "#008080",
+  "blush pink": "#ffb6c1",
+  "dusty rose": "#dcae96",
+  beige: "#f5f5dc",
+  "hot pink": "#ff69b4",
+};
+
+const normalizeStr = (str: string | null | undefined) =>
+  str ? str.trim().toLowerCase().replace(/\s+/g, " ") : "";
+
 export function ProductInfo({
   product,
   settings = {},
@@ -42,15 +69,33 @@ export function ProductInfo({
   const addItem = useCartStore((state) => state.addItem);
   const openCart = useCartStore((state) => state.openCart);
 
-  const availableSizes = useMemo(
-    () => [...new Set(product.variants.map((v) => v.size).filter(Boolean))],
-    [product.variants]
-  );
+  // Normalize and deduplicate sizes
+  const availableSizes = useMemo(() => {
+    const unique = new Map<string, string>();
+    product.variants.forEach((v) => {
+      if (v.size) {
+        const norm = normalizeStr(v.size);
+        if (!unique.has(norm)) {
+          unique.set(norm, v.size.trim().replace(/\s+/g, " "));
+        }
+      }
+    });
+    return Array.from(unique.values());
+  }, [product.variants]);
 
-  const availableColors = useMemo(
-    () => [...new Set(product.variants.map((v) => v.color).filter(Boolean))],
-    [product.variants]
-  );
+  // Normalize and deduplicate colors
+  const availableColors = useMemo(() => {
+    const unique = new Map<string, string>();
+    product.variants.forEach((v) => {
+      if (v.color) {
+        const norm = normalizeStr(v.color);
+        if (!unique.has(norm)) {
+          unique.set(norm, v.color.trim().replace(/\s+/g, " "));
+        }
+      }
+    });
+    return Array.from(unique.values());
+  }, [product.variants]);
 
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
@@ -58,18 +103,19 @@ export function ProductInfo({
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [openSection, setOpenSection] = useState<string | null>("description");
 
-  // Find selected variant
+  // Find selected variant using normalized matching
   const selectedVariant = useMemo(() => {
     let match = product.variants;
     if (availableSizes.length > 0) {
       if (!selectedSize) return null;
-      match = match.filter((v) => v.size === selectedSize);
+      match = match.filter((v) => normalizeStr(v.size) === normalizeStr(selectedSize));
     }
     if (availableColors.length > 0) {
       if (!selectedColor) return null;
-      match = match.filter((v) => v.color === selectedColor);
+      match = match.filter((v) => normalizeStr(v.color) === normalizeStr(selectedColor));
     }
-    return match[0] ?? null;
+    const inStockMatch = match.find((v) => v.stock > 0);
+    return inStockMatch ?? match[0] ?? null;
   }, [product.variants, selectedSize, selectedColor, availableSizes, availableColors]);
 
   const currentPrice = selectedVariant?.price ?? product.basePrice;
@@ -80,6 +126,42 @@ export function ProductInfo({
   const discountPercent = hasDiscount
     ? Math.round(((product.compareAtPrice! - currentPrice) / product.compareAtPrice!) * 100)
     : 0;
+
+  // Check if a color is available and in stock for the current selection
+  const isColorInStock = (color: string) => {
+    const normColor = normalizeStr(color);
+    return product.variants.some((v) => {
+      const matchColor = normalizeStr(v.color) === normColor;
+      const matchSize = !selectedSize || normalizeStr(v.size) === normalizeStr(selectedSize);
+      return matchColor && matchSize && v.stock > 0;
+    });
+  };
+
+  // Check if a size is available and in stock for the current selection
+  const isSizeInStock = (size: string) => {
+    const normSize = normalizeStr(size);
+    return product.variants.some((v) => {
+      const matchSize = normalizeStr(v.size) === normSize;
+      const matchColor = !selectedColor || normalizeStr(v.color) === normalizeStr(selectedColor);
+      return matchColor && matchSize && v.stock > 0;
+    });
+  };
+
+  const isSelectionComplete = useMemo(() => {
+    return (
+      (availableSizes.length === 0 || selectedSize !== null) &&
+      (availableColors.length === 0 || selectedColor !== null)
+    );
+  }, [availableSizes, selectedSize, availableColors, selectedColor]);
+
+  const buttonDisabled = !isSelectionComplete || !isInStock;
+
+  const getButtonLabel = () => {
+    if (availableSizes.length > 0 && !selectedSize) return "Select Size";
+    if (availableColors.length > 0 && !selectedColor) return "Select Color";
+    if (!isInStock) return "Out of Stock";
+    return "ADD TO BAG";
+  };
 
   const handleAddToCart = () => {
     if (availableSizes.length > 0 && !selectedSize) {
@@ -105,7 +187,7 @@ export function ProductInfo({
       color: selectedVariant.color,
       price: selectedVariant.price,
       quantity,
-      image: product.images[0] ?? "", // Fixed the empty string image bug!
+      image: product.images[0] ?? "",
       maxStock: selectedVariant.stock,
     });
 
@@ -113,7 +195,6 @@ export function ProductInfo({
       description: `${product.name} — Size ${selectedVariant.size} × ${quantity}`,
     });
 
-    // Open cart drawer for premium feel
     openCart();
   };
 
@@ -219,28 +300,49 @@ export function ProductInfo({
             </div>
           </div>
 
-          <div className="flex flex-wrap gap-2.5">
+          <div className="flex flex-wrap gap-3">
             {availableColors.map((color) => {
-              const variant = product.variants.find(
-                (v) => v.color === color && (!selectedSize || v.size === selectedSize)
-              );
-              const inStock = variant ? variant.stock > 0 : false;
-              // Some basic colors mapping for circle if possible, else text
+              const inStock = isColorInStock(color);
+              const isSelectedNorm = normalizeStr(selectedColor) === normalizeStr(color);
+              const normColor = normalizeStr(color);
+              const colorStyle = colorMap[normColor];
+
               return (
                 <button
-                  key={color as string}
-                  onClick={() => setSelectedColor(color as string)}
-                  disabled={!inStock && availableSizes.length === 0}
-                  className={`h-11 min-w-[48px] px-4 text-xs font-semibold uppercase tracking-wider border rounded-sm transition-all duration-200 cursor-pointer ${
-                    selectedColor === color
-                      ? "bg-foreground text-background border-foreground shadow-sm"
-                      : inStock || availableSizes.length > 0
-                        ? "border-border text-foreground hover:border-foreground hover:bg-neutral-50"
-                        : "border-border/30 text-muted-foreground/30 line-through cursor-not-allowed bg-neutral-50/20"
+                  key={color}
+                  onClick={() => setSelectedColor(isSelectedNorm ? null : color)}
+                  disabled={!inStock}
+                  className={`group relative flex items-center justify-center rounded-full transition-all duration-200 cursor-pointer ${
+                    isSelectedNorm
+                      ? "ring-2 ring-foreground ring-offset-2 scale-105"
+                      : inStock
+                        ? "hover:scale-105"
+                        : "opacity-40 cursor-not-allowed"
                   }`}
-                  aria-pressed={selectedColor === color}
+                  style={{ width: "36px", height: "36px" }}
+                  title={color}
+                  aria-pressed={isSelectedNorm}
                 >
-                  {color as string}
+                  <span
+                    className="h-full w-full rounded-full border border-black/10 shadow-inner"
+                    style={{
+                      background: colorStyle?.includes("gradient") ? colorStyle : undefined,
+                      backgroundColor: !colorStyle?.includes("gradient")
+                        ? (colorStyle ?? "#e5e5e5")
+                        : undefined,
+                    }}
+                  />
+                  {!colorStyle && (
+                    <span className="absolute inset-0 flex items-center justify-center text-[9px] font-bold uppercase text-foreground leading-none px-1 text-center truncate">
+                      {color.slice(0, 3)}
+                    </span>
+                  )}
+                  <span className="sr-only">{color}</span>
+                  {!inStock && (
+                    <span className="absolute inset-0 flex items-center justify-center">
+                      <span className="w-full h-[1px] bg-red-500/70 rotate-45" />
+                    </span>
+                  )}
                 </button>
               );
             })}
@@ -265,21 +367,21 @@ export function ProductInfo({
 
           <div className="flex flex-wrap gap-2.5">
             {availableSizes.map((size) => {
-              const variant = product.variants.find((v) => v.size === size);
-              const inStock = variant ? variant.stock > 0 : false;
+              const inStock = isSizeInStock(size);
+              const isSelectedNorm = normalizeStr(selectedSize) === normalizeStr(size);
               return (
                 <button
                   key={size}
-                  onClick={() => setSelectedSize(size)}
+                  onClick={() => setSelectedSize(isSelectedNorm ? null : size)}
                   disabled={!inStock}
                   className={`h-11 min-w-[48px] px-4 text-xs font-semibold uppercase tracking-wider border rounded-sm transition-all duration-200 cursor-pointer ${
-                    selectedSize === size
+                    isSelectedNorm
                       ? "bg-foreground text-background border-foreground shadow-sm"
                       : inStock
                         ? "border-border text-foreground hover:border-foreground hover:bg-neutral-50"
                         : "border-border/30 text-muted-foreground/30 line-through cursor-not-allowed bg-neutral-50/20"
                   }`}
-                  aria-pressed={selectedSize === size}
+                  aria-pressed={isSelectedNorm}
                 >
                   {size}
                 </button>
@@ -329,27 +431,27 @@ export function ProductInfo({
         <div className="flex gap-3">
           <button
             onClick={handleAddToCart}
-            disabled={!selectedSize || !isInStock}
+            disabled={buttonDisabled}
             className={`flex-1 flex items-center justify-center gap-2 h-12 text-xs font-bold uppercase tracking-[0.12em] transition-all duration-200 rounded-sm cursor-pointer active:scale-[0.98] ${
-              !selectedSize
+              buttonDisabled
                 ? "bg-neutral-200 border border-neutral-300 text-neutral-600 font-bold opacity-100 cursor-not-allowed"
                 : "bg-foreground hover:bg-neutral-800 text-background"
             }`}
           >
             <ShoppingBag className="h-4 w-4" />
-            {!selectedSize ? "Select Size" : !isInStock ? "Out of Stock" : "ADD TO BAG"}
+            {getButtonLabel()}
           </button>
 
           <button
             onClick={handleBuyNow}
-            disabled={!selectedSize || !isInStock}
+            disabled={buttonDisabled}
             className={`flex-1 flex items-center justify-center gap-2 h-12 text-xs font-bold uppercase tracking-[0.12em] transition-all duration-200 rounded-sm cursor-pointer shadow-sm active:scale-[0.98] ${
-              !selectedSize
+              buttonDisabled
                 ? "bg-neutral-200 border border-neutral-300 text-neutral-600 font-bold opacity-100 cursor-not-allowed"
                 : "bg-[#b33a3a] hover:bg-[#9c2f2f] text-white"
             }`}
           >
-            {!selectedSize ? "Select Size" : "BUY NOW"}
+            {!isSelectionComplete ? getButtonLabel() : "BUY NOW"}
           </button>
 
           {/* Wishlist */}
@@ -428,8 +530,8 @@ export function ProductInfo({
         price={currentPrice}
         onAddToCart={handleAddToCart}
         onBuyNow={handleBuyNow}
-        disabled={!selectedSize || !isInStock}
-        label={!selectedSize ? "Select Size" : !isInStock ? "Out of Stock" : "ADD TO BAG"}
+        disabled={buttonDisabled}
+        label={getButtonLabel()}
       />
     </div>
   );

@@ -64,7 +64,7 @@ export function StickyAddToCart({
                 : "bg-[#b33a3a] hover:bg-[#9c2f2f] text-white"
             }`}
           >
-            {label === "Select Size" ? "Select Size" : "BUY NOW"}
+            {label === "Select Size" || label === "Select Color" ? label : "BUY NOW"}
           </button>
         </div>
       </div>

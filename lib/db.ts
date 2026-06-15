@@ -95,7 +95,17 @@ function createPrismaClient(): PrismaClient {
       // If running in production on the server, force localhost/127.0.0.1 to avoid
       // external networking latency & Hostinger WAF (ModSecurity / BitNinja) from blocking
       // concurrent DB queries (which throws 403 Forbidden and crashes the process).
-      if (process.env.NODE_ENV === "production" && host !== "127.0.0.1" && host !== "localhost") {
+      // PRODUCTION HOSTINGER OVERRIDE:
+      // If running in production on the server, force localhost/127.0.0.1 to avoid
+      // external networking latency & Hostinger WAF (ModSecurity / BitNinja) from blocking
+      // concurrent DB queries (which throws 403 Forbidden and crashes the process).
+      // Bypass this override if deploying on Vercel (process.env.VERCEL is defined).
+      if (
+        process.env.NODE_ENV === "production" &&
+        !process.env.VERCEL &&
+        host !== "127.0.0.1" &&
+        host !== "localhost"
+      ) {
         console.log(
           `[PRISMA] Production server detected. Overriding host ${host} with 127.0.0.1 for high-performance local loopback.`
         );
@@ -118,7 +128,12 @@ function createPrismaClient(): PrismaClient {
   }
 
   // Handle local environment production host override if DATABASE_URL was not used
-  if (process.env.NODE_ENV === "production" && host !== "127.0.0.1" && host !== "localhost") {
+  if (
+    process.env.NODE_ENV === "production" &&
+    !process.env.VERCEL &&
+    host !== "127.0.0.1" &&
+    host !== "localhost"
+  ) {
     host = "127.0.0.1";
   }
 
